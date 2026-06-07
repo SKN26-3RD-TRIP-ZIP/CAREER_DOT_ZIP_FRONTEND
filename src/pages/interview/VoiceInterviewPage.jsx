@@ -6,6 +6,8 @@ import { useTTS } from '../../hooks/useTTS';
 function VoiceInterviewPage() {
   const [manualSessionId, setManualSessionId] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [accessTokenInput, setAccessTokenInput] = useState('');
+  const [hasAccessToken, setHasAccessToken] = useState(false);
 
   const {
     loading,
@@ -38,7 +40,33 @@ function VoiceInterviewPage() {
     isSupported: isTTSSupported
   } = useTTS();
 
+  const handleSaveAccessToken = () => {
+    const token = accessTokenInput.trim();
+
+    if (!token) {
+      alert('access token을 입력해주세요.');
+      return;
+    }
+
+    localStorage.setItem('access_token', token);
+    setHasAccessToken(true);
+    setAccessTokenInput('');
+    setSuccessMessage('access token이 저장되었습니다.');
+  };
+
+  const handleRemoveAccessToken = () => {
+    localStorage.removeItem('access_token');
+    setHasAccessToken(false);
+    setAccessTokenInput('');
+    setSuccessMessage('access token이 삭제되었습니다.');
+  };
+
   const handleLoadQuestions = async () => {
+    if (!localStorage.getItem('access_token')) {
+      alert('access token을 먼저 저장해주세요.');
+      return;
+    }
+
     if (!manualSessionId.trim()) {
       alert('session_id를 입력해주세요.');
       return;
@@ -73,6 +101,10 @@ function VoiceInterviewPage() {
   };
 
   useEffect(() => {
+    setHasAccessToken(Boolean(localStorage.getItem('access_token')));
+  }, []);
+
+  useEffect(() => {
     if (currentQuestion?.question_text && isTTSSupported) {
       speak(currentQuestion.question_text);
     }
@@ -87,13 +119,52 @@ function VoiceInterviewPage() {
         </p>
 
         <div className="mt-6 rounded-xl border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold">테스트 인증 설정</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            백엔드에서 발급한 access token을 입력하면 브라우저 localStorage에 저장되어 API 요청에 사용됩니다.
+            토큰은 코드에 저장되지 않습니다.
+          </p>
+
+          <p className="mt-3 text-sm">
+            access_token 저장 상태:{' '}
+            <span className={hasAccessToken ? 'font-semibold text-green-700' : 'font-semibold text-red-700'}>
+              {hasAccessToken ? '저장됨' : '없음'}
+            </span>
+          </p>
+
+          <textarea
+            className="mt-3 min-h-24 w-full rounded-lg border border-slate-300 p-3"
+            value={accessTokenInput}
+            onChange={(event) => setAccessTokenInput(event.target.value)}
+            placeholder="access token을 붙여넣으세요"
+          />
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-white disabled:bg-slate-400"
+              onClick={handleSaveAccessToken}
+            >
+              토큰 저장
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 px-4 py-2"
+              onClick={handleRemoveAccessToken}
+            >
+              토큰 삭제
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-slate-200 p-4">
           <label className="block text-sm font-semibold">Session ID</label>
           <div className="mt-2 flex gap-2">
             <input
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
               value={manualSessionId}
               onChange={(event) => setManualSessionId(event.target.value)}
-              placeholder="백엔드에서 생성된 session_id를 입력하세요"
+              placeholder="백엔드에서 생성된 session_id를 입력하세요. 예: b457ad22-0a20-4aea-930f-0493cadcb4ee"
             />
             <button
               type="button"
