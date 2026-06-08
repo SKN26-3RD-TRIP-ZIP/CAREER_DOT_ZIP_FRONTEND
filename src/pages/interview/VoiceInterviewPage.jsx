@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useInterview } from '../../hooks/useInterview';
 import { useSTT } from '../../hooks/useSTT';
 import { useTTS } from '../../hooks/useTTS';
@@ -95,10 +96,13 @@ function ReportPanel({ reportData, reportLoading, sessionId }) {
 }
 
 function VoiceInterviewPage() {
+  const navigate = useNavigate();
   const [manualSessionId, setManualSessionId] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [accessTokenInput, setAccessTokenInput] = useState('');
   const [hasAccessToken, setHasAccessToken] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const autoLoadAttempted = useRef(false);
 
   const {
     loading,
@@ -129,6 +133,26 @@ function VoiceInterviewPage() {
   } = useSTT();
 
   const { speak, stop, isSpeaking, isSupported: isTTSSupported } = useTTS();
+
+  // store에 sessionId가 이미 있으면(세션 설정 페이지에서 넘어온 경우) 자동으로 질문 로드
+  useEffect(() => {
+    if (autoLoadAttempted.current) return;
+    if (!sessionId) return;
+    if (questions.length > 0) return;
+    if (!localStorage.getItem('access_token')) return;
+
+    autoLoadAttempted.current = true;
+    setSuccessMessage('');
+    loadQuestions(sessionId)
+      .then((loaded) => {
+        setSuccessMessage(`질문 ${loaded.length}개를 불러왔습니다. 면접을 시작합니다.`);
+      })
+      .catch(() => {
+        setSuccessMessage('');
+      });
+  // sessionId가 마운트 시점에 이미 있을 때만 실행 — 의존성 배열 의도적 최소화
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
   const handleSaveAccessToken = () => {
     const token = accessTokenInput.trim();
@@ -198,6 +222,12 @@ function VoiceInterviewPage() {
     resetTranscript();
     setManualSessionId('');
     setSuccessMessage('');
+    autoLoadAttempted.current = false;
+  };
+
+  const handleNewInterview = () => {
+    handleReset();
+    navigate('/jd');
   };
 
   useEffect(() => {
@@ -234,7 +264,7 @@ function VoiceInterviewPage() {
           <button
             type="button"
             className="mt-6 rounded-lg bg-slate-900 px-6 py-2 text-white"
-            onClick={handleReset}
+            onClick={handleNewInterview}
           >
             새 면접 시작
           </button>
@@ -243,164 +273,148 @@ function VoiceInterviewPage() {
     );
   }
 
+  const questionsLoaded = questions.length > 0;
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-8 text-slate-900">
       <section className="mx-auto max-w-4xl rounded-2xl bg-white p-6 shadow">
-        <h1 className="text-2xl font-bold">Career.zip 음성 면접</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          session_id를 입력하면 면접이 시작됩니다. 질문은 자동으로 TTS 재생되고, 음성 답변을 STT로 인식합니다.
-        </p>
-
-        {/* 인증 토큰 설정 */}
-        <div className="mt-6 rounded-xl border border-slate-200 p-4">
-          <h2 className="text-base font-semibold">인증 토큰</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            access_token:{' '}
-            <span className={hasAccessToken ? 'font-semibold text-green-700' : 'font-semibold text-red-600'}>
-              {hasAccessToken ? '저장됨' : '없음'}
-            </span>
-          </p>
-          <textarea
-            className="mt-2 min-h-20 w-full rounded-lg border border-slate-300 p-3 text-sm"
-            value={accessTokenInput}
-            onChange={(e) => setAccessTokenInput(e.target.value)}
-            placeholder="access token을 붙여넣으세요"
-          />
-          <div className="mt-2 flex gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
-              onClick={handleSaveAccessToken}
-            >
-              토큰 저장
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
-              onClick={handleRemoveAccessToken}
-            >
-              토큰 삭제
-            </button>
-          </div>
-        </div>
-
-        {/* 세션 ID 입력 */}
-        <div className="mt-4 rounded-xl border border-slate-200 p-4">
-          <label className="block text-sm font-semibold">Session ID</label>
-          <div className="mt-2 flex gap-2">
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              value={manualSessionId}
-              onChange={(e) => setManualSessionId(e.target.value)}
-              placeholder="예: b457ad22-0a20-4aea-930f-0493cadcb4ee"
-            />
-            <button
-              type="button"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:bg-slate-400"
-              onClick={handleLoadQuestions}
-              disabled={loading}
-            >
-              {loading ? '불러오는 중...' : '면접 시작'}
-            </button>
-          </div>
-          {sessionId && <p className="mt-2 text-xs text-slate-500">세션: {sessionId}</p>}
-        </div>
-
-        {/* 현재 질문 + TTS */}
-        <div className="mt-4 rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">
-              {questions.length > 0
-                ? `질문 ${currentQuestionIndex + 1} / ${questions.length}`
-                : '현재 질문'}
-            </h2>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
-                onClick={handleSpeak}
-                disabled={!currentQuestion || isSpeaking}
-              >
-                질문 듣기
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
-                onClick={stop}
-                disabled={!isSpeaking}
-              >
-                중지
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3 min-h-16 rounded-lg bg-slate-50 p-4 text-base leading-relaxed">
-            {currentQuestion?.question_text || '면접 시작 버튼을 누르면 질문이 표시됩니다.'}
-          </div>
-
-          {!isTTSSupported && (
-            <p className="mt-2 text-sm text-amber-600">
-              이 브라우저는 TTS를 지원하지 않습니다. 질문 텍스트를 직접 읽어주세요.
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Career.zip 음성 면접</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              질문은 자동으로 TTS 재생되고, 음성 답변을 STT로 인식합니다.
             </p>
-          )}
-        </div>
-
-        {/* STT 음성 답변 */}
-        <div className="mt-4 rounded-xl border border-slate-200 p-4">
-          <h2 className="text-base font-semibold">음성 답변</h2>
-
-          {!isSTTSupported && (
-            <p className="mt-2 text-sm text-amber-600">
-              이 브라우저는 STT를 지원하지 않습니다. 아래에 직접 입력해주세요.
-            </p>
-          )}
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:bg-slate-400"
-              onClick={startListening}
-              disabled={!currentQuestion || isListening || isSpeaking || !isSTTSupported}
-            >
-              {isListening ? '녹음 중...' : '녹음 시작'}
-            </button>
-            <button
-              type="button"
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white disabled:bg-slate-400"
-              onClick={stopListening}
-              disabled={!isListening}
-            >
-              녹음 중지
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
-              onClick={resetTranscript}
-            >
-              초기화
-            </button>
           </div>
-
-          <textarea
-            className="mt-3 min-h-36 w-full rounded-lg border border-slate-300 p-3 text-sm"
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            placeholder="STT 결과가 여기에 표시됩니다. 직접 수정할 수 있습니다."
-          />
-
-          <p className="mt-1 text-xs text-slate-400">
-            상태: {isListening ? '녹음 중' : '대기'} · 답변 시간: {speechDuration}초
-          </p>
-
           <button
             type="button"
-            className="mt-3 rounded-lg bg-green-600 px-5 py-2 text-sm text-white disabled:bg-slate-400"
-            onClick={handleSubmit}
-            disabled={loading || isListening || !currentQuestion || !transcript.trim()}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-500"
+            onClick={() => navigate('/jd')}
           >
-            {loading ? '저장 중...' : '답변 제출 및 STT 저장'}
+            JD 입력으로
           </button>
         </div>
+
+        {/* 자동 로드 대기 중 안내 */}
+        {loading && !questionsLoaded && (
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+            면접 질문을 불러오는 중입니다...
+          </div>
+        )}
+
+        {/* 세션 없음 안내 — store sessionId도 없고 수동 입력도 없는 경우 */}
+        {!loading && !questionsLoaded && !sessionId && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-800">세션이 없습니다</p>
+            <p className="mt-1 text-sm text-amber-700">
+              JD 입력 → 면접 설정 순서로 진행하거나, 아래 디버그 섹션에서 session_id를 직접 입력하세요.
+            </p>
+            <button
+              type="button"
+              className="mt-2 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
+              onClick={() => navigate('/jd')}
+            >
+              JD 입력하러 가기
+            </button>
+          </div>
+        )}
+
+        {/* 현재 질문 + TTS — 질문이 로드된 후에만 표시 */}
+        {questionsLoaded && (
+          <div className="mt-4 rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold">
+                질문 {currentQuestionIndex + 1} / {questions.length}
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+                  onClick={handleSpeak}
+                  disabled={!currentQuestion || isSpeaking}
+                >
+                  질문 듣기
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+                  onClick={stop}
+                  disabled={!isSpeaking}
+                >
+                  중지
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 min-h-16 rounded-lg bg-slate-50 p-4 text-base leading-relaxed">
+              {currentQuestion?.question_text || '질문을 불러오는 중입니다.'}
+            </div>
+
+            {!isTTSSupported && (
+              <p className="mt-2 text-sm text-amber-600">
+                이 브라우저는 TTS를 지원하지 않습니다. 질문 텍스트를 직접 읽어주세요.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* STT 음성 답변 — 질문이 로드된 후에만 표시 */}
+        {questionsLoaded && (
+          <div className="mt-4 rounded-xl border border-slate-200 p-4">
+            <h2 className="text-base font-semibold">음성 답변</h2>
+
+            {!isSTTSupported && (
+              <p className="mt-2 text-sm text-amber-600">
+                이 브라우저는 STT를 지원하지 않습니다. 아래에 직접 입력해주세요.
+              </p>
+            )}
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:bg-slate-400"
+                onClick={startListening}
+                disabled={!currentQuestion || isListening || isSpeaking || !isSTTSupported}
+              >
+                {isListening ? '녹음 중...' : '녹음 시작'}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white disabled:bg-slate-400"
+                onClick={stopListening}
+                disabled={!isListening}
+              >
+                녹음 중지
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                onClick={resetTranscript}
+              >
+                초기화
+              </button>
+            </div>
+
+            <textarea
+              className="mt-3 min-h-36 w-full rounded-lg border border-slate-300 p-3 text-sm"
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+              placeholder="STT 결과가 여기에 표시됩니다. 직접 수정할 수 있습니다."
+            />
+
+            <p className="mt-1 text-xs text-slate-400">
+              상태: {isListening ? '녹음 중' : '대기'} · 답변 시간: {speechDuration}초
+            </p>
+
+            <button
+              type="button"
+              className="mt-3 rounded-lg bg-green-600 px-5 py-2 text-sm text-white disabled:bg-slate-400"
+              onClick={handleSubmit}
+              disabled={loading || isListening || !currentQuestion || !transcript.trim()}
+            >
+              {loading ? '저장 중...' : '답변 제출 및 STT 저장'}
+            </button>
+          </div>
+        )}
 
         {/* 에러 메시지 */}
         {(error || sttError) && (
@@ -416,10 +430,81 @@ function VoiceInterviewPage() {
           </div>
         )}
 
-        {/* 디버그 정보 */}
-        <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-          <p>sessionId: {sessionId || '-'} · questions: {questions.length} · index: {currentQuestionIndex} · questionId: {currentQuestion?.question_id || '-'}</p>
-          {error && <p className="mt-1 text-red-500">error: {error}</p>}
+        {/* 디버그 섹션 (토글) */}
+        <div className="mt-6">
+          <button
+            type="button"
+            className="text-xs text-slate-400 underline"
+            onClick={() => setShowDebug((v) => !v)}
+          >
+            {showDebug ? '디버그 닫기' : '디버그 열기'}
+          </button>
+
+          {showDebug && (
+            <div className="mt-3 space-y-3 rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">디버그</p>
+
+              {/* 인증 토큰 */}
+              <div>
+                <p className="text-sm font-semibold">인증 토큰</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  access_token:{' '}
+                  <span className={hasAccessToken ? 'font-semibold text-green-700' : 'font-semibold text-red-600'}>
+                    {hasAccessToken ? '저장됨' : '없음'}
+                  </span>
+                </p>
+                <textarea
+                  className="mt-2 min-h-20 w-full rounded-lg border border-slate-300 p-3 text-sm"
+                  value={accessTokenInput}
+                  onChange={(e) => setAccessTokenInput(e.target.value)}
+                  placeholder="access token을 붙여넣으세요"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
+                    onClick={handleSaveAccessToken}
+                  >
+                    토큰 저장
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                    onClick={handleRemoveAccessToken}
+                  >
+                    토큰 삭제
+                  </button>
+                </div>
+              </div>
+
+              {/* 수동 Session ID */}
+              <div>
+                <label className="block text-sm font-semibold">Session ID 직접 입력</label>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={manualSessionId}
+                    onChange={(e) => setManualSessionId(e.target.value)}
+                    placeholder="예: b457ad22-0a20-4aea-930f-0493cadcb4ee"
+                  />
+                  <button
+                    type="button"
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:bg-slate-400"
+                    onClick={handleLoadQuestions}
+                    disabled={loading}
+                  >
+                    {loading ? '불러오는 중...' : '시작'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 상태 정보 */}
+              <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+                <p>sessionId: {sessionId || '-'} · questions: {questions.length} · index: {currentQuestionIndex} · questionId: {currentQuestion?.question_id || '-'}</p>
+                {error && <p className="mt-1 text-red-500">error: {error}</p>}
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </main>
