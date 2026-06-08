@@ -39,5 +39,10 @@ export const interviewApi = {
   generateFollowup: async (answerId) => {
     const response = await axiosInstance.post(`/answers/${answerId}/followup`);
     return response.data;
+  },
+
+  getSessionReport: async (sessionId) => {
+    const response = await axiosInstance.get(`/sessions/${sessionId}/report`);
+    return response.data;
   }
 };
