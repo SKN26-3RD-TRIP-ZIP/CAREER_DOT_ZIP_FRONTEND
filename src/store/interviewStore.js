@@ -11,6 +11,13 @@ export const useInterviewStore = create((set) => ({
   setCurrentQuestionIndex: (currentQuestionIndex) => set({ currentQuestionIndex }),
   setFollowupQuestion: (followupQuestion) => set({ followupQuestion }),
 
+  resetQuestionState: () =>
+    set({
+      questions: [],
+      currentQuestionIndex: 0,
+      followupQuestion: null
+    }),
+
   moveNextQuestion: () =>
     set((state) => ({
       currentQuestionIndex: state.currentQuestionIndex + 1,
