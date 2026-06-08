@@ -10,10 +10,11 @@ const INTERVIEW_TYPE_OPTIONS = [
   { value: 'comprehensive', label: '종합 면접', desc: '기술 + 인성 통합' },
 ];
 
+// 백엔드 PERSONA_INPUT_MAP: coach, practical, verify(→verifier), pressure
 const PERSONA_OPTIONS = [
   { value: 'coach', label: '코치형', desc: '성장·개선점 중심으로 질문' },
   { value: 'practical', label: '실무형', desc: '실제 업무 상황 중심으로 질문' },
-  { value: 'verifier', label: '검증형', desc: '답변 근거·사실 확인 중심' },
+  { value: 'verify', label: '검증형', desc: '답변 근거·사실 확인 중심' },
   { value: 'pressure', label: '압박형', desc: '반박·한계 테스트 중심' },
 ];
 
@@ -24,10 +25,11 @@ function SessionSetupPage() {
   const { jdId, jdData } = useJdStore();
   const { setSessionId, resetInterview } = useInterviewStore();
 
-  const [interviewType, setInterviewType] = useState('technical');
+  const [interviewType, setInterviewType] = useState('comprehensive');
   const [persona, setPersona] = useState('practical');
   const [totalQuestionCount, setTotalQuestionCount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -43,41 +45,59 @@ function SessionSetupPage() {
       return;
     }
 
-    const payload = {
-      jd_id: jdId,
-      interview_type: interviewType,
-      persona,
-    };
     const count = parseInt(totalQuestionCount, 10);
-    if (!Number.isNaN(count) && count > 0) {
-      payload.total_question_count = count;
-    }
+    const questionCount = !Number.isNaN(count) && count > 0 ? count : DEFAULT_QUESTION_COUNT;
+
+    // 백엔드 MVPSessionCreateSerializer 필드명에 맞춰 전송
+    const sessionPayload = {
+      jd_id: jdId,
+      persona_type: persona,      // 백엔드: persona_type
+      interview_type: interviewType,
+      interview_mode: 'voice',    // 음성 면접 고정
+      total_question_count: questionCount,
+    };
 
     setLoading(true);
+    let newSessionId = null;
+
     try {
+      // Step 1: 세션 생성
+      setLoadingStep('세션 생성 중...');
       resetInterview();
-      const data = await interviewApi.createSession(payload);
-      const newSessionId = data?.session_id ?? data?.id;
+      const sessionData = await interviewApi.createSession(sessionPayload);
+      newSessionId = sessionData?.session_id ?? sessionData?.id;
       if (!newSessionId) throw new Error('session_id를 응답에서 찾을 수 없습니다.');
       setSessionId(newSessionId);
+
+      // Step 2: 질문 생성 (세션 생성만으로는 질문이 생성되지 않음)
+      setLoadingStep('면접 질문 생성 중...');
+      await interviewApi.generateQuestions(newSessionId, { question_count: questionCount });
+
       navigate('/interview');
     } catch (err) {
       const status = err?.response?.status;
+      const detail = err?.response?.data;
+
       if (!err?.response) {
         setError('백엔드 서버에 연결할 수 없습니다. runserver가 켜져 있는지 확인해주세요.');
       } else if (status === 401) {
         setError('인증에 실패했습니다. access token을 다시 저장해주세요.');
       } else if (status === 400) {
-        const detail = err?.response?.data;
         const msg = typeof detail === 'object' ? JSON.stringify(detail) : String(detail);
         setError(`입력값 오류: ${msg}`);
       } else if (status === 404) {
-        setError('JD를 찾을 수 없습니다. 다시 JD를 생성해주세요.');
+        if (newSessionId) {
+          setError('세션은 생성됐지만 질문 생성에 실패했습니다. JD 정보를 확인해주세요.');
+        } else {
+          setError('JD를 찾을 수 없습니다. 다시 JD를 생성해주세요.');
+        }
       } else {
-        setError(`세션 생성에 실패했습니다. (HTTP ${status})`);
+        const step = newSessionId ? '질문 생성' : '세션 생성';
+        setError(`${step}에 실패했습니다. (HTTP ${status})`);
       }
     } finally {
       setLoading(false);
+      setLoadingStep('');
     }
   };
 
@@ -86,7 +106,7 @@ function SessionSetupPage() {
       <section className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow">
         <h1 className="text-2xl font-bold">면접 설정</h1>
         <p className="mt-1 text-sm text-slate-500">
-          면접 유형과 면접관 페르소나를 선택하면 세션이 생성됩니다.
+          면접 유형과 면접관 페르소나를 선택하면 세션과 질문이 생성됩니다.
         </p>
 
         {/* JD 요약 */}
@@ -209,7 +229,7 @@ function SessionSetupPage() {
               disabled={loading || !jdId}
               className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:bg-slate-400"
             >
-              {loading ? '세션 생성 중...' : '면접 시작'}
+              {loading ? loadingStep || '처리 중...' : '면접 시작'}
             </button>
             <button
               type="button"
