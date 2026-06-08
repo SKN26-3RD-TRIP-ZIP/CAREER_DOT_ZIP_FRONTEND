@@ -2,6 +2,28 @@ import { useState } from 'react';
 import { interviewApi } from '../api/interviewApi';
 import { useInterviewStore } from '../store/interviewStore';
 
+function getQuestionLoadErrorMessage(err) {
+  const status = err?.response?.status;
+
+  if (!err?.response) {
+    return '백엔드 서버에 연결할 수 없습니다. runserver가 켜져 있는지 확인해주세요.';
+  }
+
+  if (status === 401) {
+    return '인증에 실패했습니다. access token을 다시 저장해주세요.';
+  }
+
+  if (status === 403) {
+    return '이 세션에 접근할 권한이 없습니다.';
+  }
+
+  if (status === 404) {
+    return '세션 또는 질문 API를 찾을 수 없습니다. session_id를 확인해주세요.';
+  }
+
+  return '질문 목록을 불러오지 못했습니다.';
+}
+
 export function useInterview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -13,6 +35,7 @@ export function useInterview() {
     followupQuestion,
     setSessionId,
     setQuestions,
+    setCurrentQuestionIndex,
     setFollowupQuestion,
     moveNextQuestion
   } = useInterviewStore();
@@ -25,10 +48,26 @@ export function useInterview() {
 
     try {
       const data = await interviewApi.getQuestions(targetSessionId);
-      setQuestions(data.results || []);
-      return data.results || [];
+      console.log('[loadQuestions] response:', data);
+
+      const results = Array.isArray(data?.results) ? data.results : [];
+      const sortedQuestions = [...results].sort(
+        (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
+      );
+
+      setQuestions(sortedQuestions);
+      setCurrentQuestionIndex(0);
+      setFollowupQuestion(null);
+
+      if (sortedQuestions.length === 0) {
+        setError('질문이 없습니다.');
+      }
+
+      return sortedQuestions;
     } catch (err) {
-      setError('질문 목록을 불러오지 못했습니다.');
+      const message = getQuestionLoadErrorMessage(err);
+      console.error('[loadQuestions] failed:', err);
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -72,6 +111,7 @@ export function useInterview() {
         followup
       };
     } catch (err) {
+      console.error('[submitVoiceAnswer] failed:', err);
       setError('답변 제출 또는 STT 결과 저장에 실패했습니다.');
       throw err;
     } finally {

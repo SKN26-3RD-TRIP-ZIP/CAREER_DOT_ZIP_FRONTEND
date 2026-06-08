@@ -74,8 +74,13 @@ function VoiceInterviewPage() {
 
     setSuccessMessage('');
     setSessionId(manualSessionId.trim());
-    await loadQuestions(manualSessionId.trim());
-    setSuccessMessage('질문 목록을 불러왔습니다.');
+
+    try {
+      const loadedQuestions = await loadQuestions(manualSessionId.trim());
+      setSuccessMessage(`질문 목록을 불러왔습니다. 총 ${loadedQuestions.length}개`);
+    } catch (err) {
+      setSuccessMessage('');
+    }
   };
 
   const handleSpeak = () => {
@@ -281,6 +286,15 @@ function VoiceInterviewPage() {
             {successMessage}
           </div>
         )}
+
+        <div className="mt-6 rounded-lg bg-slate-50 p-4 text-xs text-slate-600">
+          <p>디버그 정보</p>
+          <p>sessionId: {sessionId || '없음'}</p>
+          <p>questions.length: {questions.length}</p>
+          <p>currentQuestionIndex: {currentQuestionIndex}</p>
+          <p>currentQuestionId: {currentQuestion?.question_id || '없음'}</p>
+          <p>error: {error || sttError || '없음'}</p>
+        </div>
       </section>
     </main>
   );
