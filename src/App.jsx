@@ -1,5 +1,12 @@
-import { Route, Routes } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
+import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
+import JdInputPage from './pages/input/JdInputPage.jsx'
+import Login from './pages/admin/Login.jsx'
+import Dashboard from './pages/admin/Dashboard.jsx'
+import Members from './pages/admin/Members.jsx'
+import Prompts from './pages/admin/Prompts.jsx'
+import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 
 const prototypeRoutes = [
   '/',
@@ -40,9 +47,7 @@ const prototypeRoutes = [
   '/mypage/reports',
   '/mypage/settings',
   '/admin',
-  '/admin/members',
   '/admin/member-detail',
-  '/admin/prompts',
   '/admin/template-create',
   '/admin/versions',
   '/admin/version-test',
@@ -53,9 +58,26 @@ const prototypeRoutes = [
 function App() {
   return (
     <Routes>
+      {/* Figma 기반 MVP 통합 데모 라우트 */}
       {prototypeRoutes.map((path) => (
         <Route key={path} path={path} element={<SaaSPrototype />} />
       ))}
+
+      {/* develop 기존 JD 입력 라우트 보존 */}
+      <Route path="/jd" element={<JdInputPage />} />
+
+      {/* develop 기존 면접 페이지 라우트 보존 */}
+      <Route path="/interview" element={<VoiceInterviewPage />} />
+
+      {/* develop 기존 어드민 라우트 보존 */}
+      <Route path="/admin/login" element={<Login />} />
+      <Route element={<PrivateRoute />}>
+        <Route path="/admin/dashboard" element={<Dashboard />} />
+        <Route path="/admin/members" element={<Members />} />
+        <Route path="/admin/prompts" element={<Prompts />} />
+      </Route>
+
+      {/* fallback */}
       <Route path="*" element={<SaaSPrototype />} />
     </Routes>
   )

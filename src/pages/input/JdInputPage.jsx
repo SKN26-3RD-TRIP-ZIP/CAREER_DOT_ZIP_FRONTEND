@@ -190,9 +190,9 @@ function JdInputPage() {
               <button
                 type="button"
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
-                onClick={() => navigate('/input/documents')}
+                onClick={() => navigate('/interview')}
               >
-                지원 자료 입력으로 이동
+                면접 페이지로 이동
               </button>
               <button
                 type="button"
