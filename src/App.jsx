@@ -10,6 +10,7 @@ import MyPage from './pages/mypage/MyPage.jsx'
 import Login from './pages/admin/Login.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
+import MemberDetail from './pages/admin/MemberDetail.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
@@ -101,6 +102,7 @@ function App() {
       <Route element={<PrivateRoute />}>
         <Route path="/admin/live/dashboard" element={<Dashboard />} />
         <Route path="/admin/live/members" element={<Members />} />
+        <Route path="/admin/live/members/:userId" element={<MemberDetail />} />
         <Route path="/admin/live/prompts" element={<Prompts />} />
       </Route>
 

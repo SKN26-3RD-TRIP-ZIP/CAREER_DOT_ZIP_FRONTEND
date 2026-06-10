@@ -24,6 +24,11 @@ export async function getMembers(params = {}) {
   }
 }
 
+export async function getMemberDetail(userId) {
+  const res = await axiosInstance.get(`/admin/members/${userId}`)
+  return res.data
+}
+
 export async function getMemberStats() {
   const [all, active, suspended] = await Promise.all([
     axiosInstance.get('/admin/members', { params: { page: 1, size: 1 } }),
