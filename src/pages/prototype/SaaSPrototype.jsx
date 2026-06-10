@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../store/authStore'
 import {
   AlertCircle,
   ArrowRight,
@@ -419,14 +420,21 @@ function Logo({ dark = false }) {
 function Shell({ children, toast, admin = false }) {
   const [state, updateState] = useDemoState()
   const navigate = useNavigate()
+  const authUser = useAuthStore((s) => s.user)
+  const storeLogout = useAuthStore((s) => s.logout)
   const links = admin
     ? [['로그인', '/admin/login'], ['대시보드', '/admin/dashboard'], ['회원 관리', '/admin/members'], ['프롬프트', '/admin/prompts'], ['버전', '/admin/versions'], ['감사 로그', '/admin/audit-logs']]
     : [['Dashboard', '/dashboard'], ['Data Input', '/data'], ['Analysis', '/analysis/source'], ['Interview', '/interview/setup'], ['Report', '/report'], ['MyPage', '/mypage'], ['Admin', '/admin']]
 
   async function logout() {
-    await requestWithMockFallback('/api/v1/auth/logout', { refreshToken: state.auth.refreshToken })
-    updateState((prev) => addAudit({ ...prev, auth: { ...prev.auth, loggedIn: false, accessToken: '', refreshToken: '' } }, '로그아웃', 'API 우선 호출 / mock fallback'))
-    navigate('/')
+    try {
+      await requestWithMockFallback('/api/v1/auth/logout', { refreshToken: state.auth.refreshToken })
+    } catch (e) {
+      // 서버 logout 실패해도 클라이언트 상태는 반드시 초기화
+    }
+    storeLogout()
+    updateState((prev) => addAudit({ ...prev, auth: { ...prev.auth, loggedIn: false, accessToken: '', refreshToken: '' } }, '로그아웃', '서버 logout 후 클라이언트 초기화'))
+    navigate('/auth/login')
   }
 
   return (
@@ -438,7 +446,7 @@ function Shell({ children, toast, admin = false }) {
           <Badge>{state.auth.loggedIn ? '로그인 상태' : '비로그인 데모'}</Badge>
           {state.auth.loggedIn && <button onClick={logout}>로그아웃</button>}
         </div>
-        <Link className="cz-profile-chip" to="/mypage/profile"><span className="cz-avatar">김</span>{hamzziUser.name}</Link>
+        <Link className="cz-profile-chip" to="/mypage/profile"><span className="cz-avatar">{(authUser?.name || authUser?.email || '?').slice(0,1)}</span>{authUser?.name || authUser?.email || '게스트'}</Link>
       </header>
       {toast && <Toast>{toast}</Toast>}
       {children}
@@ -805,11 +813,12 @@ function ChoiceGrid({ items, selected }) {
 
 function DashboardPage() {
   const [state] = useDemoState()
+  const authUser = useAuthStore((s) => s.user)
   const kpis = [['누적 면접', `${hamzziStats.totalInterviews}회`], ['평균 점수', `${hamzziStats.averageScore}점`], ['최근 분석', `${hamzziStats.latestAnalysisScore}점`], ['TTS/STT Beta', `${state.interview.voiceStats.ttsPlays}/${state.interview.voiceStats.sttRuns}`]]
   return (
     <Shell>
       <main className="cz-page">
-        <SectionHead eyebrow="Dashboard" title={`${hamzziUser.name}님, 오늘은 CS 기초를 보완할 차례예요`} desc="자료 입력부터 리포트까지 전체 준비 흐름을 한 번에 확인합니다." action={<Button to="/data">자료 입력 시작</Button>} />
+        <SectionHead eyebrow="Dashboard" title={`${authUser?.name || authUser?.email || '회원'}님, 오늘은 CS 기초를 보완할 차례예요`} desc="자료 입력부터 리포트까지 전체 준비 흐름을 한 번에 확인합니다." action={<Button to="/data">자료 입력 시작</Button>} />
         <IntegrationStatus />
         <div className="cz-grid-4">{kpis.map(([label, value]) => <article className="cz-stat" key={label}><Gauge size={20} /><span>{label}</span><strong>{value}</strong></article>)}</div>
         <div className="cz-grid-2">
@@ -1160,14 +1169,16 @@ function MyPageNav() {
 
 function MyPageHome() {
   const [state] = useDemoState()
+  const authUser = useAuthStore((s) => s.user)
   const categoryCards = [['내 정보', '기본 정보와 포트폴리오 링크를 수정합니다.', '/mypage/profile', User], ['분석 결과', '최근 JD/이력서 분석과 예상 질문을 확인합니다.', '/mypage/analysis', BarChart3], ['프로젝트', '프로젝트 기반 Deep Dive 질문을 관리합니다.', '/mypage/projects', FileText], ['면접 기록', '완료된 면접 점수와 상태를 확인합니다.', '/mypage/interviews', Gauge], ['리포트 보관함', '면접 리포트를 확인하고 PDF를 준비합니다.', '/mypage/reports', Download], ['계정 설정', '보안, 알림, 탈퇴 mock 동작을 확인합니다.', '/mypage/settings', Lock]]
   const kpis = [['누적 면접 수', `${hamzziStats.totalInterviews}회`], ['평균 점수', `${hamzziStats.averageScore}점`], ['최근 분석 점수', `${hamzziStats.latestAnalysisScore}점`], ['생성 질문', `${state.interview.questions.length}개`], ['저장 답변', `${state.interview.answers.length}개`], ['꼬리질문', `${state.interview.followUps.length}개`], ['보관 리포트', `${state.report ? 4 : 3}건`]]
-  return <><article className="cz-profile-summary"><div className="cz-profile-main"><span className="cz-avatar large">김</span><div><h2>{hamzziUser.name}</h2><p>{hamzziUser.email}</p><div className="cz-tags"><Badge>비전공</Badge><Badge>신입</Badge><Badge>백엔드</Badge><Badge>{hamzziUser.accountStatus}</Badge></div></div></div><Info label="최근 로그인" value={hamzziUser.lastLogin} /><Info label="가입일" value={hamzziUser.joinedAt} /><Info label="희망 직무" value={hamzziUser.targetRole} /><div className="cz-progress-block"><span>프로필 완성도</span><strong>{hamzziUser.profileCompletion}%</strong><i><em style={{ width: `${hamzziUser.profileCompletion}%` }} /></i></div></article><IntegrationStatus /><div className="cz-grid-4">{kpis.map(([label, value]) => <article className="cz-stat" key={label}><Gauge size={20} /><span>{label}</span><strong>{value}</strong></article>)}</div><div className="cz-grid-3">{categoryCards.map(([title, desc, to, Icon]) => <Link className="cz-card" to={to} key={title}><Icon size={24} /><h2>{title}</h2><p>{desc}</p><b>바로가기 <ArrowRight size={16} /></b></Link>)}</div><div className="cz-grid-2"><article className="cz-panel"><h2>최근 세션 상태</h2><Info label="sessionId" value={state.interview.sessionId || '아직 없음'} /><Info label="질문/답변" value={`${state.interview.questions.length}개 / ${state.interview.answers.length}개`} /><Button to="/interview/setup" variant="secondary">면접 이어가기</Button></article><article className="cz-panel"><h2>최근 면접 기록</h2>{interviews.slice(0, 2).map((item) => <div className="cz-row" key={item.date}><span>{item.date}</span><strong>{item.type}</strong><Badge>{item.score}점</Badge></div>)}</article><ScoreTrend /><TagPanel title="강점 TOP5" items={strengths} tone="strength" /><TagPanel title="약점 TOP5" items={weaknesses} tone="weakness" /><article className="cz-panel"><h2>추천 다음 액션</h2><div className="cz-action-list">{['CS 기초 Deep Dive 면접 연습하기', 'DB/트랜잭션 꼬리질문 다시 연습하기', '프로젝트 기여도 답변 보완하기'].map((item) => <Button to="/interview/setup" variant="ghost" key={item}>{item}</Button>)}</div></article></div><ApiNote endpoints={apiNotes.mypage} /></>
+  return <><article className="cz-profile-summary"><div className="cz-profile-main"><span className="cz-avatar large">{(authUser?.name || authUser?.email || '?').slice(0,1)}</span><div><h2>{authUser?.name || authUser?.email || '회원'}</h2><p>{authUser?.email || ''}</p><div className="cz-tags"><Badge>비전공</Badge><Badge>신입</Badge><Badge>백엔드</Badge><Badge>{hamzziUser.accountStatus}</Badge></div></div></div><Info label="최근 로그인" value={hamzziUser.lastLogin} /><Info label="가입일" value={hamzziUser.joinedAt} /><Info label="희망 직무" value={hamzziUser.targetRole} /><div className="cz-progress-block"><span>프로필 완성도</span><strong>{hamzziUser.profileCompletion}%</strong><i><em style={{ width: `${hamzziUser.profileCompletion}%` }} /></i></div></article><IntegrationStatus /><div className="cz-grid-4">{kpis.map(([label, value]) => <article className="cz-stat" key={label}><Gauge size={20} /><span>{label}</span><strong>{value}</strong></article>)}</div><div className="cz-grid-3">{categoryCards.map(([title, desc, to, Icon]) => <Link className="cz-card" to={to} key={title}><Icon size={24} /><h2>{title}</h2><p>{desc}</p><b>바로가기 <ArrowRight size={16} /></b></Link>)}</div><div className="cz-grid-2"><article className="cz-panel"><h2>최근 세션 상태</h2><Info label="sessionId" value={state.interview.sessionId || '아직 없음'} /><Info label="질문/답변" value={`${state.interview.questions.length}개 / ${state.interview.answers.length}개`} /><Button to="/interview/setup" variant="secondary">면접 이어가기</Button></article><article className="cz-panel"><h2>최근 면접 기록</h2>{interviews.slice(0, 2).map((item) => <div className="cz-row" key={item.date}><span>{item.date}</span><strong>{item.type}</strong><Badge>{item.score}점</Badge></div>)}</article><ScoreTrend /><TagPanel title="강점 TOP5" items={strengths} tone="strength" /><TagPanel title="약점 TOP5" items={weaknesses} tone="weakness" /><article className="cz-panel"><h2>추천 다음 액션</h2><div className="cz-action-list">{['CS 기초 Deep Dive 면접 연습하기', 'DB/트랜잭션 꼬리질문 다시 연습하기', '프로젝트 기여도 답변 보완하기'].map((item) => <Button to="/interview/setup" variant="ghost" key={item}>{item}</Button>)}</div></article></div><ApiNote endpoints={apiNotes.mypage} /></>
 }
 
 const profileLabels = { name: '이름', email: '이메일', major: '전공', education: '교육 이력', careerType: '신입/경력', background: '전공/비전공', targetRole: '희망 직무', experienceYears: '경력 연차', techStacks: '관심 기술스택', github: 'GitHub', blog: 'Blog', notion: 'Notion', portfolio: 'Portfolio', mainConcern: '가장 걱정되는 부분' }
 
 function ProfilePage({ initialTab, showToast }) {
+  const authUser = useAuthStore((s) => s.user)
   const [tab, setTab] = useState(initialTab)
   const [isEditing, setIsEditing] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
@@ -1175,7 +1186,7 @@ function ProfilePage({ initialTab, showToast }) {
   const [securityError, setSecurityError] = useState('')
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [notificationForm, setNotificationForm] = useState({ email: true, remind: true, report: true, marketing: false })
-  const [profileForm, setProfileForm] = useState({ name: hamzziUser.name, email: hamzziUser.email, major: hamzziUser.major, education: hamzziUser.education, careerType: hamzziUser.careerType, background: hamzziUser.background, targetRole: hamzziUser.targetRole, experienceYears: `${hamzziUser.experienceYears}년`, techStacks: hamzziUser.techStacks.join(', '), github: hamzziUser.github, blog: hamzziUser.blog, notion: hamzziUser.notion, portfolio: hamzziUser.portfolio, mainConcern: hamzziUser.mainConcern })
+  const [profileForm, setProfileForm] = useState({ name: authUser?.name || '', email: authUser?.email || '', major: hamzziUser.major, education: hamzziUser.education, careerType: hamzziUser.careerType, background: hamzziUser.background, targetRole: hamzziUser.targetRole, experienceYears: `${hamzziUser.experienceYears}년`, techStacks: hamzziUser.techStacks.join(', '), github: hamzziUser.github, blog: hamzziUser.blog, notion: hamzziUser.notion, portfolio: hamzziUser.portfolio, mainConcern: hamzziUser.mainConcern })
   const tabs = [['basic', '기본 정보'], ['security', '보안 설정'], ['notice', '알림 설정'], ['account', '계정 관리']]
   function changeUserPassword() {
     if (passwordForm.newPassword.length < 8) return setSecurityError('새 비밀번호는 8자 이상이어야 합니다.')
@@ -1267,12 +1278,12 @@ function AdminDashboard() {
 }
 
 function AdminMembers() {
-  return <><SectionHead eyebrow="Admin Members" title="회원 관리" desc="검색과 필터는 mock 상태입니다." /><article className="cz-panel"><div className="cz-input-button"><input placeholder="회원명 또는 이메일 검색" /><button><Search size={16} /></button></div><table><thead><tr><th>이름</th><th>이메일</th><th>상태</th><th>최근 로그인</th><th>동작</th></tr></thead><tbody><tr><td>김햄찌</td><td>{hamzziUser.email}</td><td><Badge>active</Badge></td><td>{hamzziUser.lastLogin}</td><td><Button to="/admin/member-detail" variant="secondary">회원 상세</Button></td></tr><tr><td>박소윤</td><td>soyun@example.com</td><td><Badge>active</Badge></td><td>2026.06.08</td><td><Button to="/admin/member-detail" variant="secondary">회원 상세</Button></td></tr></tbody></table></article><ApiNote endpoints={apiNotes.admin} /></>
+  return <><SectionHead eyebrow="Admin Members" title="회원 관리 (MOCK)" desc="⚠️ 관리자 회원 목록 API 미연동 — 아래 표는 mock 데이터입니다. 실제 회원 데이터 아님(API 연동 필요)." /><article className="cz-panel"><div className="cz-input-button"><input placeholder="회원명 또는 이메일 검색" /><button><Search size={16} /></button></div><table><thead><tr><th>이름</th><th>이메일</th><th>상태</th><th>최근 로그인</th><th>동작</th></tr></thead><tbody><tr><td>김햄찌</td><td>{hamzziUser.email}</td><td><Badge>active</Badge></td><td>{hamzziUser.lastLogin}</td><td><Button to="/admin/member-detail" variant="secondary">회원 상세</Button></td></tr><tr><td>박소윤</td><td>soyun@example.com</td><td><Badge>active</Badge></td><td>2026.06.08</td><td><Button to="/admin/member-detail" variant="secondary">회원 상세</Button></td></tr></tbody></table></article><ApiNote endpoints={apiNotes.admin} /></>
 }
 
 function AdminMemberDetail({ showToast }) {
   const [state] = useDemoState()
-  return <><SectionHead eyebrow="Member Detail" title="김햄찌 회원 상세" desc="회원 활동 기록과 계정 상태를 확인합니다." /><div className="cz-grid-2"><article className="cz-panel"><h2>회원 정보</h2><div className="cz-summary-grid"><Info label="이름" value={hamzziUser.name} /><Info label="이메일" value={hamzziUser.email} /><Info label="상태" value={hamzziUser.accountStatus} /><Info label="가입일" value={hamzziUser.joinedAt} /></div><Button variant="secondary" onClick={() => showToast('계정 상태가 변경되었습니다.')}>계정 상태 변경</Button></article><article className="cz-panel"><h2>활동 기록</h2><ul className="cz-list">{state.admin.auditLogs.slice(0, 6).map((row) => <li key={row.join('-')}>{row[0]} · {row[2]} · {row[3]}</li>)}</ul></article></div><ApiNote endpoints={apiNotes.admin} /></>
+  return <><SectionHead eyebrow="Member Detail" title="회원 상세 (MOCK)" desc="⚠️ mock 데이터 — 관리자 회원 API 연동 필요. 실제 회원 정보 아님." /><div className="cz-grid-2"><article className="cz-panel"><h2>회원 정보</h2><div className="cz-summary-grid"><Info label="이름" value={hamzziUser.name} /><Info label="이메일" value={hamzziUser.email} /><Info label="상태" value={hamzziUser.accountStatus} /><Info label="가입일" value={hamzziUser.joinedAt} /></div><Button variant="secondary" onClick={() => showToast('계정 상태가 변경되었습니다.')}>계정 상태 변경</Button></article><article className="cz-panel"><h2>활동 기록</h2><ul className="cz-list">{state.admin.auditLogs.slice(0, 6).map((row) => <li key={row.join('-')}>{row[0]} · {row[2]} · {row[3]}</li>)}</ul></article></div><ApiNote endpoints={apiNotes.admin} /></>
 }
 
 function AdminPrompts() {
