@@ -19,9 +19,15 @@ function SignupPage() {
       setDone(true); // mock 성공 금지: 실제 201 일 때만 성공 처리
     } catch (err) {
       const status = err.response?.status;
-      if (status === 409) setError('이미 가입된 이메일입니다.');
-      else if (status === 400) setError('입력값을 확인해주세요. (비밀번호는 8자 이상)');
-      else setError('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      if (!err.response) {
+        setError('서버에 연결할 수 없습니다. 백엔드 실행/네트워크를 확인해주세요.');
+      } else if (status === 409) {
+        setError('이미 가입된 이메일입니다.');
+      } else if (status === 400) {
+        setError('입력값을 확인해주세요. (비밀번호는 8자 이상)');
+      } else {
+        setError('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
     } finally {
       setLoading(false);
     }
