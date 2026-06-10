@@ -8,6 +8,9 @@ import Members from './pages/admin/Members.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
+import SourceSelectionPage from './pages/analysis/SourceSelectionPage.jsx'
+import ResultPage from './pages/analysis/ResultPage.jsx'
+import AppLayout from './components/layout/AppLayout.jsx'
 
 const prototypeRoutes = [
   '/',
@@ -63,6 +66,12 @@ const prototypeRoutes = [
 function App() {
   return (
     <Routes>
+      <Route element={<AppLayout />}>
+        <Route path="/analysis" element={<SourceSelectionPage />} />
+        <Route path="/analysis/source" element={<SourceSelectionPage />} />
+        <Route path="/analysis/result" element={<ResultPage />} />
+        <Route path="/analysis/questions" element={<ResultPage expanded />} />
+      </Route>
       {/* Figma 기반 MVP 통합 데모 라우트 */}
       {prototypeRoutes.map((path) => (
         <Route key={path} path={path} element={<SaaSPrototype />} />
