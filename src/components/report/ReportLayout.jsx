@@ -14,8 +14,10 @@ export default function ReportLayout({ title, subtitle, action, children }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-10">
             <button
+              type="button"
+              aria-label="메인 화면으로 이동"
               onClick={() => navigate('/')}
-              className="rounded-xl bg-[#173a1f] px-4 py-2 text-sm font-extrabold text-white"
+              className="cursor-pointer rounded-xl bg-[#173a1f] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#0f2a16]"
             >
               Career.zip
             </button>
