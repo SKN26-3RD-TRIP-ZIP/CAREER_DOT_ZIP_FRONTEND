@@ -47,7 +47,11 @@ const prototypeRoutes = [
   '/mypage/reports',
   '/mypage/settings',
   '/admin',
+  '/admin/login',
+  '/admin/dashboard',
+  '/admin/members',
   '/admin/member-detail',
+  '/admin/prompts',
   '/admin/template-create',
   '/admin/versions',
   '/admin/version-test',
@@ -70,11 +74,11 @@ function App() {
       <Route path="/interview" element={<VoiceInterviewPage />} />
 
       {/* develop 기존 어드민 라우트 보존 */}
-      <Route path="/admin/login" element={<Login />} />
+      <Route path="/admin/live/login" element={<Login />} />
       <Route element={<PrivateRoute />}>
-        <Route path="/admin/dashboard" element={<Dashboard />} />
-        <Route path="/admin/members" element={<Members />} />
-        <Route path="/admin/prompts" element={<Prompts />} />
+        <Route path="/admin/live/dashboard" element={<Dashboard />} />
+        <Route path="/admin/live/members" element={<Members />} />
+        <Route path="/admin/live/prompts" element={<Prompts />} />
       </Route>
 
       {/* fallback */}
