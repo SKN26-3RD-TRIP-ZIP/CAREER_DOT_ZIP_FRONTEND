@@ -7,6 +7,7 @@ import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
+import EvaluationRoutes from './routes/evaluationRoutes.jsx'
 
 const prototypeRoutes = [
   '/',
@@ -66,6 +67,9 @@ function App() {
       {prototypeRoutes.map((path) => (
         <Route key={path} path={path} element={<SaaSPrototype />} />
       ))}
+
+      {/* 실제 구현된 리포트(평가) 페이지 — 세션별 */}
+      <Route path="/report/*" element={<EvaluationRoutes />} />
 
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
