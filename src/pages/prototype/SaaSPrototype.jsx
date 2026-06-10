@@ -420,7 +420,7 @@ function Shell({ children, toast, admin = false }) {
   const [state, updateState] = useDemoState()
   const navigate = useNavigate()
   const links = admin
-    ? [['Admin', '/admin'], ['회원 관리', '/admin/members'], ['프롬프트', '/admin/prompts'], ['버전', '/admin/versions'], ['감사 로그', '/admin/audit-logs']]
+    ? [['로그인', '/admin/login'], ['대시보드', '/admin/dashboard'], ['회원 관리', '/admin/members'], ['프롬프트', '/admin/prompts'], ['버전', '/admin/versions'], ['감사 로그', '/admin/audit-logs']]
     : [['Dashboard', '/dashboard'], ['Data Input', '/data'], ['Analysis', '/analysis/source'], ['Interview', '/interview/setup'], ['Report', '/report'], ['MyPage', '/mypage'], ['Admin', '/admin']]
 
   async function logout() {
@@ -1211,9 +1211,53 @@ function ReportsPage({ showToast }) {
   return <section>{reports.length === 0 && <EmptyState title="보관된 리포트가 없습니다" desc="면접을 완료하면 리포트가 자동 생성됩니다." action={<Button to="/interview/setup">면접 시작하기</Button>} />}<div className="cz-grid-3">{reports.map((report) => <article className="cz-panel report-card" key={report.id}><Badge>{report.grade}</Badge><h2>{report.score}점</h2><p>{report.type} · {report.date}</p><Info label="강점 요약" value={report.strength} /><Info label="약점 요약" value={report.weakness} /><div className="cz-actions"><Button variant="secondary" onClick={() => { updateState((prev) => addAudit(prev, 'PDF 다운로드', 'mock pdf 준비')); showToast('PDF 다운로드를 준비 중입니다.') }}><Download size={16} />PDF 다운로드</Button><Button to="/report" variant="ghost">상세 보기</Button><Button variant="ghost" onClick={() => showToast('리포트가 보관되었습니다.')}>보관</Button><Button variant="danger" onClick={() => { setReports(reports.filter((item) => item.id !== report.id)); showToast('리포트가 삭제되었습니다.') }}>삭제</Button></div></article>)}</div><ApiNote endpoints={apiNotes.report} /></section>
 }
 
+function AdminLogin({ showToast }) {
+  const [state, updateState] = useDemoState()
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('admin@career.zip')
+  const [password, setPassword] = useState('careerzip-admin')
+
+  async function loginAdmin() {
+    const result = await requestWithMockFallback('/api/v1/auth/login', { email, password, role: 'admin' })
+    updateState((prev) => addAudit({
+      ...prev,
+      auth: {
+        ...prev.auth,
+        loggedIn: true,
+        email,
+        accessToken: result.data?.access_token || `mock-admin-${Date.now()}`,
+        source: result.source,
+        lastLogin: safeNow(),
+      },
+    }, '관리자 로그인', result.source === 'api' ? 'API 관리자 로그인 성공' : '관리자 mock 로그인'))
+    showToast(result.source === 'api' ? '관리자 로그인 성공' : 'API 연결 실패로 관리자 mock 로그인되었습니다.')
+    navigate('/admin/dashboard')
+  }
+
+  return (
+    <>
+      <SectionHead eyebrow="Admin Login" title="Career.zip Admin" desc="발표용 관리자 데모 로그인입니다. 실제 연동 화면은 /admin/live/login 경로로 보존했습니다." />
+      <article className="cz-panel cz-admin-login-card">
+        <IntegrationStatus>관리자 화면은 사용자 화면과 분리된 dark 운영 콘솔 스타일입니다.</IntegrationStatus>
+        <div className="cz-form-grid">
+          <label>관리자 이메일<input value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <label>비밀번호<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+        </div>
+        <div className="cz-actions">
+          <Button onClick={loginAdmin}>관리자 로그인</Button>
+          <Button to="/admin/dashboard" variant="secondary">대시보드 바로 보기</Button>
+          <Button to="/admin/live/login" variant="ghost">실제 연동 admin</Button>
+        </div>
+        <Info label="현재 상태" value={state.auth.loggedIn ? `${state.auth.email} · ${state.auth.source}` : '관리자 데모 로그인 전'} />
+      </article>
+      <ApiNote endpoints={apiNotes.auth} />
+    </>
+  )
+}
+
 function AdminPage({ kind = 'dashboard' }) {
   const [toast, showToast] = useTimedToast()
-  const pageMap = { dashboard: <AdminDashboard />, members: <AdminMembers />, detail: <AdminMemberDetail showToast={showToast} />, prompts: <AdminPrompts />, template: <AdminTemplateCreate showToast={showToast} />, versions: <AdminVersions />, test: <AdminVersionTest showToast={showToast} />, logs: <AdminAuditLogs /> }
+  const pageMap = { login: <AdminLogin showToast={showToast} />, dashboard: <AdminDashboard />, members: <AdminMembers />, detail: <AdminMemberDetail showToast={showToast} />, prompts: <AdminPrompts />, template: <AdminTemplateCreate showToast={showToast} />, versions: <AdminVersions />, test: <AdminVersionTest showToast={showToast} />, logs: <AdminAuditLogs /> }
   return <Shell toast={toast} admin><main className="cz-page">{pageMap[kind]}</main></Shell>
 }
 
@@ -1294,7 +1338,8 @@ export default function SaaSPrototype() {
   if (page === '/mypage/interviews') return <MyPage tab="interviews" />
   if (page === '/mypage/reports') return <MyPage tab="reports" />
   if (page === '/mypage/settings') return <MyPage tab="settings" />
-  if (page === '/admin') return <AdminPage />
+  if (page === '/admin' || page === '/admin/login') return <AdminPage kind="login" />
+  if (page === '/admin/dashboard') return <AdminPage kind="dashboard" />
   if (page === '/admin/members') return <AdminPage kind="members" />
   if (page === '/admin/member-detail') return <AdminPage kind="detail" />
   if (page === '/admin/prompts') return <AdminPage kind="prompts" />
