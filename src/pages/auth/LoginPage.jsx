@@ -26,12 +26,17 @@ function LoginPage() {
       navigate('/profile');
     } catch (err) {
       const status = err.response?.status;
-      if (status === 403) {
+      if (!err.response) {
+        // 응답 자체가 없음 = 서버 다운/네트워크/CORS 차단
+        setError('서버에 연결할 수 없습니다. 백엔드 실행/네트워크를 확인해주세요.');
+      } else if (status === 403) {
         const msg = err.response?.data?.error || '';
         if (msg.includes('suspended')) setError('정지된 계정입니다. 관리자에게 문의하세요.');
-        else setError('이메일 인증이 필요합니다. 가입 시 받은 인증 메일을 확인해주세요.');
+        else setError('이메일 인증 후 로그인해 주세요. (가입 시 받은 인증 메일 확인)');
       } else if (status === 401) {
         setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else if (status === 400) {
+        setError('필수 입력값을 확인해 주세요.');
       } else {
         setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
