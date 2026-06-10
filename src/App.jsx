@@ -6,6 +6,7 @@ import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx'
+import MyPage from './pages/mypage/MyPage.jsx'
 import Login from './pages/admin/Login.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
@@ -42,7 +43,6 @@ const prototypeRoutes = [
   '/interview/text',
   '/interview/voice',
   '/interview/result',
-  '/mypage',
   '/mypage/profile',
   '/mypage/analysis',
   '/mypage/projects',
@@ -87,6 +87,9 @@ function App() {
 
       {/* develop 기존 면접 페이지 라우트 보존 */}
       <Route path="/interview" element={<VoiceInterviewPage />} />
+
+      {/* 마이페이지 실제 면접 기록/리포트 조회 (prototype /mypage/* 와 분리) */}
+      <Route path="/mypage" element={<MyPage />} />
 
       {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
       <Route path="/auth/login" element={<AuthLoginPage />} />
