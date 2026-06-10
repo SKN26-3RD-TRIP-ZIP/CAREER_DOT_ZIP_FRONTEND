@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login as loginApi } from '../../api/authApi';
+import { login as loginApi, getMe } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const setToken = useAuthStore((s) => s.login);
+  const reset = useAuthStore((s) => s.reset);
+  const setToken = useAuthStore((s) => s.setToken);
+  const setUser = useAuthStore((s) => s.setUser);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,6 +17,8 @@ function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    // 이전 계정 token/user 완전 제거 후 로그인 (계정 전환 시 상태 혼선 방지)
+    reset();
     try {
       const res = await loginApi({ email, password });
       const token = res.data?.access_token;
@@ -22,12 +26,14 @@ function LoginPage() {
         setError('로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
         return;
       }
-      setToken(token); // localStorage + store
-      navigate('/profile');
+      setToken(token);
+      // 화면 표시 사용자는 반드시 현재 사용자 API(/auth/me) 응답 기준
+      const me = await getMe();
+      setUser(me.data);
+      navigate('/jd');
     } catch (err) {
       const status = err.response?.status;
       if (!err.response) {
-        // 응답 자체가 없음 = 서버 다운/네트워크/CORS 차단
         setError('서버에 연결할 수 없습니다. 백엔드 실행/네트워크를 확인해주세요.');
       } else if (status === 403) {
         const msg = err.response?.data?.error || '';
@@ -40,6 +46,8 @@ function LoginPage() {
       } else {
         setError('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
+      // 실패 시 부분 상태가 남지 않도록 정리
+      reset();
     } finally {
       setLoading(false);
     }
@@ -72,7 +80,6 @@ function LoginPage() {
             </button>
           </form>
 
-          {/* Google 로그인: 미구현 → 비활성(준비 중) 처리. mock 성공 금지 */}
           <button type="button" disabled title="준비 중"
             className="mt-3 w-full rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-400 cursor-not-allowed">
             Google로 계속하기 (준비 중)
