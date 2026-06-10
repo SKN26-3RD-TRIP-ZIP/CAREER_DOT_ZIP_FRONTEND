@@ -148,7 +148,8 @@ function JdInputPage() {
       if (!err?.response) {
         setError('백엔드 서버에 연결할 수 없습니다. runserver가 켜져 있는지 확인해주세요.');
       } else if (status === 401) {
-        setError('인증에 실패했습니다. access token을 다시 저장해주세요.');
+        setError('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        navigate('/auth/login');
       } else if (status === 400) {
         const detail = err?.response?.data;
         setError(`입력값 오류: ${JSON.stringify(detail)}`);
@@ -190,9 +191,9 @@ function JdInputPage() {
               <button
                 type="button"
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
-                onClick={() => navigate('/interview')}
+                onClick={() => navigate('/session-setup')}
               >
-                면접 페이지로 이동
+                면접 설정으로 이동
               </button>
               <button
                 type="button"
