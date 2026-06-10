@@ -7,6 +7,7 @@ import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
+import EvaluationRoutes from './routes/evaluationRoutes.jsx'
 
 const prototypeRoutes = [
   '/',
