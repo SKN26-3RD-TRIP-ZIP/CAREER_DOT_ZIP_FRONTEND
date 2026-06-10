@@ -62,7 +62,8 @@ export default function FinalReportPage() {
         </div>
       </section>
 
-      {/* 질문별 AI 평가 */}
+      {/* 질문별 AI 평가 — 백엔드 summary에 질문별 데이터가 없으면 숨김(고도화 시 노출) */}
+      {r.score_detail.questions?.length > 0 && (
       <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="mb-4 text-base font-bold text-slate-900">질문별 AI 평가</h3>
         <div className="overflow-x-auto">
@@ -90,17 +91,16 @@ export default function FinalReportPage() {
           </table>
         </div>
       </section>
+      )}
 
       {/* 하단: 미니 성장 추이 + 액션 */}
       <section className="mt-4 flex flex-col justify-between gap-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center">
-        <div>
-          <h3 className="mb-3 text-sm font-bold text-slate-800">최근 세션 성장 추이</h3>
-          {growth.data ? (
+        {growth.data?.points?.length ? (
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-slate-800">최근 세션 성장 추이</h3>
             <button onClick={() => navigate(`${base}/growth`)}><MiniGrowthBars points={growth.data.points} /></button>
-          ) : (
-            <div className="text-xs text-slate-400">불러오는 중…</div>
-          )}
-        </div>
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-3">
           <button onClick={() => navigate(`${base}/roadmap`)} className="rounded-xl bg-green-500 px-5 py-3 text-sm font-bold text-white hover:bg-green-600">보완 답변 연습하기</button>
           <button className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">리포트 PDF 저장</button>

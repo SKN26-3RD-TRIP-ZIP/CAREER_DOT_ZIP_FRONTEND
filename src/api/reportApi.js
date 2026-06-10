@@ -1,48 +1,56 @@
 import axiosInstance from './axiosInstance';
-import { mockFinalReport, mockGrowthTrend, mockRoadmap, mockFeedback } from './reportMock';
+import { normalizeFinalReport } from './reportAdapter';
+import {
+  mockFinalReportResponse,
+  mockGrowthTrend,
+  mockRoadmap,
+  mockFeedback,
+} from './reportMock';
 
 /**
  * Evaluation / Report API.
  * 기존 axiosInstance(baseURL: VITE_API_BASE_URL || http://127.0.0.1:8000/api/v1) 사용.
- * VITE_USE_MOCK=true 이면 네트워크 없이 목업 픽스처를 반환합니다.
+ * VITE_USE_MOCK=true 이면 네트워크 없이 목업(실응답 동형)을 반환합니다.
+ *
+ * getFinalReport 는 백엔드 raw 응답을 normalizeFinalReport 로 정규화해 UI 형태로 돌려줍니다.
+ * (UI 컴포넌트는 백엔드 summary 구조 변경에 영향받지 않음)
  */
 const USE_MOCK = String(import.meta.env.VITE_USE_MOCK ?? 'false').toLowerCase() === 'true';
 
 const delay = (data, ms = 300) => new Promise((resolve) => setTimeout(() => resolve(data), ms));
 
 export const reportApi = {
-  // 최종 리포트 (summary). 기존 interviewApi.getSessionReport 와 동일 엔드포인트.
+  // 최종 리포트 — GET /sessions/{id}/report (SessionFinalReportView)
   getFinalReport: async (sessionId) => {
-    if (USE_MOCK) return delay({ ...mockFinalReport, session_id: sessionId });
+    if (USE_MOCK) {
+      const raw = { ...mockFinalReportResponse, session_id: sessionId };
+      return normalizeFinalReport(await delay(raw));
+    }
     const res = await axiosInstance.get(`/sessions/${sessionId}/report`);
-    return res.data;
+    return normalizeFinalReport(res.data);
   },
 
-  // 성장 추이 (mypage overall_score 이력)
+  // FinalReport 생성 — POST /reports/sessions/{id}/generate (성공 시 201)
+  createFinalReport: async (sessionId) => {
+    if (USE_MOCK) return normalizeFinalReport(await delay(mockFinalReportResponse));
+    const res = await axiosInstance.post(`/reports/sessions/${sessionId}/generate`);
+    return normalizeFinalReport(res.data);
+  },
+
+  // ── 고도화(보류) ───────────────────────────────────────────
   getGrowthTrend: async () => {
     if (USE_MOCK) return delay(mockGrowthTrend);
     const res = await axiosInstance.get('/mypage/growth');
     return res.data;
   },
-
-  // Next Learning Roadmap (※ 백엔드 신규 API 협의 필요)
   getRoadmap: async (sessionId) => {
     if (USE_MOCK) return delay(mockRoadmap);
     const res = await axiosInstance.get(`/sessions/${sessionId}/roadmap`);
     return res.data;
   },
-
-  // 면접관 피드백
   getInterviewerFeedback: async (sessionId) => {
     if (USE_MOCK) return delay(mockFeedback);
     const res = await axiosInstance.get(`/sessions/${sessionId}/feedback`);
-    return res.data;
-  },
-
-  // FinalReport 생성 — 성공 시 201
-  createFinalReport: async (sessionId) => {
-    if (USE_MOCK) return delay(mockFinalReport);
-    const res = await axiosInstance.post(`/sessions/${sessionId}/report`);
     return res.data;
   },
 };
