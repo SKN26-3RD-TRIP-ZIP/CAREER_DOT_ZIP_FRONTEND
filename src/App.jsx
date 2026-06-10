@@ -7,6 +7,7 @@ import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
+import EvaluationRoutes from './routes/evaluationRoutes.jsx'
 
 function App() {
   return (
@@ -19,6 +20,9 @@ function App() {
 
       {/* 면접 페이지 */}
       <Route path="/interview" element={<VoiceInterviewPage />} />
+
+      {/* 리포트 페이지 */}
+      <Route path="/report/*" element={<EvaluationRoutes />} />
 
       {/* 기존 경로 호환 */}
       <Route path="/" element={<Navigate to="/jd" replace />} />
