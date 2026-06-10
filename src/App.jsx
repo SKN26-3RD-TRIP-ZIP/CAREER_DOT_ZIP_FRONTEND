@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
+import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx'
@@ -81,8 +82,16 @@ function App() {
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
 
+      {/* 면접 설정 → 세션/질문 생성 진입 (QA P0: JD 저장 후 면접 설정 화면) */}
+      <Route path="/session-setup" element={<SessionSetupPage />} />
+
       {/* develop 기존 면접 페이지 라우트 보존 */}
       <Route path="/interview" element={<VoiceInterviewPage />} />
+
+      {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
+      <Route path="/auth/login" element={<AuthLoginPage />} />
+      <Route path="/auth/signup" element={<SignupPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* develop 기존 어드민 라우트 보존 */}
       <Route path="/admin/live/login" element={<Login />} />
@@ -91,11 +100,6 @@ function App() {
         <Route path="/admin/live/members" element={<Members />} />
         <Route path="/admin/live/prompts" element={<Prompts />} />
       </Route>
-
-      {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
-      <Route path="/auth/login" element={<AuthLoginPage />} />
-      <Route path="/auth/signup" element={<SignupPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* fallback */}
       <Route path="*" element={<SaaSPrototype />} />
