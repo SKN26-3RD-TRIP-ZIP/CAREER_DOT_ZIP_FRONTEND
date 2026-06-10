@@ -37,11 +37,13 @@ function SessionSetupPage() {
     setError('');
 
     if (!jdId) {
-      setError('JD 정보가 없습니다. JD 입력 페이지로 돌아가주세요.');
+      setError('먼저 JD를 저장해 주세요. JD 입력 페이지로 이동합니다.');
+      navigate('/jd');
       return;
     }
     if (!localStorage.getItem('access_token')) {
-      setError('로그인이 필요합니다. access token을 먼저 저장해주세요.');
+      setError('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+      navigate('/auth/login');
       return;
     }
 
@@ -81,7 +83,8 @@ function SessionSetupPage() {
       if (!err?.response) {
         setError('백엔드 서버에 연결할 수 없습니다. runserver가 켜져 있는지 확인해주세요.');
       } else if (status === 401) {
-        setError('인증에 실패했습니다. access token을 다시 저장해주세요.');
+        setError('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        navigate('/auth/login');
       } else if (status === 400) {
         const msg = typeof detail === 'object' ? JSON.stringify(detail) : String(detail);
         setError(`입력값 오류: ${msg}`);
