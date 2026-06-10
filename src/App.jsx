@@ -2,6 +2,9 @@ import { Routes, Route } from 'react-router-dom'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
+import AuthLoginPage from './pages/auth/LoginPage.jsx'
+import SignupPage from './pages/auth/SignupPage.jsx'
+import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx'
 import Login from './pages/admin/Login.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
@@ -88,6 +91,11 @@ function App() {
         <Route path="/admin/live/members" element={<Members />} />
         <Route path="/admin/live/prompts" element={<Prompts />} />
       </Route>
+
+      {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
+      <Route path="/auth/login" element={<AuthLoginPage />} />
+      <Route path="/auth/signup" element={<SignupPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* fallback */}
       <Route path="*" element={<SaaSPrototype />} />
