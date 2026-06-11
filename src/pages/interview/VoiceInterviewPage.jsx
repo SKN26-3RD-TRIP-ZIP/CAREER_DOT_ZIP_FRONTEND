@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useInterview } from '../../hooks/useInterview';
 import { useSTT } from '../../hooks/useSTT';
 import { useTTS } from '../../hooks/useTTS';
+import {
+  getReportMetadata,
+  getReportScoreDetail,
+  getReportScoreSummary,
+  getReportTriggeredTags,
+} from '../../utils/reportSummary';
 
 const MOCK_QUESTIONS = [
   { question_id: 'mock-1', question_text: '지원하신 백엔드 직무에서 가장 자신 있는 기술 스택은 무엇인가요?', order_index: 0 },
@@ -41,11 +47,10 @@ function ReportPanel({ reportData, reportLoading, sessionId }) {
     );
   }
 
-  const summary = reportData.summary ?? {};
-  const scoreSummary = summary.score_summary ?? {};
-  const scoreDetail = summary.score_detail ?? {};
-  const meta = summary.evaluation_metadata ?? {};
-  const tags = summary.dynamically_triggered_tags ?? {};
+  const scoreSummary = getReportScoreSummary(reportData);
+  const scoreDetail = getReportScoreDetail(reportData);
+  const meta = getReportMetadata(reportData);
+  const tags = getReportTriggeredTags(reportData);
 
   return (
     <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-6">

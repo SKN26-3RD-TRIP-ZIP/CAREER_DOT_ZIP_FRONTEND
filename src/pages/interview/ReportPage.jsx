@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useInterviewStore } from '../../store/interviewStore';
 import { useJdStore } from '../../store/jdStore';
+import { getOverallScore, getReportScoreDetail } from '../../utils/reportSummary';
 
 const MOCK_REPORT = {
   overall_score: 82,
@@ -30,14 +31,15 @@ const MOCK_REPORT = {
 };
 
 function ScoreCircle({ score }) {
-  const color = score >= 80 ? '#08CB00' : score >= 60 ? '#f59e0b' : '#ef4444';
+  const hasScore = typeof score === 'number';
+  const color = hasScore && score >= 80 ? '#08CB00' : hasScore && score >= 60 ? '#f59e0b' : '#64748b';
   return (
     <div className="flex flex-col items-center">
       <div
         className="w-28 h-28 rounded-full flex flex-col items-center justify-center border-4"
         style={{ borderColor: color }}
       >
-        <span className="text-3xl font-bold" style={{ color }}>{score}</span>
+        <span className="text-3xl font-bold" style={{ color }}>{hasScore ? score : '-'}</span>
         <span className="text-xs text-slate-500">점</span>
       </div>
       <p className="mt-2 text-sm font-semibold text-slate-600">종합 점수</p>
@@ -66,13 +68,14 @@ function ReportPage() {
 
   const apiReport = location.state?.reportData;
 
-  const score = apiReport?.summary?.score_summary?.overall_score ?? MOCK_REPORT.overall_score;
+  const score = getOverallScore(apiReport, apiReport ? null : MOCK_REPORT.overall_score);
   const company = jdData?.company_name ?? MOCK_REPORT.company;
   const position = jdData?.position ?? MOCK_REPORT.position;
 
-  const strengthText = apiReport?.summary?.score_detail?.strength;
-  const weaknessText = apiReport?.summary?.score_detail?.weakness;
-  const improvementText = apiReport?.summary?.score_detail?.improvement;
+  const scoreDetail = getReportScoreDetail(apiReport);
+  const strengthText = scoreDetail.strength;
+  const weaknessText = scoreDetail.weakness;
+  const improvementText = scoreDetail.improvement;
 
   const strengths = strengthText ? [strengthText] : MOCK_REPORT.strengths;
   const weaknesses = weaknessText ? [weaknessText] : MOCK_REPORT.weaknesses;
@@ -93,7 +96,9 @@ function ReportPage() {
           <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
             <ScoreCircle score={score} />
             <p className="mt-4 text-sm text-slate-500 text-center">
-              {score >= 80
+              {typeof score !== 'number'
+                ? '아직 제공된 종합 점수가 없습니다.'
+                : score >= 80
                 ? '우수한 면접 실력을 보여주셨습니다!'
                 : score >= 60
                 ? '기본기는 갖추셨지만 보완이 필요합니다.'
