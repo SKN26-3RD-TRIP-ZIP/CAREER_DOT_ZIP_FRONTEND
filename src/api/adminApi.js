@@ -97,3 +97,16 @@ export async function setDefaultVersion(templateId, versionId) {
     default_version_id: versionId,
   })
 }
+
+// ── Audit Logs ────────────────────────────────────────────────────────────────
+
+export async function getAuditLogs(params = {}) {
+  const { action_type, actor_id, page, size } = params
+  const query = {}
+  if (action_type) query.action_type = action_type
+  if (actor_id) query.actor_id = actor_id
+  if (page) query.page = page
+  if (size) query.size = size
+  const res = await axiosInstance.get('/admin/audit-logs', { params: query })
+  return res.data // { total, page, size, results }
+}
