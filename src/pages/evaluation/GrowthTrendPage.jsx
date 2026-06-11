@@ -19,7 +19,7 @@ export default function GrowthTrendPage() {
   const growth = useGrowthTrend();
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">
+    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">
       리포트로 돌아가기
     </button>
   );
@@ -53,7 +53,7 @@ export default function GrowthTrendPage() {
           <ul className="space-y-4">
             {g.insights.map((t, i) => (
               <li key={i} className="flex gap-2 text-sm leading-relaxed text-slate-600">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#08CB00]" />
                 {t}
               </li>
             ))}
@@ -63,8 +63,8 @@ export default function GrowthTrendPage() {
 
       <section className="mt-4 flex gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         {/* TODO: 인터뷰(면접 진행) 화면으로 연결 — 담당/연결 주체 확정 후 onClick 지정. 현재는 의도적으로 연결 끊어둠 */}
-        <button className="rounded-xl bg-green-500 px-5 py-3 text-sm font-bold text-white hover:bg-green-600">연습하러 가기</button>
-        <button className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">추이 리포트 저장</button>
+        <button className="rounded-xl bg-[#08CB00] px-5 py-3 text-sm font-bold text-white hover:bg-[#06A800]">연습하러 가기</button>
+        <button className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">추이 리포트 저장</button>
       </section>
     </ReportLayout>
   );

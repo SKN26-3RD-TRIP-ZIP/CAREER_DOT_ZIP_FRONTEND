@@ -30,10 +30,10 @@ export default function GrowthLineChart({ points = [] }) {
             <text x={padL - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#9ca3af">{v}</text>
           </g>
         ))}
-        {n > 0 && <path d={linePath} fill="none" stroke="#22c55e" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />}
+        {n > 0 && <path d={linePath} fill="none" stroke="#08CB00" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />}
         {points.map((p, i) => (
           <g key={p.session_id ?? i}>
-            <circle cx={x(i)} cy={y(p.overall_score)} r="4" fill="#22c55e" />
+            <circle cx={x(i)} cy={y(p.overall_score)} r="4" fill="#08CB00" />
             <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="#9ca3af">{p.label}</text>
           </g>
         ))}

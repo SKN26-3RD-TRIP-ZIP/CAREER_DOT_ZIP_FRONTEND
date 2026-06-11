@@ -11,7 +11,7 @@ export default function InterviewerFeedbackPage() {
   const feedback = useInterviewerFeedback(sessionId);
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}/overall`)} className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">
+    <button onClick={() => navigate(`/report/${sessionId}/overall`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">
       Overall로 돌아가기
     </button>
   );
@@ -31,7 +31,7 @@ export default function InterviewerFeedbackPage() {
       {/* 페르소나 카드 */}
       <section className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-center">
         <div className="flex items-center gap-4">
-          <div className="text-4xl">{f.persona.avatar_emoji}</div>
+          <div className="text-6xl leading-none">{f.persona.avatar_emoji}</div>
           <div>
             <div className="flex items-center gap-3">
               <h3 className="text-lg font-extrabold text-slate-900">선택한 면접관: {f.persona.short_name}</h3>
@@ -70,7 +70,7 @@ export default function InterviewerFeedbackPage() {
           <ul className="space-y-2.5">
             {f.pros.map((p, i) => (
               <li key={i} className="flex gap-2 text-sm text-slate-600">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />{p}
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#08CB00]" />{p}
               </li>
             ))}
           </ul>
@@ -82,7 +82,7 @@ export default function InterviewerFeedbackPage() {
           <ul className="space-y-2.5">
             {f.cons.map((c, i) => (
               <li key={i} className="flex gap-2 text-sm text-slate-600">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />{c}
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#E5342B]" />{c}
               </li>
             ))}
           </ul>
@@ -96,7 +96,7 @@ export default function InterviewerFeedbackPage() {
           <ul className="space-y-3">
             {f.expected_questions.map((q) => (
               <li key={q.order} className="flex gap-3 text-sm">
-                <span className="h-fit shrink-0 rounded-md bg-[#173a1f] px-2 py-0.5 text-xs font-bold text-white">Q{q.order}</span>
+                <span className="h-fit shrink-0 rounded-md bg-[#253900] px-2 py-0.5 text-xs font-bold text-white">Q{q.order}</span>
                 <span className="text-slate-600">{q.text}</span>
               </li>
             ))}
@@ -109,7 +109,7 @@ export default function InterviewerFeedbackPage() {
             <h3 className="mb-2 text-base font-bold text-slate-900">다음 연습으로 연결</h3>
             <p className="text-sm text-slate-500">이전과 동일한 세팅으로 연습을 바로 시작합니다.</p>
           </div>
-          <button onClick={() => navigate(`/report/${sessionId}/roadmap`)} className="mt-4 w-full rounded-xl bg-green-500 px-5 py-3 text-sm font-bold text-white hover:bg-green-600">
+          <button onClick={() => navigate(`/report/${sessionId}/roadmap`)} className="mt-4 w-full rounded-xl bg-[#08CB00] px-5 py-3 text-sm font-bold text-white hover:bg-[#06A800]">
             {f.persona.short_name} 피드백으로 답변 연습
           </button>
         </div>

@@ -30,7 +30,7 @@ export default function FinalReportPage() {
     <ReportLayout
       title="최종 리포트"
       subtitle="면접 결과를 한눈에 확인하고 다음 액션으로 이어가세요."
-      action={<button className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">마이페이지에 저장</button>}
+      action={<button className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">마이페이지에 저장</button>}
     >
       {/* 스코어 카드 5개 */}
       <section className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -48,13 +48,13 @@ export default function FinalReportPage() {
 
       {/* 강점 / 보완 키워드 */}
       <section className="mt-4 grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-green-100 bg-green-50/60 p-5 shadow-sm">
+        <div className="rounded-xl border border-[#08CB00]/25 bg-[#08CB00]/5 p-5 shadow-sm">
           <h3 className="mb-3 text-sm font-bold text-slate-800">강점 키워드</h3>
           <div className="flex flex-wrap gap-2">
             {strengths.map((t) => <Tag key={t.label} label={t.label} variant="strength" />)}
           </div>
         </div>
-        <div className="rounded-xl border border-red-100 bg-red-50/60 p-5 shadow-sm">
+        <div className="rounded-xl border border-[#E5342B]/25 bg-[#E5342B]/5 p-5 shadow-sm">
           <h3 className="mb-3 text-sm font-bold text-slate-800">보완 키워드</h3>
           <div className="flex flex-wrap gap-2">
             {weaknesses.map((t) => <Tag key={t.label} label={t.label} variant="weakness" />)}
@@ -102,8 +102,8 @@ export default function FinalReportPage() {
           </div>
         ) : null}
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => navigate(`${base}/roadmap`)} className="rounded-xl bg-green-500 px-5 py-3 text-sm font-bold text-white hover:bg-green-600">보완 답변 연습하기</button>
-          <button className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">리포트 PDF 저장</button>
+          <button onClick={() => navigate(`${base}/roadmap`)} className="rounded-xl bg-[#08CB00] px-5 py-3 text-sm font-bold text-white hover:bg-[#06A800]">보완 답변 연습하기</button>
+          <button className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">리포트 PDF 저장</button>
           <button className="rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-200">마이페이지에서 관리</button>
         </div>
       </section>
