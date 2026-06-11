@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { getPersonas, getTemplates, switchTemplate } from '../../api/adminApi'
 import PromptCard from '../../components/admin/PromptCard'
 import PromptCreateModal from '../../components/admin/PromptCreateModal'
+import PromptVersionModal from '../../components/admin/PromptVersionModal'
 
 const TABS = [
   { value: 'coach', label: '코치형' },
@@ -15,6 +16,7 @@ export default function Prompts() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('coach')
   const [createOpen, setCreateOpen] = useState(false)
+  const [managingTemplate, setManagingTemplate] = useState(null)
   const [switching, setSwitching] = useState(null)
 
   const { data: personas = [], isLoading: personasLoading } = useQuery({
@@ -102,6 +104,7 @@ export default function Prompts() {
                     ? () => handleActivate(currentPersona, template.template_id)
                     : undefined
                 }
+                onManage={() => setManagingTemplate(template)}
               />
             )
           })}
@@ -117,6 +120,16 @@ export default function Prompts() {
         onClose={() => setCreateOpen(false)}
         personas={personas}
         activeTab={activeTab}
+      />
+
+      <PromptVersionModal
+        template={managingTemplate}
+        open={managingTemplate !== null}
+        onClose={() => setManagingTemplate(null)}
+        onChanged={() => {
+          queryClient.invalidateQueries({ queryKey: ['templates', activeTab] })
+          queryClient.invalidateQueries({ queryKey: ['personas'] })
+        }}
       />
     </div>
   )
