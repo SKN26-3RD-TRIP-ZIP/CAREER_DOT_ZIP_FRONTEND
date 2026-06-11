@@ -28,10 +28,10 @@ export const RADAR_AXES = [
 
 /** 면접관 페르소나 라벨 */
 export const PERSONA_LABELS = {
-  practical: { short_name: '실무형', name: '실무형 면접관', avatar_emoji: '🧑‍💼' },
-  coach: { short_name: '코치형', name: '코치형 면접관', avatar_emoji: '🧑‍🏫' },
-  verifier: { short_name: '검증형', name: '검증형 면접관', avatar_emoji: '🔍' },
-  pressure: { short_name: '압박형', name: '압박형 면접관', avatar_emoji: '🧐' },
+  practical: { short_name: '실무형', name: '실무형 면접관', avatar_emoji: '💼' },
+  coach: { short_name: '코치형', name: '코치형 면접관', avatar_emoji: '🎯' },
+  verifier: { short_name: '검증형', name: '검증형 면접관', avatar_emoji: '🔎' },
+  pressure: { short_name: '압박형', name: '압박형 면접관', avatar_emoji: '🔥' },
 };
 
 export function personaMeta(personaType) {
@@ -39,7 +39,7 @@ export function personaMeta(personaType) {
     PERSONA_LABELS[personaType] || {
       short_name: personaType || '면접관',
       name: `${personaType || ''} 면접관`.trim(),
-      avatar_emoji: '🧑‍💼',
+      avatar_emoji: '💼',
     }
   );
 }

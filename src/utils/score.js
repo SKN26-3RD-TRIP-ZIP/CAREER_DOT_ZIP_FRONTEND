@@ -12,11 +12,12 @@ export function scoreTier(score) {
   return 'danger';
 }
 
+// 브랜드 그린(#08CB00) 기준으로 통일한 선명한 톤 팔레트
 export const TIER_HEX = {
-  good: '#22c55e',
-  warn: '#eab308',
-  alert: '#f97316',
-  danger: '#ef4444',
+  good: '#08CB00',
+  warn: '#F5B400',
+  alert: '#F5772B',
+  danger: '#E5342B',
 };
 
 /** 차트 fill/stroke 용 hex */
@@ -28,13 +29,13 @@ export function scoreHex(score) {
 export function scoreBadgeClass(score) {
   switch (scoreTier(score)) {
     case 'good':
-      return 'bg-green-100 text-green-700';
+      return 'bg-[#08CB00]/15 text-[#253900]';
     case 'warn':
-      return 'bg-yellow-100 text-yellow-700';
+      return 'bg-[#F5B400]/20 text-[#8A6500]';
     case 'alert':
-      return 'bg-orange-100 text-orange-700';
+      return 'bg-[#F5772B]/20 text-[#A33E0C]';
     default:
-      return 'bg-red-100 text-red-600';
+      return 'bg-[#E5342B]/15 text-[#E5342B]';
   }
 }
 
@@ -42,13 +43,13 @@ export function scoreBadgeClass(score) {
 export function scoreBarClass(score) {
   switch (scoreTier(score)) {
     case 'good':
-      return 'bg-green-500';
+      return 'bg-[#08CB00]';
     case 'warn':
-      return 'bg-yellow-500';
+      return 'bg-[#F5B400]';
     case 'alert':
-      return 'bg-orange-500';
+      return 'bg-[#F5772B]';
     default:
-      return 'bg-red-500';
+      return 'bg-[#E5342B]';
   }
 }
 

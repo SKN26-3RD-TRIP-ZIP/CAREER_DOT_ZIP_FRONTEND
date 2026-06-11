@@ -11,7 +11,7 @@ export default function StateView({ isLoading, isError, error, onRetry }) {
   }
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-      <AlertTriangle className="h-8 w-8 text-orange-400" />
+      <AlertTriangle className="h-8 w-8 text-[#F5772B]" />
       <p className="font-semibold text-slate-700">
         {error?.response?.status === 503
           ? 'AI 평가 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
@@ -27,7 +27,7 @@ export default function StateView({ isLoading, isError, error, onRetry }) {
         </button>
       )}
       {error?.response?.status === 401 && (
-        <a href="/auth/login" className="mt-1 rounded-xl bg-[#173a1f] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0f2a16]">
+        <a href="/auth/login" className="mt-1 rounded-xl bg-[#253900] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#1A2900]">
           로그인하기
         </a>
       )}

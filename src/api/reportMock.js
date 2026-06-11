@@ -82,6 +82,6 @@ export const mockGrowthTrend = {
 };
 export const mockRoadmap = { week_priority_text: '', target_delta_label: '+2~4점', items: [], practice_question: '' };
 export const mockFeedback = {
-  persona: { persona_key: 'practical', name: '실무형 면접관', short_name: '실무형', avatar_emoji: '🧑‍💼', total_score: 91, tags: [] },
+  persona: { persona_key: 'practical', name: '실무형 면접관', short_name: '실무형', avatar_emoji: '💼', total_score: 91, tags: [] },
   recommended_answer_structure: [], summary: '', pros: [], cons: [], expected_questions: [],
 };

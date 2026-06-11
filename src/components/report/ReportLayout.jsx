@@ -17,7 +17,7 @@ export default function ReportLayout({ title, subtitle, action, children }) {
               type="button"
               aria-label="메인 화면으로 이동"
               onClick={() => navigate('/')}
-              className="cursor-pointer rounded-xl bg-[#173a1f] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#0f2a16]"
+              className="cursor-pointer rounded-xl bg-[#253900] px-4 py-2 text-sm font-extrabold text-white transition-colors hover:bg-[#1A2900]"
             >
               Career.zip
             </button>
@@ -25,14 +25,14 @@ export default function ReportLayout({ title, subtitle, action, children }) {
               {NAV.map((label) => (
                 <span
                   key={label}
-                  className={label === '리포트' ? 'font-bold text-green-600' : 'cursor-pointer text-slate-500 hover:text-slate-800'}
+                  className={label === '리포트' ? 'font-bold text-[#08CB00]' : 'cursor-pointer text-slate-500 hover:text-slate-800'}
                 >
                   {label}
                 </span>
               ))}
             </nav>
           </div>
-          <button className="rounded-xl bg-green-500 px-4 py-2 text-sm font-bold text-white hover:bg-green-600">
+          <button className="rounded-xl bg-[#08CB00] px-4 py-2 text-sm font-bold text-white hover:bg-[#06A800]">
             면접 시작하기
           </button>
         </div>

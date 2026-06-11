@@ -38,7 +38,7 @@ export default function RadarChart({ data = [] }) {
           return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#e5e7eb" strokeWidth="1" />;
         })}
         {/* 데이터 영역 */}
-        <polygon points={dataPolygon} fill="#22c55e" fillOpacity="0.4" stroke="#22c55e" strokeWidth="2" />
+        <polygon points={dataPolygon} fill="#08CB00" fillOpacity="0.4" stroke="#08CB00" strokeWidth="2" />
         {/* 축 라벨 */}
         {data.map((d, i) => {
           const p = point(i, 1.18);

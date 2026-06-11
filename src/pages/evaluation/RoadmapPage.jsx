@@ -8,7 +8,7 @@ import Badge from '../../components/report/Badge';
 import { priorityLabel } from '../../utils/score';
 
 function PriorityPill({ p }) {
-  const cls = p === 'high' ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-600';
+  const cls = p === 'high' ? 'bg-[#08CB00] text-white' : 'bg-slate-200 text-slate-600';
   return <span className={`rounded-full px-4 py-1.5 text-xs font-bold ${cls}`}>{priorityLabel(p)}</span>;
 }
 
@@ -26,7 +26,7 @@ export default function RoadmapPage() {
   }, [roadmap.data, selectedRoadmapId, setSelectedRoadmapId]);
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">
+    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">
       리포트로 돌아가기
     </button>
   );
@@ -65,7 +65,7 @@ export default function RoadmapPage() {
                   key={it.id}
                   onClick={() => setSelectedRoadmapId(it.id)}
                   className={`flex cursor-pointer items-center gap-4 rounded-xl px-4 py-4 transition-colors ${
-                    selectedRoadmapId === it.id ? 'bg-green-50' : 'bg-slate-50 hover:bg-slate-100'
+                    selectedRoadmapId === it.id ? 'bg-[#08CB00]/10' : 'bg-slate-50 hover:bg-slate-100'
                   }`}
                 >
                   <input
@@ -73,7 +73,7 @@ export default function RoadmapPage() {
                     checked={checked}
                     onChange={() => toggleRoadmapChecked(it.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-5 w-5 cursor-pointer accent-green-500"
+                    className="h-5 w-5 cursor-pointer accent-[#08CB00]"
                   />
                   <div className="min-w-0 flex-1">
                     <div className={`font-bold text-slate-900 ${checked ? 'text-slate-400 line-through' : ''}`}>{it.title}</div>
@@ -97,8 +97,8 @@ export default function RoadmapPage() {
               {selected?.title ? `[${selected.title}] ` : ''}{rm.practice_question}
             </p>
           </div>
-          <button className="mb-3 w-full rounded-xl bg-green-500 px-5 py-3 text-sm font-bold text-white hover:bg-green-600">이 항목으로 답변 연습 시작</button>
-          <button className="w-full rounded-xl bg-[#173a1f] px-5 py-3 text-sm font-bold text-white hover:bg-[#0f2a16]">로드맵 저장</button>
+          <button className="mb-3 w-full rounded-xl bg-[#08CB00] px-5 py-3 text-sm font-bold text-white hover:bg-[#06A800]">이 항목으로 답변 연습 시작</button>
+          <button className="w-full rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">로드맵 저장</button>
         </div>
       </section>
     </ReportLayout>

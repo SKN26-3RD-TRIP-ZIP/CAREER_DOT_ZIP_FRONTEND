@@ -10,7 +10,7 @@ export default function ScoreCard({ label, value, caption, progress, highlight =
     return (
       <Comp
         onClick={onClick}
-        className="flex min-h-[150px] w-full flex-col justify-between rounded-xl bg-[#173a1f] p-5 text-left text-white shadow-sm"
+        className="flex min-h-[150px] w-full flex-col justify-between rounded-xl bg-[#253900] p-5 text-left text-white shadow-sm"
       >
         <div className="text-[11px] font-bold tracking-wide text-white/70">{label}</div>
         <div className="mt-2 text-4xl font-extrabold leading-none">{value}</div>
