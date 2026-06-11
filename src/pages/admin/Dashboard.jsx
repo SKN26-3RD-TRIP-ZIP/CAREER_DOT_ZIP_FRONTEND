@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Users, UserCheck, UserX, MessageSquare } from 'lucide-react'
-import { getMemberStats, getMembers, getPersonas, getTemplates } from '../../api/adminApi'
+import { getMemberStats, getMembers, getPersonas, getTemplates, getAuditLogs } from '../../api/adminApi'
 
 const PERSONA_LABEL = {
   coach: '코치형',
@@ -29,6 +29,16 @@ export default function Dashboard() {
     queryKey: ['personas'],
     queryFn: getPersonas,
   })
+
+  const {
+    data: auditData,
+    isLoading: auditLoading,
+    isError: auditError,
+  } = useQuery({
+    queryKey: ['audit-recent'],
+    queryFn: () => getAuditLogs({ page: 1, size: 5 }),
+  })
+  const recentAudits = auditData?.results ?? []
 
   const { data: practicalTemplates = [] } = useQuery({
     queryKey: ['templates', 'practical'],
@@ -137,6 +147,33 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+      </div>
+      {/* 최근 감사 로그 (실제 GET /admin/audit-logs) */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h2 className="text-base font-semibold text-slate-900">최근 감사 로그</h2>
+        </div>
+        {auditLoading ? (
+          <p className="px-6 py-8 text-center text-sm text-slate-400">불러오는 중...</p>
+        ) : auditError ? (
+          <p className="px-6 py-8 text-center text-sm text-red-600">감사 로그를 불러오지 못했습니다.</p>
+        ) : recentAudits.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-slate-400">감사 로그가 없습니다.</p>
+        ) : (
+          <div className="flex flex-col divide-y divide-slate-100">
+            {recentAudits.map((log) => (
+              <div key={log.audit_log_id} className="flex items-center justify-between gap-2 px-6 py-3 text-sm">
+                <div>
+                  <p className="font-medium text-slate-800">{log.action_type}</p>
+                  <p className="text-xs text-slate-400">{log.target_type} #{log.target_id}</p>
+                </div>
+                <span className="text-xs text-slate-400">
+                  {log.created_at ? new Date(log.created_at).toLocaleString('ko-KR') : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
