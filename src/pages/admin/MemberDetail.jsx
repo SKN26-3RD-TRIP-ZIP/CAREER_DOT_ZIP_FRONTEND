@@ -80,6 +80,7 @@ function MemberDetail() {
 
             <div className="bg-white rounded-2xl shadow p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-[#08CB00] mb-3">면접/리포트 요약</p>
+              <Row label="완료 면접 수" value={member.practice_count ?? 0} />
               <Row label="면접 세션 수" value={member.interview_count} />
               <Row label="완료된 면접 수" value={member.completed_interview_count} />
               <Row label="리포트 수" value={member.report_count} />
