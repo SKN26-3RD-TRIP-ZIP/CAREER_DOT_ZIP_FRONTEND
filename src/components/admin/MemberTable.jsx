@@ -73,7 +73,7 @@ export default function MemberTable({ filterParams }) {
               <th className={thClass}>이름</th>
               <th className={thClass}>이메일</th>
               <th className={thClass}>상태</th>
-              <th className={`${thClass} text-center`}>연습</th>
+              <th className={`${thClass} text-center`}>완료 면접 수</th>
               <th className={thClass}>최근 로그인</th>
               <th className={thClass}>가입일</th>
               <th className={`${thClass} text-right`}>관리</th>
@@ -91,7 +91,7 @@ export default function MemberTable({ filterParams }) {
                 <td className="px-6 py-4 font-semibold text-slate-900">{user.name}</td>
                 <td className="px-6 py-4 text-slate-500">{user.email}</td>
                 <td className="px-6 py-4"><StatusBadge status={user.status} /></td>
-                <td className="px-6 py-4 text-center text-slate-600">{user.practice_count}회</td>
+                <td className="px-6 py-4 text-center text-slate-600">{user.practice_count ?? 0}회</td>
                 <td className="px-6 py-4 text-slate-400">
                   {user.last_login ? new Date(user.last_login).toLocaleDateString('ko-KR') : '-'}
                 </td>
