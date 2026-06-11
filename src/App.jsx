@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
+import InterviewSetupCheckPage from './pages/interview/InterviewSetupCheckPage.jsx'
+import InterviewQuestionCheckPage from './pages/interview/InterviewQuestionCheckPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
 import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
@@ -83,12 +85,15 @@ function App() {
 
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
+      <Route path="/JD" element={<JdInputPage />} />
 
       {/* 면접 설정 → 세션/질문 생성 진입 (QA P0: JD 저장 후 면접 설정 화면) */}
       <Route path="/session-setup" element={<SessionSetupPage />} />
 
       {/* develop 기존 면접 페이지 라우트 보존 */}
       <Route path="/interview" element={<VoiceInterviewPage />} />
+      <Route path="/interview/setup-check" element={<InterviewSetupCheckPage />} />
+      <Route path="/interview/question-check" element={<InterviewQuestionCheckPage />} />
 
       {/* 마이페이지 실제 면접 기록/리포트 조회 (prototype /mypage/* 와 분리) */}
       <Route path="/mypage" element={<MyPage />} />

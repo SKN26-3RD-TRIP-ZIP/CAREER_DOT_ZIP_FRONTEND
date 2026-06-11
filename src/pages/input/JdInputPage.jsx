@@ -111,7 +111,7 @@ function JdInputPage() {
       main_tasks: form.main_tasks.trim(),
       requirements: form.requirements.trim(),
       preferences: form.preferences.trim(),
-      jd_text: form.jd_text.trim(),
+      original_text: form.jd_text.trim(),
       custom_keywords: parseCommaSeparated(form.custom_keywords),
     };
 
@@ -142,6 +142,9 @@ function JdInputPage() {
       const data = await jdApi.createJd(payload);
       const jdId = data?.jd_id ?? data?.id ?? null;
       setJd(jdId, data);
+      if (jdId) {
+        window.localStorage.setItem('careerzip_temp_jd_id', jdId);
+      }
       setSuccessData(data);
     } catch (err) {
       const status = err?.response?.status;
@@ -191,7 +194,7 @@ function JdInputPage() {
               <button
                 type="button"
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
-                onClick={() => navigate('/session-setup')}
+                onClick={() => navigate('/interview/setup')}
               >
                 면접 설정으로 이동
               </button>

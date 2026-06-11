@@ -36,6 +36,15 @@ export const interviewApi = {
     return response.data;
   },
 
+  transcribeAudio: async (formData) => {
+    const response = await axiosInstance.post('/stt/transcribe', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
   generateFollowup: async (answerId) => {
     const response = await axiosInstance.post(`/answers/${answerId}/followup`);
     return response.data;

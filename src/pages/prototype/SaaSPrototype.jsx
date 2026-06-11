@@ -26,6 +26,7 @@ import {
   User,
   X,
 } from 'lucide-react'
+import InterviewSetupCheckPage from '../interview/InterviewSetupCheckPage.jsx'
 import './SaaSPrototype.css'
 
 const STORAGE_KEY = 'careerzip.mvp.functional.demo.v1'
@@ -355,11 +356,47 @@ function useDemoState() {
   return [state, updateState]
 }
 
-async function requestWithMockFallback(endpoint, payload) {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1'
+
+function buildApiUrl(endpoint) {
+  if (/^https?:\/\//.test(endpoint)) return endpoint
+  return `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint.slice('/api/v1'.length) : `/${endpoint}`}`
+}
+
+function getStoredAccessToken() {
+  if (typeof window === 'undefined') return ''
+
+  const directToken = window.localStorage.getItem('access_token')
+  if (directToken) return directToken
+
   try {
-    const response = await fetch(endpoint, {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    const demoToken = parsed?.auth?.source === 'api' ? parsed.auth.accessToken : ''
+    return demoToken && !demoToken.startsWith('mock-') ? demoToken : ''
+  } catch {
+    return ''
+  }
+}
+
+function requiresAccessToken(endpoint) {
+  return endpoint.startsWith('/api/v1/') && !endpoint.startsWith('/api/v1/auth/')
+}
+
+async function requestWithMockFallback(endpoint, payload) {
+  const accessToken = getStoredAccessToken()
+
+  if (requiresAccessToken(endpoint) && !accessToken) {
+    return { ok: false, source: 'mock', error: new Error('Missing access token') }
+  }
+
+  try {
+    const response = await fetch(buildApiUrl(endpoint), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify(payload || {}),
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -676,6 +713,8 @@ function Landing() {
 function AuthPage() {
   const navigate = useNavigate()
   const [state, updateState] = useDemoState()
+  const storeLogin = useAuthStore((s) => s.login)
+  const storeLogout = useAuthStore((s) => s.logout)
   const [toast, showToast] = useTimedToast()
   const [email, setEmail] = useState(hamzziUser.email)
   const [password, setPassword] = useState('')
@@ -690,12 +729,18 @@ function AuthPage() {
       return
     }
     const result = await requestWithMockFallback('/api/v1/auth/login', { email, password, keepLogin })
+    const accessToken = result.data?.access_token || ''
+    if (result.source === 'api' && accessToken) {
+      storeLogin(accessToken)
+    } else {
+      storeLogout()
+    }
     updateState((prev) => addAudit({
       ...prev,
       auth: {
         loggedIn: true,
         email,
-        accessToken: result.data?.access_token || `mock-access-${Date.now()}`,
+        accessToken: accessToken || `mock-access-${Date.now()}`,
         refreshToken: result.data?.refresh_token || `mock-refresh-${Date.now()}`,
         source: result.source,
         lastLogin: safeNow(),
@@ -943,36 +988,7 @@ function InterviewPage({ kind = 'setup' }) {
 }
 
 function InterviewSetup({ showToast }) {
-  const [state, updateState] = useDemoState()
-  const navigate = useNavigate()
-  const [settings, setSettings] = useState(state.interview.settings)
-
-  function setOption(key, value) {
-    setSettings((prev) => ({ ...prev, [key]: value }))
-  }
-
-  async function createSession() {
-    const result = await requestWithMockFallback('/api/v1/sessions', { settings, data: state.data })
-    const sessionId = result.data?.session_id || createSessionId()
-    updateState((prev) => addAudit({ ...prev, interview: { ...prev.interview, sessionId, sessionSource: result.source, settings } }, '세션 생성', result.source === 'api' ? sessionId : `${sessionId} · mock fallback`))
-    showToast(result.source === 'api' ? `세션이 생성되었습니다. ${sessionId}` : `백엔드 연결 실패로 mock 세션이 생성되었습니다. ${sessionId}`)
-  }
-
-  async function generateQuestions() {
-    const result = await requestWithMockFallback(`/api/v1/sessions/${state.interview.sessionId || 'mock'}/questions/generate`, { settings, selectedQuestionIds: state.analysis.selectedQuestionIds })
-    updateState((prev) => {
-      const next = { ...prev, interview: { ...prev.interview, settings, questions: generateQuestionsFromState({ ...prev, interview: { ...prev.interview, settings } }), currentIndex: 0 } }
-      return addAudit(next, '질문 생성', result.source === 'api' ? 'API 질문 생성 성공' : 'mock 질문 목록 생성')
-    })
-    showToast(result.source === 'api' ? '질문 목록이 생성되었습니다.' : '백엔드 연결 실패로 mock 질문 목록이 생성되었습니다.')
-  }
-
-  function startInterview() {
-    updateState((prev) => ({ ...prev, interview: { ...prev.interview, settings, currentIndex: 0, questions: prev.interview.questions.length ? prev.interview.questions : generateQuestionsFromState({ ...prev, interview: { ...prev.interview, settings } }) } }))
-    navigate('/interview/question')
-  }
-
-  return <><SectionHead eyebrow="Interview Setup" title="면접을 설정하세요" desc="세션 생성, 질문 생성, 면접 시작이 실제 상태로 이어집니다." /><IntegrationStatus>텍스트 면접과 음성 Beta 면접 모두 지원합니다.</IntegrationStatus><article className="cz-panel"><div className="cz-summary-grid"><Info label="사용할 JD" value={state.data.jd.role} /><Info label="사용할 이력서" value={state.data.resume.summary} /><Info label="사용할 자소서" value={state.data.coverLetter.question} /><Info label="사용할 프로젝트" value={state.data.projects.map((project) => project.name).join(', ')} /></div><OptionGroup title="면접 유형" options={['기술 면접', '인성 면접', '종합 면접']} value={settings.type} setValue={(value) => setOption('type', value)} /><OptionGroup title="면접관 페르소나" options={['코치형', '실무형', '검증형', '압박형']} value={settings.persona} setValue={(value) => setOption('persona', value)} /><OptionGroup title="면접 모드" options={['텍스트', '음성 Beta']} value={settings.mode} setValue={(value) => setOption('mode', value)} /><OptionGroup title="질문 수" options={['3문항', '5문항', '8문항']} value={settings.count} setValue={(value) => setOption('count', value)} /><div className="cz-actions"><Button onClick={createSession}>세션 생성</Button><Button variant="secondary" onClick={generateQuestions}>질문 생성</Button><Button variant="ghost" onClick={startInterview}>면접 시작</Button></div><div className="cz-summary-grid"><Info label="sessionId" value={state.interview.sessionId || '아직 생성 전'} /><Info label="질문 목록" value={`${state.interview.questions.length}개 생성됨`} /></div>{state.interview.questions.length > 0 && <ol className="cz-list">{state.interview.questions.map((question) => <li key={question.id}>{question.text}</li>)}</ol>}</article><ApiNote endpoints={[...apiNotes.session, ...apiNotes.questions]} /></>
+  return <InterviewSetupCheckPage embedded />
 }
 
 function OptionGroup({ title, options, value, setValue }) {
@@ -1225,18 +1241,26 @@ function ReportsPage({ showToast }) {
 function AdminLogin({ showToast }) {
   const [state, updateState] = useDemoState()
   const navigate = useNavigate()
+  const storeLogin = useAuthStore((s) => s.login)
+  const storeLogout = useAuthStore((s) => s.logout)
   const [email, setEmail] = useState('admin@career.zip')
   const [password, setPassword] = useState('careerzip-admin')
 
   async function loginAdmin() {
     const result = await requestWithMockFallback('/api/v1/auth/login', { email, password, role: 'admin' })
+    const accessToken = result.data?.access_token || ''
+    if (result.source === 'api' && accessToken) {
+      storeLogin(accessToken)
+    } else {
+      storeLogout()
+    }
     updateState((prev) => addAudit({
       ...prev,
       auth: {
         ...prev.auth,
         loggedIn: true,
         email,
-        accessToken: result.data?.access_token || `mock-admin-${Date.now()}`,
+        accessToken: accessToken || `mock-admin-${Date.now()}`,
         source: result.source,
         lastLogin: safeNow(),
       },
