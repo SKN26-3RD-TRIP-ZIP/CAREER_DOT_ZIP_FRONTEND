@@ -250,6 +250,16 @@ function VoiceInterviewPage() {
     navigate('/jd');
   };
 
+  const handleViewReport = () => {
+    if (sessionId) {
+      navigate(`/report/${sessionId}`);
+      return;
+    }
+
+    alert('리포트를 열 실제 session_id가 없습니다. 마이페이지로 이동합니다.');
+    navigate('/mypage');
+  };
+
   useEffect(() => {
     setHasAccessToken(Boolean(localStorage.getItem('access_token')));
   }, []);
@@ -285,7 +295,7 @@ function VoiceInterviewPage() {
             <button
               type="button"
               className="rounded-lg bg-[#08CB00] px-6 py-2.5 text-sm font-semibold text-white"
-              onClick={() => navigate('/interview/report', { state: { reportData } })}
+              onClick={handleViewReport}
             >
               리포트 보기
             </button>
@@ -428,7 +438,7 @@ function VoiceInterviewPage() {
               <button
                 type="button"
                 className="rounded-lg bg-[#08CB00] px-6 py-2.5 text-sm font-semibold text-white"
-                onClick={() => navigate('/interview/report')}
+                onClick={handleViewReport}
               >
                 리포트 보기
               </button>
