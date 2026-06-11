@@ -1,4 +1,4 @@
-export default function PromptCard({ template, isActive, onActivate }) {
+export default function PromptCard({ template, isActive, onActivate, onManage }) {
   const createdDate = new Date(template.created_at).toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -26,16 +26,24 @@ export default function PromptCard({ template, isActive, onActivate }) {
         <p className="mt-1 text-xs text-slate-400">{createdDate} 생성</p>
       </div>
 
-      {!isActive && onActivate && (
-        <div className="px-5 pb-4 mt-auto">
+      <div className="mt-auto flex gap-2 px-5 pb-4">
+        {onManage && (
+          <button
+            onClick={onManage}
+            className="flex-1 rounded-md border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            버전 관리
+          </button>
+        )}
+        {!isActive && onActivate && (
           <button
             onClick={onActivate}
-            className="w-full rounded-md border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            className="flex-1 rounded-md border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
           >
             활성화
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
