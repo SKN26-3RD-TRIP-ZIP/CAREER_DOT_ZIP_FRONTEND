@@ -1,7 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jdApi } from '../../api/jdApi';
+import { jobsApi } from '../../api/jobsApi';
 import { useJdStore } from '../../store/jdStore';
+
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
+
+const INPUT_MODES = [
+  { id: 'manual', label: '직접 입력' },
+  { id: 'mock', label: 'Mock 공고' },
+  { id: 'upload', label: 'PDF 업로드' },
+];
 
 const JOB_CATEGORY_OPTIONS = [
   { value: 'backend', label: '백엔드' },
@@ -28,6 +37,26 @@ const TECH_STACK_OPTIONS = [
   'JavaScript', 'React', 'Node.js', 'MySQL', 'Docker', 'AWS',
 ];
 
+const INITIAL_FORM = {
+  company_name: '',
+  position: '',
+  job_category: '',
+  experience_level: '',
+  tech_stacks: [],
+  custom_tech_stacks: '',
+  main_tasks: '',
+  requirements: '',
+  preferences: '',
+  jd_text: '',
+  custom_keywords: '',
+};
+
+const INITIAL_UPLOAD_FORM = {
+  company_name: '',
+  position: '',
+  file: null,
+};
+
 function parseCommaSeparated(value) {
   return value
     .split(',')
@@ -49,28 +78,47 @@ function FieldLabel({ htmlFor, children, required }) {
   );
 }
 
-const INITIAL_FORM = {
-  company_name: '',
-  position: '',
-  job_category: '',
-  experience_level: '',
-  tech_stacks: [],
-  custom_tech_stacks: '',
-  main_tasks: '',
-  requirements: '',
-  preferences: '',
-  jd_text: '',
-  custom_keywords: '',
-};
+function formatApiError(err, fallback) {
+  const status = err?.response?.status;
+  const detail = err?.response?.data?.detail || err?.response?.data;
+  if (!err?.response) return '백엔드 서버에 연결할 수 없습니다. runserver가 켜져 있는지 확인해주세요.';
+  if (status === 401) return '로그인이 필요합니다. 로그인 페이지로 이동합니다.';
+  if (status === 413) return '파일 크기는 10MB를 초과할 수 없습니다.';
+  if (status === 422) return typeof detail === 'string' ? detail : '파일에서 텍스트를 추출하지 못했습니다.';
+  if (status === 400) return typeof detail === 'string' ? detail : `입력값 오류: ${JSON.stringify(detail)}`;
+  return `${fallback} (HTTP ${status})`;
+}
+
+function validateJdPdf(file) {
+  if (!file) return '업로드할 PDF 파일을 선택해주세요.';
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (ext !== 'pdf') return 'PDF 파일만 업로드할 수 있습니다.';
+  if (file.size > MAX_UPLOAD_SIZE) return '파일 크기는 10MB를 초과할 수 없습니다.';
+  return null;
+}
 
 function JdInputPage() {
   const navigate = useNavigate();
   const { setJd } = useJdStore();
 
+  const [activeMode, setActiveMode] = useState('manual');
   const [form, setForm] = useState(INITIAL_FORM);
+  const [uploadForm, setUploadForm] = useState(INITIAL_UPLOAD_FORM);
+  const [mockSearch, setMockSearch] = useState('');
+  const [mockJobs, setMockJobs] = useState([]);
+  const [selectedMockJob, setSelectedMockJob] = useState(null);
+  const [mockLoading, setMockLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successData, setSuccessData] = useState(null);
+
+  const rememberJd = (data) => {
+    const nextJdId = data?.jd_id ?? data?.id ?? null;
+    if (!nextJdId) return;
+    setJd(nextJdId, data);
+    window.localStorage.setItem('careerzip_temp_jd_id', nextJdId);
+    window.localStorage.setItem('careerzip_selected_jd_id', nextJdId);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -89,7 +137,7 @@ function JdInputPage() {
     });
   };
 
-  const validate = () => {
+  const validateManual = () => {
     if (!form.company_name.trim()) return '회사명을 입력해주세요.';
     if (!form.position.trim()) return '직무명을 입력해주세요.';
     if (!form.job_category) return '직무 카테고리를 선택해주세요.';
@@ -125,12 +173,12 @@ function JdInputPage() {
     return payload;
   };
 
-  const handleSubmit = async (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessData(null);
 
-    const validationError = validate();
+    const validationError = validateManual();
     if (validationError) {
       setError(validationError);
       return;
@@ -138,27 +186,94 @@ function JdInputPage() {
 
     setLoading(true);
     try {
-      const payload = buildPayload();
-      const data = await jdApi.createJd(payload);
-      const jdId = data?.jd_id ?? data?.id ?? null;
-      setJd(jdId, data);
-      if (jdId) {
-        window.localStorage.setItem('careerzip_temp_jd_id', jdId);
-      }
+      const data = await jdApi.createJd(buildPayload());
+      rememberJd(data);
       setSuccessData(data);
     } catch (err) {
-      const status = err?.response?.status;
-      if (!err?.response) {
-        setError('백엔드 서버에 연결할 수 없습니다. runserver가 켜져 있는지 확인해주세요.');
-      } else if (status === 401) {
-        setError('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-        navigate('/auth/login');
-      } else if (status === 400) {
-        const detail = err?.response?.data;
-        setError(`입력값 오류: ${JSON.stringify(detail)}`);
-      } else {
-        setError(`JD 저장에 실패했습니다. (HTTP ${status})`);
-      }
+      const message = formatApiError(err, 'JD 저장에 실패했습니다.');
+      setError(message);
+      if (err?.response?.status === 401) navigate('/auth/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMockJobs = async () => {
+    setMockLoading(true);
+    setError('');
+    try {
+      const data = await jobsApi.searchJobs({ q: mockSearch, size: 8 });
+      const results = Array.isArray(data?.results) ? data.results : [];
+      setMockJobs(results);
+      setSelectedMockJob((prev) => prev ?? results[0] ?? null);
+    } catch (err) {
+      const message = formatApiError(err, 'Mock 공고 목록을 불러오지 못했습니다.');
+      setError(message);
+      if (err?.response?.status === 401) navigate('/auth/login');
+    } finally {
+      setMockLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMode === 'mock' && mockJobs.length === 0) {
+      fetchMockJobs();
+    }
+  }, [activeMode]);
+
+  const handleMockSave = async () => {
+    setError('');
+    setSuccessData(null);
+    if (!selectedMockJob) {
+      setError('저장할 Mock 채용공고를 선택해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await jobsApi.saveJobAsJd(selectedMockJob);
+      rememberJd(data);
+      setSuccessData(data);
+    } catch (err) {
+      const message = formatApiError(err, 'Mock 공고 저장에 실패했습니다.');
+      setError(message);
+      if (err?.response?.status === 401) navigate('/auth/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessData(null);
+
+    if (!uploadForm.company_name.trim()) {
+      setError('회사명을 입력해주세요.');
+      return;
+    }
+    if (!uploadForm.position.trim()) {
+      setError('직무명을 입력해주세요.');
+      return;
+    }
+    const fileError = validateJdPdf(uploadForm.file);
+    if (fileError) {
+      setError(fileError);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await jdApi.uploadJdPdf(uploadForm.file, {
+        company_name: uploadForm.company_name.trim(),
+        position: uploadForm.position.trim(),
+      });
+      rememberJd(data);
+      setSuccessData(data);
+    } catch (err) {
+      const message = formatApiError(err, 'JD PDF 업로드에 실패했습니다.');
+      setError(message);
+      if (err?.response?.status === 401) navigate('/auth/login');
     } finally {
       setLoading(false);
     }
@@ -166,6 +281,8 @@ function JdInputPage() {
 
   const handleReset = () => {
     setForm(INITIAL_FORM);
+    setUploadForm(INITIAL_UPLOAD_FORM);
+    setSelectedMockJob(null);
     setError('');
     setSuccessData(null);
   };
@@ -194,7 +311,14 @@ function JdInputPage() {
               <button
                 type="button"
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white"
-                onClick={() => navigate('/interview/setup')}
+                onClick={() => navigate('/input/documents')}
+              >
+                지원 자료 선택
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                onClick={() => navigate('/session-setup')}
               >
                 면접 설정으로 이동
               </button>
@@ -208,218 +332,347 @@ function JdInputPage() {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            {/* 회사명 + 직무명 */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <FieldLabel htmlFor="company_name" required>회사명</FieldLabel>
-                <input
-                  id="company_name"
-                  name="company_name"
-                  type="text"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="회사명을 입력하세요"
-                  value={form.company_name}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <FieldLabel htmlFor="position" required>직무명</FieldLabel>
-                <input
-                  id="position"
-                  name="position"
-                  type="text"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="지원 직무를 입력하세요"
-                  value={form.position}
-                  onChange={handleChange}
-                />
-              </div>
+          <>
+            <div className="mt-6 grid grid-cols-3 gap-2 rounded-xl bg-slate-100 p-1">
+              {INPUT_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveMode(mode.id);
+                    setError('');
+                  }}
+                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                    activeMode === mode.id
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              ))}
             </div>
 
-            {/* 직무 카테고리 */}
-            <div>
-              <FieldLabel htmlFor="job_category" required>직무 카테고리</FieldLabel>
-              <select
-                id="job_category"
-                name="job_category"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                value={form.job_category}
-                onChange={handleChange}
-              >
-                <option value="">선택해주세요</option>
-                {JOB_CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+            {activeMode === 'manual' && (
+              <form onSubmit={handleManualSubmit} className="mt-6 space-y-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel htmlFor="company_name" required>회사명</FieldLabel>
+                    <input
+                      id="company_name"
+                      name="company_name"
+                      type="text"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="회사명을 입력하세요"
+                      value={form.company_name}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel htmlFor="position" required>직무명</FieldLabel>
+                    <input
+                      id="position"
+                      name="position"
+                      type="text"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="지원 직무를 입력하세요"
+                      value={form.position}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
 
-            {/* 경력 구분 */}
-            <div>
-              <FieldLabel htmlFor="experience_level" required>경력 구분</FieldLabel>
-              <select
-                id="experience_level"
-                name="experience_level"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                value={form.experience_level}
-                onChange={handleChange}
-              >
-                <option value="">선택해주세요</option>
-                {EXPERIENCE_LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <FieldLabel htmlFor="job_category" required>직무 카테고리</FieldLabel>
+                  <select
+                    id="job_category"
+                    name="job_category"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={form.job_category}
+                    onChange={handleChange}
+                  >
+                    <option value="">선택해주세요</option>
+                    {JOB_CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* 기술스택 */}
-            <div>
-              <FieldLabel>기술스택</FieldLabel>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {TECH_STACK_OPTIONS.map((stack) => {
-                  const checked = form.tech_stacks.includes(stack);
-                  return (
-                    <button
-                      key={stack}
-                      type="button"
-                      onClick={() => handleTechStackToggle(stack)}
-                      className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                        checked
-                          ? 'border-slate-900 bg-slate-900 text-white'
-                          : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
-                      }`}
-                    >
-                      {stack}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                <div>
+                  <FieldLabel htmlFor="experience_level" required>경력 구분</FieldLabel>
+                  <select
+                    id="experience_level"
+                    name="experience_level"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={form.experience_level}
+                    onChange={handleChange}
+                  >
+                    <option value="">선택해주세요</option>
+                    {EXPERIENCE_LEVEL_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* 기타 기술스택 직접입력 */}
-            <div>
-              <FieldLabel htmlFor="custom_tech_stacks">기타 기술스택 직접입력</FieldLabel>
-              <input
-                id="custom_tech_stacks"
-                name="custom_tech_stacks"
-                type="text"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder="DRF, Redis, FastAPI (쉼표로 구분)"
-                value={form.custom_tech_stacks}
-                onChange={handleChange}
-              />
-              {form.custom_tech_stacks && (
-                <p className="mt-1 text-xs text-slate-400">
-                  → {JSON.stringify(parseCommaSeparated(form.custom_tech_stacks))}
+                <div>
+                  <FieldLabel>기술스택</FieldLabel>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {TECH_STACK_OPTIONS.map((stack) => {
+                      const checked = form.tech_stacks.includes(stack);
+                      return (
+                        <button
+                          key={stack}
+                          type="button"
+                          onClick={() => handleTechStackToggle(stack)}
+                          className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                            checked
+                              ? 'border-slate-900 bg-slate-900 text-white'
+                              : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
+                          }`}
+                        >
+                          {stack}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="custom_tech_stacks">기타 기술스택 직접입력</FieldLabel>
+                  <input
+                    id="custom_tech_stacks"
+                    name="custom_tech_stacks"
+                    type="text"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="DRF, Redis, FastAPI (쉼표로 구분)"
+                    value={form.custom_tech_stacks}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="main_tasks">주요업무</FieldLabel>
+                  <textarea
+                    id="main_tasks"
+                    name="main_tasks"
+                    rows={3}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="주요업무를 입력하세요"
+                    value={form.main_tasks}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="requirements">자격요건</FieldLabel>
+                  <textarea
+                    id="requirements"
+                    name="requirements"
+                    rows={3}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="자격요건을 입력하세요"
+                    value={form.requirements}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="preferences">우대사항</FieldLabel>
+                  <textarea
+                    id="preferences"
+                    name="preferences"
+                    rows={2}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="우대사항을 입력하세요"
+                    value={form.preferences}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="jd_text">JD 원문 또는 추가 설명</FieldLabel>
+                  <textarea
+                    id="jd_text"
+                    name="jd_text"
+                    rows={4}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="JD 원문이나 추가 설명을 자유롭게 입력하세요"
+                    value={form.jd_text}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="custom_keywords">직접입력 키워드</FieldLabel>
+                  <input
+                    id="custom_keywords"
+                    name="custom_keywords"
+                    type="text"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="API, 인증, 배포 (쉼표로 구분)"
+                    value={form.custom_keywords}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {error && (
+                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                <p className="text-xs text-slate-400">
+                  <RequiredMark /> 표시 항목과 주요업무·자격요건·JD 원문 중 하나 이상은 필수입니다.
                 </p>
-              )}
-            </div>
 
-            {/* 주요업무 */}
-            <div>
-              <FieldLabel htmlFor="main_tasks">주요업무</FieldLabel>
-              <textarea
-                id="main_tasks"
-                name="main_tasks"
-                rows={3}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder="주요업무를 입력하세요"
-                value={form.main_tasks}
-                onChange={handleChange}
-              />
-            </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:bg-slate-400"
+                  >
+                    {loading ? '저장 중...' : 'JD 저장'}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    onClick={handleReset}
+                    disabled={loading}
+                  >
+                    초기화
+                  </button>
+                </div>
+              </form>
+            )}
 
-            {/* 자격요건 */}
-            <div>
-              <FieldLabel htmlFor="requirements">자격요건</FieldLabel>
-              <textarea
-                id="requirements"
-                name="requirements"
-                rows={3}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder="자격요건을 입력하세요"
-                value={form.requirements}
-                onChange={handleChange}
-              />
-            </div>
+            {activeMode === 'mock' && (
+              <div className="mt-6 space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="search"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="회사명, 직무, 기술스택 검색"
+                    value={mockSearch}
+                    onChange={(e) => setMockSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') fetchMockJobs();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
+                    onClick={fetchMockJobs}
+                    disabled={mockLoading}
+                  >
+                    {mockLoading ? '검색 중' : '검색'}
+                  </button>
+                </div>
 
-            {/* 우대사항 */}
-            <div>
-              <FieldLabel htmlFor="preferences">우대사항</FieldLabel>
-              <textarea
-                id="preferences"
-                name="preferences"
-                rows={2}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder="우대사항을 입력하세요"
-                value={form.preferences}
-                onChange={handleChange}
-              />
-            </div>
+                <div className="space-y-2">
+                  {mockJobs.length === 0 && !mockLoading && (
+                    <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">표시할 Mock 공고가 없습니다.</p>
+                  )}
+                  {mockJobs.map((job) => {
+                    const id = job.job_id ?? job.id ?? `${job.company_name}-${job.position}`;
+                    const selected = selectedMockJob === job;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setSelectedMockJob(job)}
+                        className={`w-full rounded-xl border p-4 text-left transition-colors ${
+                          selected
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-200 bg-white hover:border-slate-400'
+                        }`}
+                      >
+                        <p className="text-sm font-bold">
+                          {job.company_name || '회사명 없음'} · {job.position || '직무명 없음'}
+                        </p>
+                        <p className={`mt-1 line-clamp-2 text-xs ${selected ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {job.job_description || job.requirements || '공고 요약이 없습니다.'}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
 
-            {/* JD 원문 또는 추가 설명 */}
-            <div>
-              <FieldLabel htmlFor="jd_text">JD 원문 또는 추가 설명</FieldLabel>
-              <textarea
-                id="jd_text"
-                name="jd_text"
-                rows={4}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder="JD 원문이나 추가 설명을 자유롭게 입력하세요"
-                value={form.jd_text}
-                onChange={handleChange}
-              />
-            </div>
+                {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-            {/* 직접입력 키워드 */}
-            <div>
-              <FieldLabel htmlFor="custom_keywords">직접입력 키워드</FieldLabel>
-              <input
-                id="custom_keywords"
-                name="custom_keywords"
-                type="text"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                placeholder="API, 인증, 배포 (쉼표로 구분)"
-                value={form.custom_keywords}
-                onChange={handleChange}
-              />
-              {form.custom_keywords && (
-                <p className="mt-1 text-xs text-slate-400">
-                  → {JSON.stringify(parseCommaSeparated(form.custom_keywords))}
-                </p>
-              )}
-            </div>
-
-            {/* 에러 */}
-            {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                {error}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={loading || !selectedMockJob}
+                    className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:bg-slate-400"
+                    onClick={handleMockSave}
+                  >
+                    {loading ? '저장 중...' : '선택 공고 JD 저장'}
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* 필수 안내 */}
-            <p className="text-xs text-slate-400">
-              <RequiredMark /> 표시 항목과 주요업무·자격요건·JD 원문 중 하나 이상은 필수입니다.
-            </p>
+            {activeMode === 'upload' && (
+              <form onSubmit={handleUploadSubmit} className="mt-6 space-y-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel htmlFor="upload_company_name" required>회사명</FieldLabel>
+                    <input
+                      id="upload_company_name"
+                      type="text"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="회사명을 입력하세요"
+                      value={uploadForm.company_name}
+                      onChange={(e) => setUploadForm((prev) => ({ ...prev, company_name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel htmlFor="upload_position" required>직무명</FieldLabel>
+                    <input
+                      id="upload_position"
+                      type="text"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="지원 직무를 입력하세요"
+                      value={uploadForm.position}
+                      onChange={(e) => setUploadForm((prev) => ({ ...prev, position: e.target.value }))}
+                    />
+                  </div>
+                </div>
 
-            {/* 버튼 */}
-            <div className="flex gap-2 pt-1">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:bg-slate-400"
-              >
-                {loading ? '저장 중...' : 'JD 저장'}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                onClick={handleReset}
-                disabled={loading}
-              >
-                초기화
-              </button>
-            </div>
-          </form>
+                <div>
+                  <FieldLabel htmlFor="jd_pdf_file" required>JD PDF 파일</FieldLabel>
+                  <input
+                    id="jd_pdf_file"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    onChange={(e) => setUploadForm((prev) => ({ ...prev, file: e.target.files?.[0] ?? null }))}
+                  />
+                  <p className="mt-1 text-xs text-slate-400">PDF, 최대 10MB</p>
+                </div>
+
+                {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:bg-slate-400"
+                  >
+                    {loading ? '업로드 중...' : 'PDF 업로드'}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    onClick={handleReset}
+                    disabled={loading}
+                  >
+                    초기화
+                  </button>
+                </div>
+              </form>
+            )}
+          </>
         )}
       </section>
     </main>

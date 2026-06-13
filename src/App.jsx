@@ -4,6 +4,7 @@ import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import InterviewSetupCheckPage from './pages/interview/InterviewSetupCheckPage.jsx'
 import InterviewQuestionCheckPage from './pages/interview/InterviewQuestionCheckPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
+import DocumentsInputPage from './pages/input/DocumentsInputPage.jsx'
 import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
@@ -84,6 +85,7 @@ function App() {
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
       <Route path="/JD" element={<JdInputPage />} />
+      <Route path="/input/documents" element={<DocumentsInputPage />} />
 
       {/* 면접 설정 → 세션/질문 생성 진입 (QA P0: JD 저장 후 면접 설정 화면) */}
       <Route path="/session-setup" element={<SessionSetupPage />} />

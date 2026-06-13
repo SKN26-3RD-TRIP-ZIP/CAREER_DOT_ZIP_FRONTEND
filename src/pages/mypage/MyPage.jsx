@@ -37,6 +37,8 @@ function MyPage() {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState('');
+  const [summary, setSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -51,6 +53,20 @@ function MyPage() {
       })
       .catch(() => {
         /* 401 등은 axios 인터셉터가 처리 */
+      });
+    mypageApi
+      .getSummary()
+      .then((data) => {
+        if (active) setSummary(data);
+      })
+      .catch((err) => {
+        if (!active) return;
+        const s = err.response?.status;
+        if (s === 401) {
+          navigate('/auth/login');
+          return;
+        }
+        setSummaryError('요약 정보를 불러오지 못했습니다.');
       });
     mypageApi
       .getInterviewHistory()
@@ -90,6 +106,11 @@ function MyPage() {
 
   const company = jdData?.company_name ?? '회사명 미입력';
   const position = jdData?.position ?? '백엔드 개발자';
+  const latestJd = summary?.latest_jd || null;
+  const latestResume = summary?.latest_resume || null;
+  const latestJdCreatedAt = latestJd?.created_at || summary?.latest_jd_created_at;
+  const latestJdStatus = latestJd?.analysis_status || summary?.latest_jd_analysis_status;
+  const latestResumeUpdatedAt = latestResume?.updated_at || summary?.latest_resume_updated_at;
 
   return (
     <main className="min-h-screen bg-[#EEEEEE] px-4 py-8">
@@ -135,24 +156,44 @@ function MyPage() {
             </button>
           </SectionCard>
 
+          {/* 자료 요약 */}
+          <SectionCard title="내 자료 요약">
+            {summaryError ? (
+              <p className="text-sm text-red-600">{summaryError}</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-xs text-slate-400">등록된 JD</p>
+                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.jd_count ?? 0}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-xs text-slate-400">등록된 이력서</p>
+                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.resume_count ?? 0}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-xs text-slate-400">등록된 자기소개서</p>
+                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.cover_letter_count ?? 0}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-xs text-slate-400">등록된 프로젝트</p>
+                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.project_count ?? 0}</p>
+                </div>
+              </div>
+            )}
+          </SectionCard>
+
           {/* 등록한 JD */}
           <SectionCard title="등록한 JD">
-            {jdData ? (
+            {latestJd || jdData ? (
               <div>
                 <p className="text-sm font-semibold text-slate-800">
-                  {company} · {position}
+                  {latestJd ? `${latestJd.company_name} · ${latestJd.position}` : `${company} · ${position}`}
                 </p>
-                {jdData.experience_level && (
-                  <p className="mt-0.5 text-xs text-slate-400">{jdData.experience_level}</p>
+                {latestJdCreatedAt && (
+                  <p className="mt-0.5 text-xs text-slate-400">최근 등록: {fmtDateTime(latestJdCreatedAt)}</p>
                 )}
-                {jdData.tech_stacks?.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {jdData.tech_stacks.map((s) => (
-                      <span key={s} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
+                {latestJdStatus && (
+                  <p className="mt-0.5 text-xs text-slate-400">분석 상태: {latestJdStatus}</p>
                 )}
               </div>
             ) : (
@@ -169,19 +210,19 @@ function MyPage() {
 
           {/* 등록한 지원 자료 */}
           <SectionCard title="등록한 지원 자료">
-            {docs ? (
+            {summary || docs ? (
               <div className="space-y-2 text-sm text-slate-600">
                 <p>
                   <span className="font-semibold text-slate-800">이력서:</span>{' '}
-                  {docs.resume ? `${docs.resume.substring(0, 40)}...` : '미입력'}
+                  {latestResume ? `${latestResume.name} · ${fmtDateTime(latestResumeUpdatedAt)}` : (docs?.resume ? `${docs.resume.substring(0, 40)}...` : '미입력')}
                 </p>
                 <p>
                   <span className="font-semibold text-slate-800">자소서:</span>{' '}
-                  {docs.coverLetters?.some((c) => c.answer) ? '작성 완료' : '미입력'}
+                  {summary ? `${summary.cover_letter_count ?? 0}개 등록` : (docs?.coverLetters?.some((c) => c.answer) ? '작성 완료' : '미입력')}
                 </p>
                 <p>
                   <span className="font-semibold text-slate-800">프로젝트:</span>{' '}
-                  {docs.projectExp ? `${docs.projectExp.substring(0, 40)}...` : '미입력'}
+                  {summary ? `${summary.project_count ?? 0}개 등록` : (docs?.projectExp ? `${docs.projectExp.substring(0, 40)}...` : '미입력')}
                 </p>
               </div>
             ) : (
