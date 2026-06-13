@@ -32,6 +32,7 @@ export function getOverallScore(report, fallback = 0) {
     report?.summary?.score_summary?.overall_score ??
     report?.score_summary?.overall_score ??
     report?.raw_data?.summary?.score_summary?.overall_score ??
+    report?.overall_score ??
     fallback
   );
 }

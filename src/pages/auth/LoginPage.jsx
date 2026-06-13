@@ -30,7 +30,7 @@ function LoginPage() {
       // 화면 표시 사용자는 반드시 현재 사용자 API(/auth/me) 응답 기준
       const me = await getMe();
       setUser(me.data);
-      navigate('/jd');
+      navigate('/profile');
     } catch (err) {
       const status = err.response?.status;
       if (!err.response) {
