@@ -21,7 +21,7 @@ import {
 export function normalizeFinalReport(raw) {
   const summary = raw?.summary ?? {};
   const meta = summary.evaluation_metadata ?? {};
-  const scoreSummary = summary.score_summary ?? {};
+  const scoreSummary = summary.score_summary ?? raw?.score_summary ?? raw?.raw_data?.summary?.score_summary ?? {};
   const metrics = scoreSummary.metrics ?? {};
   const detail = summary.score_detail ?? {};
   const triggered = summary.dynamically_triggered_tags ?? {};
@@ -56,7 +56,7 @@ export function normalizeFinalReport(raw) {
     created_at: raw?.generated_at ?? meta.calculated_at ?? '',
 
     score_summary: {
-      overall_score: num(scoreSummary.overall_score),
+      overall_score: num(scoreSummary.overall_score ?? raw?.overall_score),
       grade_label: '',
       comment: meta.summary_text || 'AI 면접 종합 평가 결과입니다.',
       // 백엔드 원본 metrics 패스스루(페이지 내 buildRadar 등 직접 소비용 — 비파괴)

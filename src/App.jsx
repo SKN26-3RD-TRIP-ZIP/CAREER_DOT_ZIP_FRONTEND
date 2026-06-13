@@ -1,11 +1,11 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
-import InterviewSetupCheckPage from './pages/interview/InterviewSetupCheckPage.jsx'
 import InterviewQuestionCheckPage from './pages/interview/InterviewQuestionCheckPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
 import DocumentsInputPage from './pages/input/DocumentsInputPage.jsx'
 import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
+import ProfilePage from './pages/profile/ProfilePage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx'
@@ -92,13 +92,14 @@ function App() {
 
       {/* develop 기존 면접 페이지 라우트 보존 */}
       <Route path="/interview" element={<VoiceInterviewPage />} />
-      <Route path="/interview/setup" element={<InterviewSetupCheckPage />} />
+      <Route path="/interview/setup" element={<SessionSetupPage />} />
       <Route path="/interview/question" element={<InterviewQuestionCheckPage />} />
       <Route path="/interview/setup-check" element={<Navigate to="/interview/setup" replace />} />
       <Route path="/interview/question-check" element={<Navigate to="/interview/question" replace />} />
 
       {/* 마이페이지 실제 면접 기록/리포트 조회 (prototype /mypage/* 와 분리) */}
       <Route path="/mypage" element={<MyPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
 
       {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
       <Route path="/auth/login" element={<AuthLoginPage />} />

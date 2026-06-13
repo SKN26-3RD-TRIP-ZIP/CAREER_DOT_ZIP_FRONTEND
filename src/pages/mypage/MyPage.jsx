@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useJdStore } from '../../store/jdStore';
 import { useAuthStore } from '../../store/authStore';
 import { mypageApi } from '../../api/mypageApi';
-import { getMe } from '../../api/authApi';
+import { getMe, logout as logoutApi } from '../../api/authApi';
+import { getOverallScore } from '../../utils/reportSummary';
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 
@@ -32,6 +33,7 @@ function MyPage() {
   const { jdData } = useJdStore();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const clearAuth = useAuthStore((s) => s.logout);
 
   // 실제 면접 기록 (GET /api/v1/mypage/interviews, request.user 기준)
   const [history, setHistory] = useState([]);
@@ -39,6 +41,7 @@ function MyPage() {
   const [historyError, setHistoryError] = useState('');
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState('');
+  const [reports, setReports] = useState([]);
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -88,10 +91,29 @@ function MyPage() {
       .finally(() => {
         if (active) setHistoryLoading(false);
       });
+    mypageApi
+      .getReportList()
+      .then((data) => {
+        if (active) setReports(Array.isArray(data?.results) ? data.results : []);
+      })
+      .catch(() => {
+        if (active) setReports([]);
+      });
     return () => {
       active = false;
     };
   }, [navigate, setUser]);
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi();
+    } catch {
+      // Client state must be cleared even if the refresh cookie is already gone.
+    } finally {
+      clearAuth();
+      navigate('/auth/login');
+    }
+  };
 
   const rawProfile = localStorage.getItem('userProfile');
   const profile = rawProfile ? JSON.parse(rawProfile) : null;
@@ -111,6 +133,10 @@ function MyPage() {
   const latestJdCreatedAt = latestJd?.created_at || summary?.latest_jd_created_at;
   const latestJdStatus = latestJd?.analysis_status || summary?.latest_jd_analysis_status;
   const latestResumeUpdatedAt = latestResume?.updated_at || summary?.latest_resume_updated_at;
+  const latestReport = summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null;
+  const latestReportScore = latestReport ? getOverallScore(latestReport, latestReport.overall_score ?? null) : null;
+  const latestReportSessionId = latestReport?.session_id;
+  const interviewCount = summary?.interview_count ?? history.length;
 
   return (
     <main className="min-h-screen bg-[#EEEEEE] px-4 py-8">
@@ -127,7 +153,7 @@ function MyPage() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/auth/login')}
+            onClick={handleLogout}
             className="text-xs text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5"
           >
             로그아웃
@@ -177,6 +203,10 @@ function MyPage() {
                 <div className="rounded-xl bg-slate-50 p-3">
                   <p className="text-xs text-slate-400">등록된 프로젝트</p>
                   <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.project_count ?? 0}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-xs text-slate-400">총 면접</p>
+                  <p className="mt-1 text-xl font-bold text-[#253900]">{interviewCount}</p>
                 </div>
               </div>
             )}
@@ -238,6 +268,30 @@ function MyPage() {
           </SectionCard>
 
           {/* 면접 기록 (실제 API) */}
+          <SectionCard title="최근 리포트">
+            {latestReport && latestReportSessionId ? (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {latestReportScore != null ? `${latestReportScore}점` : '점수 산정 전'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    {fmtDateTime(latestReport.generated_at || latestReport.created_at)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/report/${latestReportSessionId}`)}
+                  className="rounded-lg bg-[#253900] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-80"
+                >
+                  상세 보기
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">아직 생성된 리포트가 없습니다.</p>
+            )}
+          </SectionCard>
+
           <SectionCard title="면접 기록">
             {historyLoading ? (
               <p className="text-sm text-slate-400">불러오는 중...</p>
