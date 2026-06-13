@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useJdStore } from '../../store/jdStore';
 import { useAuthStore } from '../../store/authStore';
 import { mypageApi } from '../../api/mypageApi';
+import { getMe } from '../../api/authApi';
+
+const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 
 const JOB_LABEL = {
   backend: '백엔드 개발자',
@@ -28,6 +31,7 @@ function MyPage() {
   const navigate = useNavigate();
   const { jdData } = useJdStore();
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
 
   // 실제 면접 기록 (GET /api/v1/mypage/interviews, request.user 기준)
   const [history, setHistory] = useState([]);
@@ -40,6 +44,14 @@ function MyPage() {
       return;
     }
     let active = true;
+    // 현재 사용자 정보 갱신(최근 로그인 last_login 포함). 새로고침 시 store 가 비어있어도 표시되도록.
+    getMe()
+      .then((res) => {
+        if (active) setUser(res.data);
+      })
+      .catch(() => {
+        /* 401 등은 axios 인터셉터가 처리 */
+      });
     mypageApi
       .getInterviewHistory()
       .then((data) => {
@@ -63,7 +75,7 @@ function MyPage() {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [navigate, setUser]);
 
   const rawProfile = localStorage.getItem('userProfile');
   const profile = rawProfile ? JSON.parse(rawProfile) : null;
@@ -88,6 +100,9 @@ function MyPage() {
             <p className="mt-1 text-sm text-slate-500">
               {user ? `${user.name || user.email}님의 면접 정보와 기록` : '내 면접 정보와 기록을 확인하세요.'}
             </p>
+            {user?.last_login && (
+              <p className="mt-0.5 text-xs text-slate-400">최근 로그인: {fmtDateTime(user.last_login)}</p>
+            )}
           </div>
           <button
             type="button"

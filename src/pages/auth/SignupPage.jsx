@@ -39,10 +39,15 @@ function SignupPage() {
         <div className="w-full max-w-sm bg-white rounded-2xl shadow p-8 text-center">
           <h2 className="text-xl font-bold text-[#253900] mb-3">가입이 완료되었습니다 🎉</h2>
           <p className="text-sm text-slate-600">
-            <strong>{email}</strong> 으로 인증 메일을 보냈습니다.<br />
-            메일의 인증 링크를 눌러 인증을 완료한 뒤 로그인해주세요.
+            <strong>{email}</strong> 으로 <strong>6자리 인증번호</strong>를 보냈습니다.<br />
+            인증 화면에서 번호를 입력해 인증을 완료한 뒤 로그인해주세요.
           </p>
-          <Link to="/auth/login" className="inline-block mt-6 text-[#08CB00] font-semibold">로그인하러 가기</Link>
+          <Link
+            to={`/verify-email?email=${encodeURIComponent(email)}`}
+            className="inline-block mt-6 rounded-lg bg-[#08CB00] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            인증번호 입력하러 가기
+          </Link>
         </div>
       </main>
     );
