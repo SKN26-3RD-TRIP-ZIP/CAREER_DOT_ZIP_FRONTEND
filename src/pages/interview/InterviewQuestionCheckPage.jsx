@@ -235,14 +235,14 @@ function InterviewQuestionCheckPage() {
     if (!hasQuestion || isCompleted) return undefined;
     resetAnswerState();
     if (isTtsSupported) {
-      speak(currentQuestionText);
+      speak(currentQuestionText, { sessionId });
     }
 
     return () => {
       stop();
       cleanupRecording();
     };
-  }, [cleanupRecording, currentQuestionId, currentQuestionText, hasQuestion, isCompleted, isTtsSupported, resetAnswerState, speak, stop]);
+  }, [cleanupRecording, currentQuestionId, currentQuestionText, hasQuestion, isCompleted, isTtsSupported, resetAnswerState, sessionId, speak, stop]);
 
   const processAndSave = useCallback(
     async ({ blob = audioBlob, duration = recordedDuration, reuseStt = false } = {}) => {
@@ -468,17 +468,7 @@ function InterviewQuestionCheckPage() {
                   <Check size={18} />
                   면접 종료하고 리포트로 이동
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  className="question-check-secondary"
-                  disabled={!hasQuestion || isProcessing || !currentQuestionText}
-                  onClick={() => speak(currentQuestionText)}
-                >
-                  <RotateCcw size={18} />
-                  다시 듣기
-                </button>
-              )}
+              ) : null}
               {!isCompleted && failedStep ? (
                 <button type="button" className="question-check-primary" disabled={isProcessing} onClick={handleRetry}>
                   <RotateCcw size={18} />
@@ -517,7 +507,7 @@ function InterviewQuestionCheckPage() {
               ? `${formatElapsedTime(Math.round(recordedDuration))} · 녹음 파일 생성됨`
               : hasQuestion
                 ? `${currentQuestion?.difficulty || 'medium'} · Whisper STT 저장 흐름`
-                : '세션과 질문이 없으면 /interview/setup-check 화면으로 돌아가 주세요.'}
+                : '세션과 질문이 없으면 /interview/setup 화면으로 돌아가 주세요.'}
           <Check size={15} />
           {isCompleted ? '면접 종료 버튼이 활성화되었습니다.' : '저장 완료 전에는 다음 질문으로 이동할 수 없습니다.'}
         </section>

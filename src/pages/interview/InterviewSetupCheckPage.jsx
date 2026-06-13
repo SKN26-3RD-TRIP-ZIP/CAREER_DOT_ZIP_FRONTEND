@@ -62,9 +62,9 @@ const PERSONAS = [
 ];
 
 const QUESTION_COUNTS = [
-  { id: '5', label: '5문항' },
-  { id: '8', label: '8문항' },
-  { id: '12', label: '12문항' }
+  { id: '5', label: '5문항', estimatedTime: '예상 20분' },
+  { id: '8', label: '8문항', estimatedTime: '예상 30~35분' },
+  { id: '12', label: '12문항', estimatedTime: '예상 45~50분' }
 ];
 
 const MATERIALS = [
@@ -243,7 +243,7 @@ function InterviewSetupCheckPage({ embedded = false }) {
       const totalQuestionCount = Number(selectedQuestionCount);
       const sessionPayload = {
         jd_id: effectiveJdId,
-        persona_type: selectedPersona,
+        persona: selectedPersona,
         interview_type: selectedInterviewType === 'mixed' ? 'comprehensive' : selectedInterviewType,
         interview_mode: 'voice',
         total_question_count: totalQuestionCount
@@ -276,7 +276,7 @@ function InterviewSetupCheckPage({ embedded = false }) {
       setSessionId(createdSessionId);
       setQuestions(orderedQuestions);
       setCurrentQuestionIndex(0);
-      navigate('/interview/question-check');
+      navigate('/interview/question');
     } catch (error) {
       setStartError(getStartErrorMessage(error));
     } finally {
@@ -296,7 +296,7 @@ function InterviewSetupCheckPage({ embedded = false }) {
             <a href="/dashboard">Dashboard</a>
             <a href="/data">Data Input</a>
             <a href="/analysis">Analysis</a>
-            <a className="is-active" href="/interview/setup-check">Interview</a>
+            <a className="is-active" href="/interview/setup">Interview</a>
             <a href="/report">Report</a>
             <a href="/mypage">MyPage</a>
             <a href="/admin">Admin</a>
@@ -370,7 +370,7 @@ function InterviewSetupCheckPage({ embedded = false }) {
             ))}
           </div>
           <p className="setup-time">
-            <Clock size={15} /> 예상 20~25분
+            <Clock size={15} /> {selectedQuestionCountItem?.estimatedTime ?? '예상 시간 확인 필요'}
           </p>
         </article>
 

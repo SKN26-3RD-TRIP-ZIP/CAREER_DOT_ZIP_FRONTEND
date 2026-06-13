@@ -1,18 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { interviewApi } from '../api/interviewApi';
 
 export function useTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const [lastMethod, setLastMethod] = useState(null);
+  const [lastVoice, setLastVoice] = useState(null);
+  const audioRef = useRef(null);
+  const audioUrlRef = useRef(null);
+  const browserTtsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const audioSupported = typeof Audio !== 'undefined';
+  const isSupported = browserTtsSupported || audioSupported;
 
-  const stop = useCallback(() => {
-    if (!isSupported) return;
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  }, [isSupported]);
+  const cleanupOpenAiAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  }, []);
 
-  const speak = useCallback(
+  const speakWithBrowser = useCallback(
     (text) => {
-      if (!isSupported || !text) return;
+      if (!browserTtsSupported || !text) return false;
 
       window.speechSynthesis.cancel();
 
@@ -21,27 +34,87 @@ export function useTTS() {
       utterance.rate = 1;
       utterance.pitch = 1;
 
-      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onstart = () => {
+        setLastMethod('browser');
+        setLastVoice(null);
+        setIsSpeaking(true);
+      };
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
 
       window.speechSynthesis.speak(utterance);
+      return true;
     },
-    [isSupported]
+    [browserTtsSupported]
+  );
+
+  const stop = useCallback(() => {
+    cleanupOpenAiAudio();
+    if (browserTtsSupported) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  }, [browserTtsSupported, cleanupOpenAiAudio]);
+
+  const speak = useCallback(
+    async (text, options = {}) => {
+      if (!isSupported || !text) return;
+
+      stop();
+
+      if (options.sessionId && audioSupported) {
+        try {
+          setIsSpeaking(true);
+          const result = await interviewApi.synthesizeSpeech({
+            session_id: options.sessionId,
+            text
+          });
+          const audioUrl = URL.createObjectURL(result.audioBlob);
+          const audio = new Audio(audioUrl);
+
+          audioRef.current = audio;
+          audioUrlRef.current = audioUrl;
+          setLastMethod('openai');
+          setLastVoice(result.voice || null);
+
+          audio.onended = () => {
+            cleanupOpenAiAudio();
+            setIsSpeaking(false);
+          };
+          audio.onerror = () => {
+            cleanupOpenAiAudio();
+            setIsSpeaking(false);
+            speakWithBrowser(text);
+          };
+
+          await audio.play();
+          return;
+        } catch (error) {
+          cleanupOpenAiAudio();
+          setIsSpeaking(false);
+        }
+      }
+
+      speakWithBrowser(text);
+    },
+    [audioSupported, cleanupOpenAiAudio, isSupported, speakWithBrowser, stop]
   );
 
   useEffect(() => {
     return () => {
-      if (isSupported) {
+      cleanupOpenAiAudio();
+      if (browserTtsSupported) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [isSupported]);
+  }, [browserTtsSupported, cleanupOpenAiAudio]);
 
   return {
     speak,
     stop,
     isSpeaking,
-    isSupported
+    isSupported,
+    lastMethod,
+    lastVoice
   };
 }

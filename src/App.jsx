@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route } from 'react-router-dom'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import InterviewSetupCheckPage from './pages/interview/InterviewSetupCheckPage.jsx'
@@ -37,10 +37,8 @@ const prototypeRoutes = [
   '/analysis/source',
   '/analysis/result',
   '/analysis/questions',
-  '/interview/setup',
   '/interview/mic-check',
   '/interview/start',
-  '/interview/question',
   '/interview/answering',
   '/interview/last',
   '/interview/generating',
@@ -92,8 +90,10 @@ function App() {
 
       {/* develop 기존 면접 페이지 라우트 보존 */}
       <Route path="/interview" element={<VoiceInterviewPage />} />
-      <Route path="/interview/setup-check" element={<InterviewSetupCheckPage />} />
-      <Route path="/interview/question-check" element={<InterviewQuestionCheckPage />} />
+      <Route path="/interview/setup" element={<InterviewSetupCheckPage />} />
+      <Route path="/interview/question" element={<InterviewQuestionCheckPage />} />
+      <Route path="/interview/setup-check" element={<Navigate to="/interview/setup" replace />} />
+      <Route path="/interview/question-check" element={<Navigate to="/interview/question" replace />} />
 
       {/* 마이페이지 실제 면접 기록/리포트 조회 (prototype /mypage/* 와 분리) */}
       <Route path="/mypage" element={<MyPage />} />
