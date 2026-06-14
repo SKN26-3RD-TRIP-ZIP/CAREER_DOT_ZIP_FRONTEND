@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { signup as signupApi } from '../../api/authApi';
+import { Alert, AuthShell, Button, Field, inputClass } from '../../components/ui/DemoLayout';
+
+function getSignupError(err) {
+  const status = err.response?.status;
+  if (!err.response) return '서버에 연결할 수 없습니다. 백엔드 실행 상태와 네트워크를 확인해주세요.';
+  if (status === 409) return '이미 가입된 이메일입니다.';
+  if (status === 400) return '입력값을 확인해주세요. 비밀번호는 8자 이상이어야 합니다.';
+  return '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+}
 
 function SignupPage() {
   const [email, setEmail] = useState('');
@@ -16,18 +25,9 @@ function SignupPage() {
     setLoading(true);
     try {
       await signupApi({ email, name, password });
-      setDone(true); // mock 성공 금지: 실제 201 일 때만 성공 처리
+      setDone(true);
     } catch (err) {
-      const status = err.response?.status;
-      if (!err.response) {
-        setError('서버에 연결할 수 없습니다. 백엔드 실행/네트워크를 확인해주세요.');
-      } else if (status === 409) {
-        setError('이미 가입된 이메일입니다.');
-      } else if (status === 400) {
-        setError('입력값을 확인해주세요. (비밀번호는 8자 이상)');
-      } else {
-        setError('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      }
+      setError(getSignupError(err));
     } finally {
       setLoading(false);
     }
@@ -35,62 +35,73 @@ function SignupPage() {
 
   if (done) {
     return (
-      <main className="min-h-screen bg-[#EEEEEE] flex items-center justify-center px-4">
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow p-8 text-center">
-          <h2 className="text-xl font-bold text-[#253900] mb-3">가입이 완료되었습니다 🎉</h2>
-          <p className="text-sm text-slate-600">
-            <strong>{email}</strong> 으로 <strong>6자리 인증번호</strong>를 보냈습니다.<br />
-            인증 화면에서 번호를 입력해 인증을 완료한 뒤 로그인해주세요.
-          </p>
-          <Link
-            to={`/verify-email?email=${encodeURIComponent(email)}`}
-            className="inline-block mt-6 rounded-lg bg-[#08CB00] px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            인증번호 입력하러 가기
+      <AuthShell
+        title="회원가입 완료"
+        description={`${email} 주소로 6자리 인증번호를 보냈습니다. 인증을 완료한 뒤 로그인해주세요.`}
+        footer={
+          <Link to="/auth/login" className="font-semibold text-emerald-700">
+            이미 인증했다면 로그인하기
           </Link>
-        </div>
-      </main>
+        }
+      >
+        <Button as={Link} to={`/verify-email?email=${encodeURIComponent(email)}`} className="w-full">
+          인증번호 입력하러 가기
+        </Button>
+      </AuthShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#EEEEEE] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#253900]">Career.zip</h1>
-          <p className="mt-2 text-sm text-slate-500">AI 모의면접 서비스</p>
-        </div>
-        <div className="bg-white rounded-2xl shadow p-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-6">회원가입</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">이름</label>
-              <input type="text" className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#08CB00]"
-                placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">이메일</label>
-              <input type="email" className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#08CB00]"
-                placeholder="example@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">비밀번호</label>
-              <input type="password" minLength={8} className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#08CB00]"
-                placeholder="8자 이상" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={loading}
-              className="w-full rounded-lg bg-[#08CB00] py-2.5 text-sm font-semibold text-white hover:bg-[#06a800] disabled:opacity-50 transition-colors">
-              {loading ? '가입 중...' : '회원가입'}
-            </button>
-          </form>
-          <p className="mt-4 text-center text-xs text-slate-400">
-            이미 계정이 있으신가요?{' '}
-            <Link to="/auth/login" className="text-[#08CB00] font-semibold">로그인</Link>
-          </p>
-        </div>
-      </div>
-    </main>
+    <AuthShell
+      title="회원가입"
+      description="이름, 이메일, 비밀번호를 입력하면 이메일 인증 단계로 이어집니다."
+      footer={
+        <>
+          이미 계정이 있나요?{' '}
+          <Link to="/auth/login" className="font-semibold text-emerald-700">
+            로그인
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="이름" required>
+          <input
+            type="text"
+            className={inputClass}
+            placeholder="홍길동"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </Field>
+        <Field label="이메일" required>
+          <input
+            type="email"
+            className={inputClass}
+            placeholder="example@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </Field>
+        <Field label="비밀번호" hint="8자 이상 입력해주세요." required>
+          <input
+            type="password"
+            minLength={8}
+            className={inputClass}
+            placeholder="8자 이상"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </Field>
+        {error && <Alert tone="danger">{error}</Alert>}
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? '가입 중...' : '회원가입'}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }
 

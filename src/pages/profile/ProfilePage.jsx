@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileApi } from '../../api/profileApi';
+import {
+  Alert,
+  Button,
+  Card,
+  Field,
+  LoadingState,
+  PageShell,
+  inputClass,
+} from '../../components/ui/DemoLayout';
+
+const STEPS = ['프로필', 'JD 등록', '이력서', '면접 설정'];
 
 const JOB_OPTIONS = [
   { value: 'backend', label: '백엔드 개발자' },
@@ -16,25 +27,25 @@ const JOB_OPTIONS = [
 function formatApiError(err, fallback) {
   const status = err?.response?.status;
   const data = err?.response?.data;
-  if (!err?.response) return '백엔드 서버에 연결할 수 없습니다.';
-  if (status === 401) return '로그인이 필요합니다.';
+  if (!err?.response) return '서버에 연결할 수 없습니다. 백엔드 실행 상태를 확인해주세요.';
+  if (status === 401) return '로그인이 필요합니다. 다시 로그인해주세요.';
   if (data?.detail) return data.detail;
   if (data?.error) return typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
   return `${fallback} (HTTP ${status})`;
 }
 
-function RadioGroup({ label, name, options, value, onChange }) {
+function ChoiceGroup({ label, name, options, value, onChange }) {
   return (
     <div>
       <p className="mb-2 text-sm font-semibold text-slate-800">{label}</p>
-      <div className="flex gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {options.map((opt) => (
           <label
             key={opt.value}
-            className={`flex-1 cursor-pointer rounded-xl border px-4 py-3 text-center text-sm font-medium transition-colors ${
+            className={`cursor-pointer rounded-lg border px-4 py-3 text-center text-sm font-semibold transition ${
               value === opt.value
-                ? 'border-[#08CB00] bg-[#08CB00] text-white'
-                : 'border-slate-200 bg-white text-slate-700 hover:border-[#08CB00]'
+                ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
             }`}
           >
             <input
@@ -63,6 +74,7 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -110,12 +122,13 @@ function ProfilePage() {
         majorType,
         jobRole,
         yearsExp: String(careerYear),
-      })
+      }),
     );
   };
 
   const handleNext = async () => {
     setError('');
+    setSuccess('');
     const careerYear = Number.parseInt(yearsExp || '0', 10);
     if (Number.isNaN(careerYear) || careerYear < 0 || careerYear > 30) {
       setError('경력 연차는 0부터 30 사이로 입력해주세요.');
@@ -142,10 +155,10 @@ function ProfilePage() {
         }
       }
       persistLocalProfile(careerYear);
+      setSuccess('프로필이 저장되었습니다.');
       navigate('/jd');
     } catch (err) {
-      const message = formatApiError(err, '프로필 저장에 실패했습니다.');
-      setError(message);
+      setError(formatApiError(err, '프로필 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
     } finally {
       setSaving(false);
@@ -153,94 +166,75 @@ function ProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#EEEEEE] px-4 py-8">
-      <div className="mx-auto max-w-xl">
-        <div className="mb-6">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#08CB00]">Step 1 / 4</p>
-          <h1 className="text-2xl font-bold text-[#253900]">프로필 입력</h1>
-          <p className="mt-1 text-sm text-slate-500">맞춤 면접을 위해 기본 정보를 입력해주세요.</p>
-        </div>
-
-        <div className="space-y-6 rounded-2xl bg-white p-6 shadow">
-          {loading ? (
-            <p className="text-sm text-slate-500">프로필을 불러오는 중입니다.</p>
-          ) : (
-            <>
-              <RadioGroup
-                label="경력 구분"
-                name="careerType"
-                options={[
-                  { value: 'new', label: '신입' },
-                  { value: 'career', label: '경력' },
-                ]}
-                value={careerType}
-                onChange={setCareerType}
-              />
-
-              <RadioGroup
-                label="전공 여부"
-                name="majorType"
-                options={[
-                  { value: 'major', label: '전공자' },
-                  { value: 'non_major', label: '비전공자' },
-                ]}
-                value={majorType}
-                onChange={setMajorType}
-              />
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-800" htmlFor="desired_job">
-                  희망 직무
-                </label>
-                <select
-                  id="desired_job"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-[#08CB00] focus:outline-none"
-                  value={jobRole}
-                  onChange={(e) => setJobRole(e.target.value)}
-                >
-                  {JOB_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+    <PageShell
+      eyebrow="Step 1"
+      title="프로필 입력"
+      description="경력, 전공 여부, 희망 직무를 저장하면 JD와 이력서 기반 면접 준비가 더 정확해집니다."
+      steps={STEPS}
+      currentStep={1}
+    >
+      <Card className="mx-auto max-w-2xl p-6">
+        {loading ? (
+          <LoadingState title="프로필을 불러오는 중입니다" />
+        ) : (
+          <div className="space-y-6">
+            <ChoiceGroup
+              label="경력 구분"
+              name="careerType"
+              options={[
+                { value: 'new', label: '신입' },
+                { value: 'career', label: '경력' },
+              ]}
+              value={careerType}
+              onChange={setCareerType}
+            />
+            <ChoiceGroup
+              label="전공 여부"
+              name="majorType"
+              options={[
+                { value: 'major', label: '전공자' },
+                { value: 'non_major', label: '비전공자' },
+              ]}
+              value={majorType}
+              onChange={setMajorType}
+            />
+            <Field label="희망 직무" required>
+              <select className={inputClass} value={jobRole} onChange={(e) => setJobRole(e.target.value)}>
+                {JOB_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="경력 연차" hint="신입이면 0을 입력해주세요.">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  className={`${inputClass} w-32`}
+                  placeholder="0"
+                  value={yearsExp}
+                  onChange={(e) => setYearsExp(e.target.value)}
+                />
+                <span className="text-sm text-slate-500">년</span>
               </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-800" htmlFor="career_year">
-                  경력 연차
-                  <span className="ml-1 text-xs font-normal text-slate-400">신입이면 0 또는 비워두세요.</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="career_year"
-                    type="number"
-                    min="0"
-                    max="30"
-                    className="w-24 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-[#08CB00] focus:outline-none"
-                    placeholder="0"
-                    value={yearsExp}
-                    onChange={(e) => setYearsExp(e.target.value)}
-                  />
-                  <span className="text-sm text-slate-500">년</span>
-                </div>
-              </div>
-
-              {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={saving}
-                className="w-full rounded-lg bg-[#08CB00] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#06a800] disabled:opacity-50"
-              >
-                {saving ? '저장 중...' : '다음 단계: JD 등록'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </main>
+            </Field>
+            {error && <Alert tone="danger">{error}</Alert>}
+            {success && <Alert tone="success">{success}</Alert>}
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="secondary" onClick={() => navigate('/mypage')}>
+                마이페이지로 이동
+              </Button>
+              <Button type="button" onClick={handleNext} disabled={saving}>
+                {saving ? '저장 중...' : '저장하고 JD 등록하기'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </PageShell>
   );
 }
 

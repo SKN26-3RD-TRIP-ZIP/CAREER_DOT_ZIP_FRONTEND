@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useJdStore } from '../../store/jdStore';
-import { useAuthStore } from '../../store/authStore';
-import { mypageApi } from '../../api/mypageApi';
 import { getMe, logout as logoutApi } from '../../api/authApi';
+import { mypageApi } from '../../api/mypageApi';
+import { EmptyState, Button, Card, LoadingState, PageShell, StatCard, StatusBadge, Alert } from '../../components/ui/DemoLayout';
+import { useAuthStore } from '../../store/authStore';
+import { useJdStore } from '../../store/jdStore';
 import { getOverallScore } from '../../utils/reportSummary';
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
+const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('ko-KR') : '기록 없음');
 
 const JOB_LABEL = {
   backend: '백엔드 개발자',
@@ -19,11 +21,32 @@ const JOB_LABEL = {
   etc: '기타',
 };
 
-function SectionCard({ title, children }) {
+function safeJsonParse(value) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function reportSessionId(report) {
+  return report?.session_id ?? report?.interview_session_id ?? report?.session?.session_id ?? null;
+}
+
+function statusTone(status) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized.includes('complete') || normalized.includes('success')) return 'success';
+  if (normalized.includes('fail') || normalized.includes('error')) return 'danger';
+  if (normalized.includes('progress') || normalized.includes('pending')) return 'warning';
+  return 'default';
+}
+
+function InfoRow({ label, value }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-5">
-      <p className="text-xs font-bold uppercase tracking-wide text-[#08CB00] mb-3">{title}</p>
-      {children}
+    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-0">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-right text-sm font-semibold text-slate-900">{value || '-'}</span>
     </div>
   );
 }
@@ -34,12 +57,12 @@ function MyPage() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const clearAuth = useAuthStore((s) => s.logout);
-
-  // 실제 면접 기록 (GET /api/v1/mypage/interviews, request.user 기준)
   const [history, setHistory] = useState([]);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState('');
   const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState('');
   const [reports, setReports] = useState([]);
 
@@ -48,15 +71,15 @@ function MyPage() {
       navigate('/auth/login');
       return;
     }
+
     let active = true;
-    // 현재 사용자 정보 갱신(최근 로그인 last_login 포함). 새로고침 시 store 가 비어있어도 표시되도록.
+
     getMe()
       .then((res) => {
         if (active) setUser(res.data);
       })
-      .catch(() => {
-        /* 401 등은 axios 인터셉터가 처리 */
-      });
+      .catch(() => {});
+
     mypageApi
       .getSummary()
       .then((data) => {
@@ -64,33 +87,36 @@ function MyPage() {
       })
       .catch((err) => {
         if (!active) return;
-        const s = err.response?.status;
-        if (s === 401) {
+        if (err.response?.status === 401) {
           navigate('/auth/login');
           return;
         }
-        setSummaryError('요약 정보를 불러오지 못했습니다.');
+        setSummaryError('활동 요약을 불러오지 못했습니다.');
+      })
+      .finally(() => {
+        if (active) setSummaryLoading(false);
       });
+
     mypageApi
       .getInterviewHistory()
       .then((data) => {
-        if (active) setHistory(Array.isArray(data?.results) ? data.results : []);
+        if (!active) return;
+        const results = Array.isArray(data?.results) ? data.results : [];
+        setHistory(results);
+        setHistoryTotal(data?.total ?? results.length);
       })
       .catch((err) => {
         if (!active) return;
-        const s = err.response?.status;
-        if (s === 401) {
+        if (err.response?.status === 401) {
           navigate('/auth/login');
           return;
         }
-        if (s === 403) setHistoryError('접근 권한이 없습니다.');
-        else if (s === 404) setHistoryError('기록을 찾을 수 없습니다.');
-        else setHistoryError('면접 기록을 불러오지 못했습니다.');
-        // mock 데이터로 대체하지 않음
+        setHistoryError('면접 기록을 불러오지 못했습니다.');
       })
       .finally(() => {
         if (active) setHistoryLoading(false);
       });
+
     mypageApi
       .getReportList()
       .then((data) => {
@@ -99,6 +125,7 @@ function MyPage() {
       .catch(() => {
         if (active) setReports([]);
       });
+
     return () => {
       active = false;
     };
@@ -108,249 +135,197 @@ function MyPage() {
     try {
       await logoutApi();
     } catch {
-      // Client state must be cleared even if the refresh cookie is already gone.
+      // 서버 세션이 이미 만료되어도 클라이언트 토큰은 정리합니다.
     } finally {
       clearAuth();
       navigate('/auth/login');
     }
   };
 
-  const rawProfile = localStorage.getItem('userProfile');
-  const profile = rawProfile ? JSON.parse(rawProfile) : null;
+  const profile = safeJsonParse(localStorage.getItem('userProfile'));
+  const docs = safeJsonParse(localStorage.getItem('userDocuments'));
 
-  const rawDocs = localStorage.getItem('userDocuments');
-  const docs = rawDocs ? JSON.parse(rawDocs) : null;
-
-  const careerLabel = profile?.careerType === 'new' ? '신입' : '경력';
-  const majorLabel = profile?.majorType === 'major' ? '전공자' : '비전공자';
-  const jobLabel = JOB_LABEL[profile?.jobRole] ?? profile?.jobRole ?? '백엔드 개발자';
-  const yearsLabel = profile?.yearsExp && profile.yearsExp !== '0' ? `${profile.yearsExp}년차` : '신입';
-
-  const company = jdData?.company_name ?? '회사명 미입력';
-  const position = jdData?.position ?? '백엔드 개발자';
   const latestJd = summary?.latest_jd || null;
   const latestResume = summary?.latest_resume || null;
   const latestJdCreatedAt = latestJd?.created_at || summary?.latest_jd_created_at;
   const latestJdStatus = latestJd?.analysis_status || summary?.latest_jd_analysis_status;
   const latestResumeUpdatedAt = latestResume?.updated_at || summary?.latest_resume_updated_at;
-  const latestReport = summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null;
-  const latestReportScore = latestReport ? getOverallScore(latestReport, latestReport.overall_score ?? null) : null;
-  const latestReportSessionId = latestReport?.session_id;
-  const interviewCount = summary?.interview_count ?? history.length;
+
+  const latestReport = useMemo(
+    () => summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null,
+    [summary, reports, history],
+  );
+  const latestReportScore = latestReport ? getOverallScore(latestReport, null) : null;
+  const latestReportSessionId = reportSessionId(latestReport);
+  const latestHistory = history[0] || null;
+  const interviewCount = summary?.interview_count ?? historyTotal;
+
+  const profileTags = [
+    profile?.careerType === 'career' ? '경력' : '신입',
+    profile?.majorType === 'non_major' ? '비전공자' : '전공자',
+    JOB_LABEL[profile?.jobRole] ?? profile?.jobRole,
+    profile?.yearsExp && profile.yearsExp !== '0' ? `${profile.yearsExp}년차` : '신입',
+  ].filter(Boolean);
 
   return (
-    <main className="min-h-screen bg-[#EEEEEE] px-4 py-8">
-      <div className="mx-auto max-w-xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-[#253900]">마이페이지</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {user ? `${user.name || user.email}님의 면접 정보와 기록` : '내 면접 정보와 기록을 확인하세요.'}
-            </p>
-            {user?.last_login && (
-              <p className="mt-0.5 text-xs text-slate-400">최근 로그인: {fmtDateTime(user.last_login)}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="text-xs text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5"
-          >
-            로그아웃
-          </button>
+    <PageShell
+      title="마이페이지"
+      description="최근 로그인, 활동 요약, 저장된 자료, 면접 리포트를 한 곳에서 확인합니다."
+      actions={
+        <Button type="button" variant="secondary" onClick={handleLogout}>
+          로그아웃
+        </Button>
+      }
+    >
+      <div className="grid gap-5 lg:grid-cols-[1.1fr_1.9fr]">
+        <div className="space-y-5">
+          <Card className="p-5">
+            <p className="text-sm font-bold text-slate-900">사용자 정보</p>
+            <div className="mt-4 space-y-1">
+              <InfoRow label="이름" value={user?.name || '이름 없음'} />
+              <InfoRow label="이메일" value={user?.email} />
+              <InfoRow label="최근 로그인" value={fmtDateTime(user?.last_login)} />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {profileTags.length ? (
+                profileTags.map((tag) => <StatusBadge key={tag}>{tag}</StatusBadge>)
+              ) : (
+                <StatusBadge>프로필 미등록</StatusBadge>
+              )}
+            </div>
+            <Button type="button" variant="secondary" className="mt-4 w-full" onClick={() => navigate('/profile')}>
+              프로필 등록/수정
+            </Button>
+          </Card>
+
+          <Card className="p-5">
+            <p className="text-sm font-bold text-slate-900">다음 행동</p>
+            <div className="mt-4 grid gap-2">
+              <Button type="button" onClick={() => navigate('/jd')}>
+                JD 등록하기
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate('/input/documents')}>
+                이력서 업로드하기
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
+                면접 시작하기
+              </Button>
+            </div>
+          </Card>
         </div>
 
-        <div className="space-y-4">
-          {/* 내 프로필 */}
-          <SectionCard title="내 프로필">
-            <div className="flex flex-wrap gap-2">
-              {[careerLabel, majorLabel, jobLabel, yearsLabel].map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-[#EEEEEE] px-3 py-1 text-sm text-[#253900] font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
+        <div className="space-y-5">
+          {summaryLoading ? (
+            <LoadingState title="활동 요약을 불러오는 중입니다" />
+          ) : summaryError ? (
+            <Alert tone="danger">{summaryError}</Alert>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <StatCard label="총 면접" value={interviewCount ?? 0} helper="완료/진행 기록 기준" />
+              <StatCard label="JD" value={summary?.jd_count ?? 0} helper={latestJdCreatedAt ? `최근 ${fmtDate(latestJdCreatedAt)}` : '등록 없음'} />
+              <StatCard label="이력서" value={summary?.resume_count ?? 0} helper={latestResumeUpdatedAt ? `최근 ${fmtDate(latestResumeUpdatedAt)}` : '등록 없음'} />
+              <StatCard label="자소서" value={summary?.cover_letter_count ?? 0} helper="저장된 자소서" />
+              <StatCard label="프로젝트" value={summary?.project_count ?? 0} helper="프로젝트 경험" />
             </div>
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              className="mt-3 text-xs text-[#08CB00] font-semibold"
-            >
-              프로필 수정
-            </button>
-          </SectionCard>
+          )}
 
-          {/* 자료 요약 */}
-          <SectionCard title="내 자료 요약">
-            {summaryError ? (
-              <p className="text-sm text-red-600">{summaryError}</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">등록된 JD</p>
-                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.jd_count ?? 0}</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">등록된 이력서</p>
-                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.resume_count ?? 0}</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">등록된 자기소개서</p>
-                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.cover_letter_count ?? 0}</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">등록된 프로젝트</p>
-                  <p className="mt-1 text-xl font-bold text-[#253900]">{summary?.project_count ?? 0}</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-slate-400">총 면접</p>
-                  <p className="mt-1 text-xl font-bold text-[#253900]">{interviewCount}</p>
-                </div>
+          <section className="grid gap-5 lg:grid-cols-2">
+            <Card className="p-5">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-slate-900">최근 리포트</p>
+                {latestReportScore != null && <StatusBadge tone="success">{latestReportScore}점</StatusBadge>}
               </div>
-            )}
-          </SectionCard>
-
-          {/* 등록한 JD */}
-          <SectionCard title="등록한 JD">
-            {latestJd || jdData ? (
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  {latestJd ? `${latestJd.company_name} · ${latestJd.position}` : `${company} · ${position}`}
-                </p>
-                {latestJdCreatedAt && (
-                  <p className="mt-0.5 text-xs text-slate-400">최근 등록: {fmtDateTime(latestJdCreatedAt)}</p>
-                )}
-                {latestJdStatus && (
-                  <p className="mt-0.5 text-xs text-slate-400">분석 상태: {latestJdStatus}</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">등록한 JD가 없습니다.</p>
-            )}
-            <button
-              type="button"
-              onClick={() => navigate('/jd')}
-              className="mt-3 text-xs text-[#08CB00] font-semibold"
-            >
-              JD 수정
-            </button>
-          </SectionCard>
-
-          {/* 등록한 지원 자료 */}
-          <SectionCard title="등록한 지원 자료">
-            {summary || docs ? (
-              <div className="space-y-2 text-sm text-slate-600">
-                <p>
-                  <span className="font-semibold text-slate-800">이력서:</span>{' '}
-                  {latestResume ? `${latestResume.name} · ${fmtDateTime(latestResumeUpdatedAt)}` : (docs?.resume ? `${docs.resume.substring(0, 40)}...` : '미입력')}
-                </p>
-                <p>
-                  <span className="font-semibold text-slate-800">자소서:</span>{' '}
-                  {summary ? `${summary.cover_letter_count ?? 0}개 등록` : (docs?.coverLetters?.some((c) => c.answer) ? '작성 완료' : '미입력')}
-                </p>
-                <p>
-                  <span className="font-semibold text-slate-800">프로젝트:</span>{' '}
-                  {summary ? `${summary.project_count ?? 0}개 등록` : (docs?.projectExp ? `${docs.projectExp.substring(0, 40)}...` : '미입력')}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">등록한 지원 자료가 없습니다.</p>
-            )}
-            <button
-              type="button"
-              onClick={() => navigate('/input/documents')}
-              className="mt-3 text-xs text-[#08CB00] font-semibold"
-            >
-              자료 수정
-            </button>
-          </SectionCard>
-
-          {/* 면접 기록 (실제 API) */}
-          <SectionCard title="최근 리포트">
-            {latestReport && latestReportSessionId ? (
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {latestReportScore != null ? `${latestReportScore}점` : '점수 산정 전'}
+              {latestReport ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-600">
+                    {latestReportScore != null ? '가장 최근 생성된 리포트 점수를 확인했습니다.' : '최근 리포트가 있으나 점수 정보는 아직 없습니다.'}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {fmtDateTime(latestReport.generated_at || latestReport.created_at)}
-                  </p>
+                  <p className="text-xs text-slate-500">{fmtDateTime(latestReport.generated_at || latestReport.created_at)}</p>
+                  {latestReportSessionId ? (
+                    <Button type="button" onClick={() => navigate(`/report/${latestReportSessionId}`)}>
+                      상세 리포트 보기
+                    </Button>
+                  ) : (
+                    <Alert tone="warning">상세 이동에 필요한 session_id가 응답에 없습니다.</Alert>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/report/${latestReportSessionId}`)}
-                  className="rounded-lg bg-[#253900] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-80"
-                >
-                  상세 보기
-                </button>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">아직 생성된 리포트가 없습니다.</p>
-            )}
-          </SectionCard>
+              ) : (
+                <EmptyState
+                  title="아직 생성된 리포트가 없습니다"
+                  description="면접을 완료하면 최근 리포트와 점수가 이곳에 표시됩니다."
+                  actionLabel="면접 시작하기"
+                  actionTo="/interview/setup"
+                />
+              )}
+            </Card>
 
-          <SectionCard title="면접 기록">
+            <Card className="p-5">
+              <p className="mb-4 text-sm font-bold text-slate-900">최근 JD / 이력서</p>
+              {latestJd || jdData ? (
+                <div className="rounded-lg bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {latestJd ? `${latestJd.company_name} · ${latestJd.position}` : `${jdData?.company_name || '회사명 없음'} · ${jdData?.position || '직무명 없음'}`}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <StatusBadge tone={statusTone(latestJdStatus)}>{latestJdStatus || '분석 상태 없음'}</StatusBadge>
+                    <StatusBadge>{latestJdCreatedAt ? fmtDate(latestJdCreatedAt) : '등록일 없음'}</StatusBadge>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState title="등록된 JD가 없습니다" description="JD를 등록하면 최근 회사명과 직무가 표시됩니다." actionLabel="JD 등록" actionTo="/jd" />
+              )}
+
+              <div className="mt-3 rounded-lg bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-900">{latestResume?.name || docs?.resume?.slice?.(0, 32) || '최근 이력서 없음'}</p>
+                <p className="mt-1 text-xs text-slate-500">최근 수정 {fmtDateTime(latestResumeUpdatedAt)}</p>
+              </div>
+            </Card>
+          </section>
+
+          <Card className="p-5">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <p className="text-sm font-bold text-slate-900">최근 면접 기록</p>
+              {latestHistory?.status && <StatusBadge tone={statusTone(latestHistory.status)}>{latestHistory.status}</StatusBadge>}
+            </div>
             {historyLoading ? (
-              <p className="text-sm text-slate-400">불러오는 중...</p>
+              <LoadingState title="면접 기록을 불러오는 중입니다" />
             ) : historyError ? (
-              <p className="text-sm text-red-600">{historyError}</p>
+              <Alert tone="danger">{historyError}</Alert>
             ) : history.length === 0 ? (
-              <p className="text-sm text-slate-400">아직 면접 기록이 없습니다.</p>
+              <EmptyState
+                title="아직 면접 기록이 없습니다"
+                description="JD와 이력서를 선택해 첫 면접을 시작해보세요."
+                actionLabel="면접 시작하기"
+                actionTo="/interview/setup"
+              />
             ) : (
-              <div className="space-y-3">
-                {history.map((rec) => (
-                  <div
-                    key={rec.session_id}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
-                  >
+              <div className="space-y-2">
+                {history.slice(0, 5).map((rec) => (
+                  <div key={rec.session_id} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {rec.interview_type || '면접'}
-                        {rec.persona ? ` · ${rec.persona}` : ''}
+                      <p className="text-sm font-semibold text-slate-900">
+                        {rec.interview_type || '면접'} {rec.persona ? `· ${rec.persona}` : ''}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-400">
-                        {rec.created_at ? new Date(rec.created_at).toLocaleDateString('ko-KR') : ''} · 상태 {rec.status} · 질문 {rec.question_count}/답변 {rec.answer_count}
+                      <p className="mt-1 text-xs text-slate-500">
+                        {fmtDateTime(rec.created_at)} · 질문 {rec.question_count ?? 0} / 답변 {rec.answer_count ?? 0}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {rec.has_report && rec.overall_score != null && (
-                        <span
-                          className="text-base font-bold"
-                          style={{ color: rec.overall_score >= 80 ? '#08CB00' : '#f59e0b' }}
-                        >
-                          {rec.overall_score}점
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2">
+                      {rec.has_report && rec.overall_score != null && <StatusBadge tone="success">{rec.overall_score}점</StatusBadge>}
                       {rec.has_report && (
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/report/${rec.session_id}`)}
-                          className="rounded-lg bg-[#253900] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-80"
-                        >
+                        <Button type="button" variant="secondary" onClick={() => navigate(`/report/${rec.session_id}`)}>
                           결과 보기
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </SectionCard>
-
-          {/* 새 면접 시작 */}
-          <button
-            type="button"
-            onClick={() => navigate('/jd')}
-            className="w-full rounded-lg bg-[#08CB00] py-3 text-sm font-semibold text-white hover:bg-[#06a800] transition-colors"
-          >
-            새 면접 시작
-          </button>
+          </Card>
         </div>
       </div>
-    </main>
+    </PageShell>
   );
 }
 

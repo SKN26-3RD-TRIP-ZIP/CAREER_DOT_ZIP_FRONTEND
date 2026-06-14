@@ -24,8 +24,6 @@ import AppLayout from './components/layout/AppLayout.jsx'
 
 const prototypeRoutes = [
   '/',
-  '/login',
-  '/signup',
   '/onboarding',
   '/dashboard',
   '/data',
@@ -85,6 +83,7 @@ function App() {
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
       <Route path="/JD" element={<JdInputPage />} />
+      <Route path="/input/jd" element={<JdInputPage />} />
       <Route path="/input/documents" element={<DocumentsInputPage />} />
 
       {/* 면접 설정 → 세션/질문 생성 진입 (QA P0: JD 저장 후 면접 설정 화면) */}
@@ -104,6 +103,8 @@ function App() {
       {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
       <Route path="/auth/login" element={<AuthLoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />
+      <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* develop 기존 어드민 라우트 보존 */}
