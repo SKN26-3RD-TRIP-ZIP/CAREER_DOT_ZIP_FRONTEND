@@ -18,7 +18,7 @@ import {
   inputClass,
 } from '../../components/ui/DemoLayout';
 
-const STEPS = ['프로필', 'JD 등록', '이력서', '면접 설정'];
+const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트', '면접 설정'];
 
 const INTERVIEW_TYPE_OPTIONS = [
   { value: 'technical', label: '기술 면접', desc: '직무 관련 기술 역량 중심' },
@@ -34,8 +34,8 @@ const PERSONA_OPTIONS = [
 ];
 
 const INTERVIEW_MODE_OPTIONS = [
-  { value: 'text', label: '텍스트', desc: '키보드 답변으로 진행' },
-  { value: 'voice', label: '음성', desc: '마이크 답변으로 진행' },
+  { value: 'text', label: 'Text', desc: '키보드 답변으로 진행' },
+  { value: 'voice', label: 'Voice', desc: '마이크 답변으로 진행' },
 ];
 
 const DEFAULT_QUESTION_COUNT = 5;
@@ -63,7 +63,7 @@ function OptionCard({ option, checked, name, onChange }) {
   return (
     <label
       className={`cursor-pointer rounded-lg border p-4 transition ${
-        checked ? 'border-emerald-600 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+        checked ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
       }`}
     >
       <input
@@ -74,8 +74,8 @@ function OptionCard({ option, checked, name, onChange }) {
         onChange={(e) => onChange(e.target.value)}
         className="sr-only"
       />
-      <p className="text-sm font-bold">{option.label}</p>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{option.desc}</p>
+      <p className="text-sm font-black">{option.label}</p>
+      <p className="mt-1 text-xs leading-5">{option.desc}</p>
     </label>
   );
 }
@@ -86,14 +86,14 @@ function SelectableItem({ selected, title, meta, onClick }) {
       type="button"
       onClick={onClick}
       className={`w-full rounded-lg border p-4 text-left transition ${
-        selected ? 'border-emerald-600 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+        selected ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold">{title}</p>
+        <p className="text-sm font-black">{title}</p>
         {selected && <StatusBadge tone="success">선택됨</StatusBadge>}
       </div>
-      {meta && <p className="mt-1 text-xs leading-5 text-slate-500">{meta}</p>}
+      {meta && <p className="mt-1 text-xs leading-5">{meta}</p>}
     </button>
   );
 }
@@ -249,8 +249,8 @@ function SessionSetupPage() {
 
   return (
     <PageShell
-      eyebrow="Step 4"
-      title="면접 설정"
+      eyebrow="Step 5"
+      title="면접을 설정해요"
       description="저장된 JD와 이력서를 선택하고 면접 유형, 진행 방식, 면접관 페르소나를 정합니다."
       actions={
         <Button type="button" variant="secondary" onClick={fetchSources} disabled={initialLoading || loading}>
@@ -258,7 +258,7 @@ function SessionSetupPage() {
         </Button>
       }
       steps={STEPS}
-      currentStep={4}
+      currentStep={5}
     >
       <Card className="p-6">
         {initialLoading ? (
@@ -266,9 +266,9 @@ function SessionSetupPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid gap-4 lg:grid-cols-3">
-              <section className="rounded-lg border border-slate-200 p-4">
+              <section className="rounded-lg border border-[#000000] p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold text-slate-900">JD 선택</p>
+                  <p className="text-sm font-black text-[#253900]">JD 선택</p>
                   <Button type="button" variant="ghost" onClick={() => navigate('/jd')}>
                     추가
                   </Button>
@@ -295,9 +295,9 @@ function SessionSetupPage() {
                 )}
               </section>
 
-              <section className="rounded-lg border border-slate-200 p-4">
+              <section className="rounded-lg border border-[#000000] p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold text-slate-900">이력서 선택</p>
+                  <p className="text-sm font-black text-[#253900]">이력서 선택</p>
                   <Button type="button" variant="ghost" onClick={() => navigate('/input/documents')}>
                     추가
                   </Button>
@@ -324,8 +324,8 @@ function SessionSetupPage() {
                 )}
               </section>
 
-              <section className="rounded-lg border border-slate-200 p-4">
-                <p className="mb-3 text-sm font-bold text-slate-900">자소서 선택</p>
+              <section className="rounded-lg border border-[#000000] p-4">
+                <p className="mb-3 text-sm font-black text-[#253900]">자소서 선택</p>
                 <div className="space-y-2">
                   <SelectableItem
                     selected={!selectedCoverLetterId}
@@ -350,28 +350,28 @@ function SessionSetupPage() {
               </section>
             </div>
 
-            <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-bold text-slate-900">선택 요약</p>
+            <section className="rounded-lg border border-[#000000] bg-[#EEEEEE] p-4">
+              <p className="text-sm font-black text-[#253900]">선택 요약</p>
               <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
                 <div>
-                  <dt className="text-xs text-slate-500">JD</dt>
-                  <dd className="mt-1 font-semibold text-slate-800">
+                  <dt className="text-xs font-bold text-[#253900]">JD</dt>
+                  <dd className="mt-1 font-semibold text-[#000000]">
                     {selectedJd ? `${selectedJd.company_name} · ${selectedJd.position}` : '선택되지 않음'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">이력서</dt>
-                  <dd className="mt-1 font-semibold text-slate-800">{selectedResume ? selectedResume.name || '이력서' : '선택되지 않음'}</dd>
+                  <dt className="text-xs font-bold text-[#253900]">이력서</dt>
+                  <dd className="mt-1 font-semibold text-[#000000]">{selectedResume ? selectedResume.name || '이력서' : '선택되지 않음'}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-500">자소서</dt>
-                  <dd className="mt-1 font-semibold text-slate-800">{selectedCoverLetter ? selectedCoverLetter.title || '자기소개서' : '선택 안 함'}</dd>
+                  <dt className="text-xs font-bold text-[#253900]">자소서</dt>
+                  <dd className="mt-1 font-semibold text-[#000000]">{selectedCoverLetter ? selectedCoverLetter.title || '자기소개서' : '선택 안 함'}</dd>
                 </div>
               </dl>
             </section>
 
             <section>
-              <p className="text-sm font-bold text-slate-900">면접 유형</p>
+              <p className="text-sm font-black text-[#253900]">면접 유형 선택</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 {INTERVIEW_TYPE_OPTIONS.map((opt) => (
                   <OptionCard key={opt.value} option={opt} checked={interviewType === opt.value} name="interview_type" onChange={setInterviewType} />
@@ -380,7 +380,7 @@ function SessionSetupPage() {
             </section>
 
             <section>
-              <p className="text-sm font-bold text-slate-900">면접 모드</p>
+              <p className="text-sm font-black text-[#253900]">진행 모드 선택</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {INTERVIEW_MODE_OPTIONS.map((opt) => (
                   <OptionCard key={opt.value} option={opt} checked={interviewMode === opt.value} name="interview_mode" onChange={setInterviewMode} />
@@ -389,7 +389,7 @@ function SessionSetupPage() {
             </section>
 
             <section>
-              <p className="text-sm font-bold text-slate-900">면접관 페르소나</p>
+              <p className="text-sm font-black text-[#253900]">페르소나 선택</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {PERSONA_OPTIONS.map((opt) => (
                   <OptionCard key={opt.value} option={opt} checked={persona === opt.value} name="persona" onChange={setPersona} />
@@ -411,15 +411,12 @@ function SessionSetupPage() {
 
             {error && <Alert tone="danger">{error}</Alert>}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-between gap-2">
+              <Button type="button" variant="secondary" onClick={() => navigate('/input/cover-letter-project')} disabled={loading}>
+                이전
+              </Button>
               <Button type="submit" disabled={loading || !selectedJdId || !selectedResumeId}>
-                {loading ? loadingStep || '처리 중...' : `${interviewMode === 'text' ? 'text' : 'voice'} 면접 시작`}
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/jd')} disabled={loading}>
-                JD 추가
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/input/documents')} disabled={loading}>
-                이력서 추가
+                {loading ? loadingStep || '처리 중...' : '면접 시작하기'}
               </Button>
             </div>
           </form>

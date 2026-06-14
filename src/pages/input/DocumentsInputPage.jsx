@@ -14,19 +14,7 @@ import {
 } from '../../components/ui/DemoLayout';
 
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
-const STEPS = ['프로필', 'JD 등록', '이력서', '면접 설정'];
-
-const TABS = [
-  { id: 'resume', label: '이력서' },
-  { id: 'coverletter', label: '자기소개서 메모' },
-  { id: 'project', label: '프로젝트 메모' },
-];
-
-const COVER_LETTER_QUESTIONS = [
-  '지원 동기를 작성해주세요.',
-  '본인의 강점과 약점을 작성해주세요.',
-  '대표 프로젝트 경험을 작성해주세요.',
-];
+const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트', '면접 설정'];
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 
@@ -51,11 +39,6 @@ function formatApiError(err, fallback) {
 
 function DocumentsInputPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('resume');
-  const [resume, setResume] = useState('');
-  const [coverLetters, setCoverLetters] = useState(COVER_LETTER_QUESTIONS.map((q) => ({ question: q, answer: '' })));
-  const [projectExp, setProjectExp] = useState('');
-  const [saving, setSaving] = useState(false);
   const [resumeList, setResumeList] = useState([]);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -63,6 +46,7 @@ function DocumentsInputPage() {
   const [resumeUploadName, setResumeUploadName] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeDetail, setResumeDetail] = useState(null);
+  const [focusMemo, setFocusMemo] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -76,8 +60,7 @@ function DocumentsInputPage() {
       const remembered = window.localStorage.getItem('careerzip_selected_resume_id');
       if (!selectedResumeId && (remembered || results[0]?.resume_id)) {
         const nextId = remembered || results[0].resume_id;
-        setSelectedResumeId(nextId);
-        window.localStorage.setItem('careerzip_selected_resume_id', nextId);
+        selectResume(nextId);
       }
     } catch (err) {
       setError(formatApiError(err, '이력서 목록을 불러오지 못했습니다.'));
@@ -91,10 +74,6 @@ function DocumentsInputPage() {
     fetchResumes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleCoverLetterChange = (idx, value) => {
-    setCoverLetters((prev) => prev.map((item, i) => (i === idx ? { ...item, answer: value } : item)));
-  };
 
   const selectResume = (resumeId) => {
     setSelectedResumeId(resumeId);
@@ -120,7 +99,7 @@ function DocumentsInputPage() {
       setResumeUploadName('');
       setResumeFile(null);
       await fetchResumes();
-      setSuccess('이력서가 업로드되었습니다. 목록에서 선택된 이력서를 확인해주세요.');
+      setSuccess('이력서가 업로드되었습니다. 선택된 이력서를 확인해주세요.');
     } catch (err) {
       setError(formatApiError(err, '이력서 업로드에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -146,182 +125,125 @@ function DocumentsInputPage() {
     setError('');
     if (!selectedResumeId) {
       setError('면접에 사용할 이력서를 업로드하거나 목록에서 선택해주세요.');
-      setActiveTab('resume');
       return;
     }
-    setSaving(true);
-    localStorage.setItem('userDocuments', JSON.stringify({ resume, coverLetters, projectExp, resume_id: selectedResumeId }));
+    const prev = JSON.parse(localStorage.getItem('userDocuments') || '{}');
+    localStorage.setItem('userDocuments', JSON.stringify({ ...prev, resumeMemo: focusMemo, resume_id: selectedResumeId }));
     window.localStorage.setItem('careerzip_selected_resume_id', selectedResumeId);
-    setTimeout(() => {
-      setSaving(false);
-      navigate('/interview/setup');
-    }, 200);
+    navigate('/input/cover-letter-project');
   };
 
   return (
     <PageShell
       eyebrow="Step 3"
-      title="이력서와 보조 자료"
-      description="PDF 또는 DOCX 이력서를 업로드하고 면접 세션에서 사용할 이력서를 선택합니다. 자소서와 프로젝트는 현재 화면 내 준비 메모로 저장됩니다."
+      title="이력서를 업로드해요"
+      description="PDF 또는 DOCX 이력서를 업로드하고 면접 세션에서 사용할 이력서를 선택합니다."
       steps={STEPS}
       currentStep={3}
     >
-      <Card className="mx-auto max-w-4xl overflow-hidden">
-        <div className="grid grid-cols-3 border-b border-slate-200">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-4 text-sm font-semibold transition ${
-                activeTab === tab.id ? 'border-b-2 border-emerald-600 text-emerald-700' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'resume' && (
-            <div className="space-y-6">
-              <form onSubmit={handleResumeUpload} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">이력서 파일 업로드</p>
-                    <p className="mt-1 text-xs text-slate-500">PDF 또는 DOCX, 최대 10MB</p>
-                  </div>
-                  <StatusBadge tone="info">실제 API 저장</StatusBadge>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <input
-                    type="text"
-                    className={inputClass}
-                    placeholder="이력서 제목 (선택)"
-                    value={resumeUploadName}
-                    onChange={(e) => setResumeUploadName(e.target.value)}
-                  />
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className={inputClass}
-                    onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
-                  />
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <Button type="submit" disabled={uploading}>
-                    {uploading ? '업로드 중...' : '이력서 업로드'}
-                  </Button>
-                </div>
-              </form>
-
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-bold text-slate-900">저장된 이력서 선택</p>
-                  <Button type="button" variant="ghost" onClick={fetchResumes} disabled={resumeLoading}>
-                    {resumeLoading ? '새로고침 중...' : '새로고침'}
-                  </Button>
-                </div>
-
-                {resumeLoading ? (
-                  <LoadingState title="이력서 목록을 불러오는 중입니다" />
-                ) : resumeList.length === 0 ? (
-                  <EmptyState
-                    title="아직 등록된 이력서가 없습니다"
-                    description="PDF 또는 DOCX 이력서를 업로드하면 면접 세션에서 선택할 수 있습니다."
-                  />
-                ) : (
-                  <div className="grid gap-2">
-                    {resumeList.map((item) => (
-                      <button
-                        key={item.resume_id}
-                        type="button"
-                        onClick={() => selectResume(item.resume_id)}
-                        className={`rounded-lg border p-4 text-left transition ${
-                          selectedResumeId === item.resume_id
-                            ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-semibold">{item.name || '이력서'}</p>
-                          {selectedResumeId === item.resume_id && <StatusBadge tone="success">선택됨</StatusBadge>}
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">최근 수정 {fmtDateTime(item.updated_at)}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {selectedResumeId && (
-                  <Button type="button" variant="secondary" onClick={handleLoadResumeDetail} className="mt-3">
-                    선택 이력서 상세 보기
-                  </Button>
-                )}
-                {resumeDetail && (
-                  <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    <p className="font-semibold text-slate-900">{resumeDetail.name || '이력서'}</p>
-                    <p className="mt-2 max-h-36 overflow-auto whitespace-pre-line leading-6">
-                      {resumeDetail.original_text || '추출된 이력서 텍스트가 없습니다.'}
-                    </p>
-                  </div>
-                )}
-              </section>
-
-              <Field label="보조 메모" hint="API 저장값은 아니며 세션 설정 전까지 브라우저에 보관됩니다.">
-                <textarea
-                  rows={5}
+      <Card className="mx-auto max-w-5xl p-6">
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <form onSubmit={handleResumeUpload} className="rounded-lg border border-[#000000] p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black text-[#253900]">이력서 파일 업로드</h2>
+                <p className="mt-2 text-sm leading-6">PDF 또는 DOCX 파일을 끌어다 놓거나 파일 선택으로 업로드하세요.</p>
+              </div>
+              <StatusBadge tone="info">최대 10MB</StatusBadge>
+            </div>
+            <div className="mt-5 space-y-4">
+              <Field label="이력서 제목">
+                <input
+                  type="text"
                   className={inputClass}
-                  placeholder="이력서 기반으로 면접에서 강조하고 싶은 내용을 적어두세요."
-                  value={resume}
-                  onChange={(e) => setResume(e.target.value)}
+                  placeholder="예: 백엔드 이력서 v3"
+                  value={resumeUploadName}
+                  onChange={(e) => setResumeUploadName(e.target.value)}
                 />
               </Field>
-            </div>
-          )}
-
-          {activeTab === 'coverletter' && (
-            <div className="space-y-5">
-              <Alert tone="info">현재 자소서 메모는 브라우저에만 보관됩니다. 저장된 자소서가 있는 경우 면접 설정 화면에서 별도로 선택할 수 있습니다.</Alert>
-              {coverLetters.map((item, idx) => (
-                <Field key={item.question} label={`Q${idx + 1}. ${item.question}`}>
-                  <textarea
-                    rows={4}
-                    className={inputClass}
-                    placeholder="답변을 입력해주세요."
-                    value={item.answer}
-                    onChange={(e) => handleCoverLetterChange(idx, e.target.value)}
-                  />
-                </Field>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'project' && (
-            <div className="space-y-4">
-              <Alert tone="info">프로젝트 경험은 현재 면접 준비 메모로만 저장됩니다. 실제 프로젝트 API가 없는 경우 빈 상태로 표시됩니다.</Alert>
-              <Field label="프로젝트 경험" hint="프로젝트명, 기간, 역할, 기술 스택, 성과를 함께 적어두면 질문 준비에 도움이 됩니다.">
-                <textarea
-                  rows={10}
+              <Field label="이력서 파일" hint="PDF, DOCX 파일을 지원합니다." required>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   className={inputClass}
-                  placeholder={'예시:\n프로젝트명: Career.zip\n기간: 2026.03 ~ 2026.06\n역할: 백엔드 개발\n기여: AI 질문 생성 API 설계 및 구현'}
-                  value={projectExp}
-                  onChange={(e) => setProjectExp(e.target.value)}
+                  onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
                 />
               </Field>
+              <Button type="submit" disabled={uploading} className="w-full">
+                {uploading ? '업로드 중...' : '파일 선택 후 업로드'}
+              </Button>
             </div>
-          )}
+          </form>
 
-          {error && <Alert tone="danger" className="mt-5">{error}</Alert>}
-          {success && <Alert tone="success" className="mt-5">{success}</Alert>}
+          <section className="rounded-lg border border-[#000000] p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-black text-[#253900]">최근 이력서</h2>
+              <Button type="button" variant="ghost" onClick={fetchResumes} disabled={resumeLoading}>
+                새로고침
+              </Button>
+            </div>
+            {resumeLoading ? (
+              <LoadingState title="이력서 목록을 불러오는 중입니다" />
+            ) : resumeList.length === 0 ? (
+              <EmptyState title="아직 등록된 이력서가 없습니다" description="이력서를 업로드하면 면접 세션에서 선택할 수 있습니다." />
+            ) : (
+              <div className="grid gap-3">
+                {resumeList.map((item) => (
+                  <button
+                    key={item.resume_id}
+                    type="button"
+                    onClick={() => selectResume(item.resume_id)}
+                    className={`rounded-lg border p-4 text-left transition ${
+                      selectedResumeId === item.resume_id
+                        ? 'border-[#253900] bg-[#08CB00] text-[#000000]'
+                        : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-black">{item.name || '이력서'}</p>
+                      {selectedResumeId === item.resume_id && <StatusBadge tone="success">선택됨</StatusBadge>}
+                    </div>
+                    <p className="mt-1 text-xs">최근 수정 {fmtDateTime(item.updated_at)}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedResumeId && (
+              <Button type="button" variant="secondary" onClick={handleLoadResumeDetail} className="mt-4">
+                선택 이력서 상세 보기
+              </Button>
+            )}
+          </section>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        {resumeDetail && (
+          <div className="mt-6 rounded-lg border border-[#000000] p-5 text-sm">
+            <p className="font-black text-[#253900]">{resumeDetail.name || '이력서'}</p>
+            <p className="mt-3 max-h-40 overflow-auto whitespace-pre-line leading-6">
+              {resumeDetail.original_text || '추출된 이력서 텍스트가 없습니다.'}
+            </p>
+          </div>
+        )}
+
+        <Field label="면접에서 강조할 내용" hint="API 저장값은 아니며 세션 설정 전까지 브라우저에 보관됩니다.">
+          <textarea
+            rows={4}
+            className={`${inputClass} mt-6`}
+            placeholder="이력서 기반으로 면접에서 강조하고 싶은 내용을 적어두세요."
+            value={focusMemo}
+            onChange={(e) => setFocusMemo(e.target.value)}
+          />
+        </Field>
+
+        {error && <Alert tone="danger" className="mt-5">{error}</Alert>}
+        {success && <Alert tone="success" className="mt-5">{success}</Alert>}
+
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Button type="button" variant="secondary" onClick={() => navigate('/jd')}>
-            JD 다시 등록
+            이전
           </Button>
-          <Button type="button" onClick={handleNext} disabled={saving}>
-            {saving ? '저장 중...' : '면접 설정으로 이동'}
+          <Button type="button" onClick={handleNext}>
+            저장하고 다음
           </Button>
         </div>
       </Card>
