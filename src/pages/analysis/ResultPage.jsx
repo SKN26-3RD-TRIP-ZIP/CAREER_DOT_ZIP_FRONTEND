@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Target, Cpu, FileText, AlertTriangle } from 'lucide-react'
 import { getAnalysisResult, getAnalysisStatus } from '../../api/analysisApi'
 import { analysisResult as mockData } from './analysisData'
 import './Analysis.css'
+
+function skillTone(value) {
+  if (value >= 70) return 'positive'
+  if (value >= 40) return 'warning'
+  return 'danger'
+}
 
 // Map API response → display-ready shape
 function mapResult(data) {
@@ -13,10 +19,10 @@ function mapResult(data) {
   const gapCount = (data.weaknesses ?? []).length
 
   const metrics = [
-    { label: 'JD 적합도', value: `${matchScore}%`, tone: matchScore >= 70 ? 'positive' : 'warning' },
-    { label: '기술 매칭률', value: `${techScore}%`, tone: techScore >= 70 ? 'positive' : 'warning' },
-    { label: '자소서 포인트', value: `${clCount}건`, tone: 'positive' },
-    { label: '우선 보완', value: `${gapCount}건`, tone: gapCount > 0 ? 'warning' : 'positive' },
+    { label: 'JD 적합도', value: `${matchScore}%`, tone: matchScore >= 70 ? 'positive' : 'warning', icon: Target, desc: matchScore >= 70 ? '목표 수준 달성' : '보완 여지 있음' },
+    { label: '기술 매칭률', value: `${techScore}%`, tone: techScore >= 70 ? 'positive' : 'warning', icon: Cpu, desc: techScore >= 70 ? '기술 스택 부합' : '일부 기술 부족' },
+    { label: '자소서 포인트', value: `${clCount}건`, tone: 'positive', icon: FileText, desc: '강점으로 활용 가능' },
+    { label: '우선 보완', value: `${gapCount}건`, tone: gapCount > 0 ? 'warning' : 'positive', icon: AlertTriangle, desc: gapCount > 0 ? '면접 전 준비 권장' : '보완 항목 없음' },
   ]
 
   // Skills: use gap.tech_gap if available, otherwise approximate from keywords
@@ -35,6 +41,7 @@ function mapResult(data) {
       ...(data.unmatched_keywords ?? []).slice(0, 3).map((k, i) => ({ label: k, value: lowScores[i] ?? 35 })),
     ].slice(0, 6)
   }
+  skills = skills.map((s) => ({ ...s, tone: skillTone(s.value) }))
 
   const keywords = [
     ...(data.matched_keywords ?? []).map((k) => ({ label: k, active: true })),
@@ -66,20 +73,32 @@ function ResultPage({ expanded = false }) {
   useEffect(() => {
     if (!sessionId) return
 
+    const startTime = Date.now()
+    let pollCount = 0
+    console.log('[Analysis] 폴링 시작 session_id:', sessionId, new Date().toISOString())
+
     const poll = async () => {
+      pollCount += 1
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+      console.log(`[Analysis] 폴링 #${pollCount} (경과 ${elapsed}s) — status 확인 중...`)
       try {
         const res = await getAnalysisStatus(sessionId)
+        console.log(`[Analysis] 폴링 #${pollCount} 응답:`, res.data.status)
         if (res.data.status === 'ready') {
           clearInterval(intervalRef.current)
+          console.log(`[Analysis] ✅ 분석 완료! 총 ${elapsed}s 소요 (폴링 ${pollCount}회)`)
           const matchRes = await getAnalysisResult(sessionId)
+          console.log('[Analysis] 결과 데이터 수신:', matchRes.data)
           setResult(mapResult(matchRes.data))
           setStatus('ready')
         } else if (res.data.status === 'failed') {
           clearInterval(intervalRef.current)
+          console.error(`[Analysis] ❌ 분석 실패 (${elapsed}s 경과)`)
           setStatus('failed')
         }
-      } catch {
+      } catch (err) {
         clearInterval(intervalRef.current)
+        console.error('[Analysis] 폴링 에러:', err)
         setStatus('failed')
       }
     }
@@ -111,23 +130,32 @@ function ResultPage({ expanded = false }) {
   // Use real result or fall back to mock
   const display = result ?? mapResult(mockData)
 
-  const selectedAnswer = selectedQuestion !== null ? display.questions[selectedQuestion]?.answer : null
-
   return (
     <>
       <div className="analysis-page-head compact">
-        <div>
-          <h1>AI가 JD, 이력서, 자소서의 간극을 분석했습니다.</h1>
+        <h1>AI가 JD, 이력서, 자소서의 간극을 분석했습니다.</h1>
+        <div className="result-actions-top">
+          <Link className="analysis-secondary-button" to="/analysis/source">자료 다시 선택</Link>
+          <Link className="analysis-primary-button" to="/interview/setup">이 분석으로 면접 시작하기</Link>
         </div>
       </div>
 
       <section className="metric-grid" aria-label="분석 지표">
-        {display.metrics.map((metric) => (
-          <article className="analysis-card metric-card" key={metric.label}>
-            <span>{metric.label}</span>
-            <strong className={metric.tone}>{metric.value}</strong>
-          </article>
-        ))}
+        {display.metrics.map((metric) => {
+          const Icon = metric.icon
+          return (
+            <article className="analysis-card metric-card" key={metric.label}>
+              <div className="metric-header">
+                <span>{metric.label}</span>
+                <div className={`metric-icon-wrap ${metric.tone}`}>
+                  <Icon size={16} />
+                </div>
+              </div>
+              <strong className={metric.tone}>{metric.value}</strong>
+              <p className="metric-desc">{metric.desc}</p>
+            </article>
+          )
+        })}
       </section>
 
       <section className="result-main-grid">
@@ -137,8 +165,10 @@ function ResultPage({ expanded = false }) {
             {display.skills.map((skill) => (
               <div className="skill-row" key={skill.label}>
                 <span>{skill.label}</span>
-                <div className="skill-track"><i style={{ width: `${skill.value}%` }} /></div>
-                <em>{skill.value}%</em>
+                <div className="skill-track">
+                  <i className={skill.tone} style={{ width: `${skill.value}%` }} />
+                </div>
+                <em className={skill.tone}>{skill.value}%</em>
               </div>
             ))}
           </div>
@@ -183,24 +213,26 @@ function ResultPage({ expanded = false }) {
           <h2>예상 질문</h2>
           <div className="question-list">
             {display.questions.map((q, index) => (
-              <button
-                className={selectedQuestion === index ? 'selected' : ''}
-                key={q.id ?? index}
-                type="button"
-                onClick={() => setSelectedQuestion(index)}
-              >
-                {q.question_text ?? q}
-              </button>
+              <div key={q.id ?? index}>
+                <button
+                  className={selectedQuestion === index ? 'selected' : ''}
+                  type="button"
+                  onClick={() => setSelectedQuestion(selectedQuestion === index ? null : index)}
+                >
+                  {q.question_text ?? q}
+                </button>
+                {selectedQuestion === index && q.answer && (
+                  <StarAnswer answer={q.answer} />
+                )}
+                {selectedQuestion === index && !q.answer && (
+                  <p className="no-answer-msg">아직 준비된 답변이 없습니다.</p>
+                )}
+              </div>
             ))}
           </div>
-          {selectedAnswer && <StarAnswer answer={selectedAnswer} />}
         </article>
-
-        <aside className="result-actions">
-          <Link className="analysis-primary-button tall" to="/interview/setup">이 분석으로 면접 시작하기</Link>
-          <Link className="analysis-secondary-button tall" to="/analysis/source">자료 다시 선택</Link>
-        </aside>
       </section>
+
     </>
   )
 }
