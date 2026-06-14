@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Search } from 'lucide-react'
 
 const STATUS_TABS = [
-  { value: 'all', label: '전체' },
-  { value: 'active', label: '활성' },
-  { value: 'suspended', label: '정지' },
+  { value: 'all',     label: '전체' },
+  { value: 'active',  label: '활성' },
+  { value: 'dormant', label: '휴면' },
+  { value: 'banned',  label: '차단' },
 ]
 
 export default function MemberFilter({ values, onChange }) {
