@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { login as loginApi, getMe } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { Alert, AuthShell, Button, Field, inputClass } from '../../components/ui/DemoLayout';
@@ -20,6 +20,13 @@ function getLoginError(err) {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const notice =
+    params.get('session') === 'expired'
+      ? '세션이 만료되었습니다. 다시 로그인해주세요.'
+      : params.get('logout') === '1'
+        ? '로그아웃되었습니다.'
+        : '';
   const reset = useAuthStore((s) => s.reset);
   const setToken = useAuthStore((s) => s.setToken);
   const setUser = useAuthStore((s) => s.setUser);
@@ -63,10 +70,12 @@ function LoginPage() {
           <Link to="/auth/signup" className="font-semibold text-emerald-700">
             회원가입
           </Link>
+          <span className="mt-2 block text-xs text-slate-400">비밀번호 재설정 기능은 추후 제공 예정입니다.</span>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {notice && <Alert tone="info">{notice}</Alert>}
         <Field label="이메일" required>
           <input
             type="email"

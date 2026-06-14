@@ -6,6 +6,9 @@ import { EmptyState, Button, Card, LoadingState, PageShell, StatCard, StatusBadg
 import { useAuthStore } from '../../store/authStore';
 import { useJdStore } from '../../store/jdStore';
 import { getOverallScore } from '../../utils/reportSummary';
+import { getRecommendedQuestions } from '../../utils/recommendedQuestions';
+import MiniGrowthBars from '../../components/report/charts/MiniGrowthBars';
+import { reportApi } from '../../api/reportApi';
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('ko-KR') : '기록 없음');
@@ -32,6 +35,25 @@ function safeJsonParse(value) {
 
 function reportSessionId(report) {
   return report?.session_id ?? report?.interview_session_id ?? report?.session?.session_id ?? null;
+}
+
+// 정규화된 리포트에서 약점 목록 추출 (다양한 스키마 fallback)
+function extractWeaknesses(report) {
+  if (!report) return [];
+  const tags = Array.isArray(report.dynamically_triggered_tags) ? report.dynamically_triggered_tags : [];
+  const fromTags = tags.filter((t) => t.kind === 'weakness').map((t) => t.label || t.raw).filter(Boolean);
+  if (fromTags.length) return fromTags;
+  const candidates = [
+    report?.score_interpretation?.improvement,
+    report?.summary?.weaknesses,
+    report?.raw_data?.summary?.weaknesses,
+    report?.weaknesses,
+  ];
+  for (const c of candidates) {
+    if (Array.isArray(c) && c.length) return c.filter(Boolean);
+    if (typeof c === 'string' && c.trim()) return [c.trim()];
+  }
+  return [];
 }
 
 function statusTone(status) {
@@ -65,6 +87,7 @@ function MyPage() {
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState('');
   const [reports, setReports] = useState([]);
+  const [latestReportDetail, setLatestReportDetail] = useState(null);
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -138,7 +161,7 @@ function MyPage() {
       // 서버 세션이 이미 만료되어도 클라이언트 토큰은 정리합니다.
     } finally {
       clearAuth();
-      navigate('/auth/login');
+      navigate('/auth/login?logout=1');
     }
   };
 
@@ -159,6 +182,50 @@ function MyPage() {
   const latestReportSessionId = reportSessionId(latestReport);
   const latestHistory = history[0] || null;
   const interviewCount = summary?.interview_count ?? historyTotal;
+
+  // 최근 리포트 상세 조회(약점/추천질문용) — list 응답엔 약점이 없어 detail 을 별도 조회
+  useEffect(() => {
+    if (!latestReportSessionId) {
+      setLatestReportDetail(null);
+      return;
+    }
+    let active = true;
+    reportApi
+      .getFinalReport(latestReportSessionId)
+      .then((data) => {
+        if (active) setLatestReportDetail(data);
+      })
+      .catch(() => {
+        if (active) setLatestReportDetail(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [latestReportSessionId]);
+
+  // 성장 추이: /reports 점수를 시간순 정렬해 막대로 표시
+  const growthPoints = useMemo(
+    () =>
+      [...reports]
+        .filter((r) => getOverallScore(r, null) != null)
+        .sort(
+          (a, b) =>
+            new Date(a.generated_at || a.created_at || 0) - new Date(b.generated_at || b.created_at || 0),
+        )
+        .map((r) => ({
+          session_id: reportSessionId(r),
+          overall_score: Number(getOverallScore(r, 0)) || 0,
+          label: fmtDate(r.generated_at || r.created_at),
+        })),
+    [reports],
+  );
+  const growthDelta =
+    growthPoints.length >= 2
+      ? growthPoints[growthPoints.length - 1].overall_score - growthPoints[growthPoints.length - 2].overall_score
+      : null;
+
+  const weaknesses = useMemo(() => extractWeaknesses(latestReportDetail), [latestReportDetail]);
+  const recommendedQuestions = useMemo(() => getRecommendedQuestions(weaknesses, 3), [weaknesses]);
 
   const profileTags = [
     profile?.careerType === 'career' ? '경력' : '신입',
@@ -323,6 +390,54 @@ function MyPage() {
               </div>
             )}
           </Card>
+
+          <section className="grid gap-5 lg:grid-cols-2">
+            <Card className="p-5">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-slate-900">성장 추이</p>
+                {growthDelta != null && (
+                  <StatusBadge tone={growthDelta >= 0 ? 'success' : 'danger'}>
+                    {growthDelta >= 0 ? `▲ ${growthDelta}` : `▼ ${Math.abs(growthDelta)}`}점
+                  </StatusBadge>
+                )}
+              </div>
+              {growthPoints.length >= 2 ? (
+                <div className="space-y-3">
+                  <MiniGrowthBars points={growthPoints} />
+                  <p className="text-xs text-slate-500">
+                    최근 {Math.min(growthPoints.length, 5)}개 리포트 점수 추이입니다.
+                    {growthDelta != null && (growthDelta >= 0 ? ' 직전 대비 상승했어요.' : ' 직전 대비 하락했어요.')}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">리포트가 2개 이상 쌓이면 성장 추이가 표시됩니다.</p>
+              )}
+            </Card>
+
+            <Card className="p-5">
+              <p className="mb-4 text-sm font-bold text-slate-900">약점 TOP 3 &amp; 추천 연습 질문</p>
+              {weaknesses.length ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {weaknesses.slice(0, 3).map((w, i) => (
+                      <StatusBadge key={i} tone="warning">
+                        {typeof w === 'string' ? w : w.label || w.tag || '약점'}
+                      </StatusBadge>
+                    ))}
+                  </div>
+                  <ul className="mt-4 space-y-2">
+                    {recommendedQuestions.map((rq, i) => (
+                      <li key={i} className="rounded-lg bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
+                        Q. {rq.question}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">리포트가 생성되면 약점과 추천 연습 질문이 표시됩니다.</p>
+              )}
+            </Card>
+          </section>
         </div>
       </div>
     </PageShell>

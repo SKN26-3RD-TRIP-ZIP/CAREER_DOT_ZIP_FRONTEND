@@ -4,6 +4,8 @@ import { useFinalReport } from '../../hooks/useReport';
 import ReportLayout from '../../components/report/ReportLayout';
 import StateView from '../../components/report/StateView';
 import { getOverallScore } from '../../utils/reportSummary';
+import RadarChart from '../../components/report/charts/RadarChart';
+import { getRecommendedQuestions } from '../../utils/recommendedQuestions';
 
 function toList(value) {
   if (!value) return [];
@@ -68,6 +70,8 @@ export default function FinalReportPage() {
     [report],
   );
 
+  const recommendedQuestions = useMemo(() => getRecommendedQuestions(weaknesses, 3), [weaknesses]);
+
   if (reportQuery.isLoading || reportQuery.isError || !report) {
     return (
       <ReportLayout title="최종 리포트" subtitle="면접 결과를 불러와 종합 점수와 개선 포인트를 확인합니다.">
@@ -78,15 +82,23 @@ export default function FinalReportPage() {
 
   const categories = Array.isArray(report.score_detail?.categories) ? report.score_detail.categories : [];
   const questions = Array.isArray(report.score_detail?.questions) ? report.score_detail.questions : [];
+  const radarData = categories
+    .filter((c) => c && c.score != null && !Number.isNaN(Number(c.score)))
+    .map((c) => ({ axis: c.label, score: Number(c.score) || 0 }));
 
   return (
     <ReportLayout
       title="최종 리포트"
       subtitle="면접 결과를 바탕으로 종합 점수, 강점, 약점, 추천 개선사항을 확인합니다."
       action={
-        <button type="button" onClick={() => navigate('/mypage')} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">
-          마이페이지로 이동
-        </button>
+        <div className="no-print flex gap-2">
+          <button type="button" onClick={() => window.print()} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            PDF로 저장
+          </button>
+          <button type="button" onClick={() => navigate('/mypage')} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">
+            마이페이지로 이동
+          </button>
+        </div>
       }
     >
       <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
@@ -117,6 +129,12 @@ export default function FinalReportPage() {
           </div>
         </Section>
       </div>
+
+      {radarData.length >= 3 && (
+        <Section title="역량 레이더" className="mt-5">
+          <RadarChart data={radarData} />
+        </Section>
+      )}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <Section title="강점">
@@ -159,7 +177,22 @@ export default function FinalReportPage() {
         )}
       </Section>
 
-      <section className="mt-5 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <Section title="약점 기반 추천 연습 질문" className="mt-5">
+        {recommendedQuestions.length ? (
+          <ul className="space-y-3">
+            {recommendedQuestions.map((rq, idx) => (
+              <li key={idx} className="rounded-lg bg-slate-50 px-4 py-3">
+                {rq.weakness && <p className="text-xs font-semibold text-amber-700">약점: {rq.weakness}</p>}
+                <p className="mt-1 text-sm leading-6 text-slate-700">Q. {rq.question}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-slate-500">추천 연습 질문이 없습니다.</p>
+        )}
+      </Section>
+
+      <section className="no-print mt-5 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-950">다음 액션</h2>
           <p className="mt-1 text-sm text-slate-500">리포트를 확인한 뒤 다시 면접하거나 다른 JD로 준비를 이어갈 수 있습니다.</p>

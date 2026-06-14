@@ -18,3 +18,13 @@ button {
 button:disabled {
   cursor: not-allowed;
 }
+
+/* 리포트 PDF 저장(window.print) 시 네비/액션 버튼 숨김 + 인쇄 가독성 */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff;
+  }
+}

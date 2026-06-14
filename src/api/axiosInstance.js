@@ -44,7 +44,7 @@ axiosInstance.interceptors.response.use(
         // refresh 실패 → 로그아웃
         localStorage.removeItem('access_token');
         if (typeof window !== 'undefined') {
-          window.location.assign('/auth/login');
+          window.location.assign('/auth/login?session=expired');
         }
         return Promise.reject(refreshError);
       }

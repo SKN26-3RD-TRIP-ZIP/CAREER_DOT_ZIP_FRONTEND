@@ -271,6 +271,18 @@ function VoiceInterviewPage() {
     }
   }, [currentQuestion?.question_id, currentQuestion?.question_text, isTTSSupported, isInterviewComplete, speak]);
 
+  // 면접 진행 중 새로고침/창 닫기 방지 (진행 중일 때만)
+  useEffect(() => {
+    const inProgress = questions.length > 0 && !isInterviewComplete;
+    if (!inProgress) return undefined;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [questions.length, isInterviewComplete]);
+
   // 면접 완료 화면
   if (isInterviewComplete) {
     return (
@@ -480,9 +492,28 @@ function VoiceInterviewPage() {
               </div>
             </div>
 
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>진행률</span>
+                <span>{Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%</span>
+              </div>
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-[#08CB00] transition-all"
+                  style={{ width: `${Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%` }}
+                />
+              </div>
+            </div>
+
             <div className="mt-3 min-h-16 rounded-lg bg-slate-50 p-4 text-base leading-relaxed">
               {currentQuestion?.question_text || '질문을 불러오는 중입니다.'}
             </div>
+
+            {(currentQuestion?.is_follow_up || currentQuestion?.parent_question_id || currentQuestion?.parent_question) && (
+              <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                답변을 더 구체화하기 위해 추가(꼬리) 질문이 생성되었습니다.
+              </p>
+            )}
 
             {!isTTSSupported && (
               <p className="mt-2 text-sm text-amber-600">
@@ -535,6 +566,12 @@ function VoiceInterviewPage() {
               onChange={(e) => setTranscript(e.target.value)}
               placeholder="STT 결과가 여기에 표시됩니다. 직접 수정할 수 있습니다."
             />
+
+            {transcript.trim().length > 0 && transcript.trim().length < 20 && (
+              <p className="mt-2 text-sm text-amber-600">
+                답변이 너무 짧습니다. 최소 2~3문장 이상으로 답변하면 더 정확한 피드백을 받을 수 있습니다. (저장은 가능합니다)
+              </p>
+            )}
 
             <p className="mt-1 text-xs text-slate-400">
               상태: {isListening ? '녹음 중' : '대기'} · 답변 시간: {speechDuration}초
