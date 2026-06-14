@@ -11,7 +11,7 @@ import {
   inputClass,
 } from '../../components/ui/DemoLayout';
 
-const STEPS = ['프로필', 'JD 등록', '이력서', '면접 설정'];
+const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트', '면접 설정'];
 
 const JOB_OPTIONS = [
   { value: 'backend', label: '백엔드 개발자' },
@@ -34,18 +34,27 @@ function formatApiError(err, fallback) {
   return `${fallback} (HTTP ${status})`;
 }
 
+function safeJsonParse(value) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 function ChoiceGroup({ label, name, options, value, onChange }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-semibold text-slate-800">{label}</p>
+      <p className="mb-2 text-sm font-black text-[#253900]">{label}</p>
       <div className="grid grid-cols-2 gap-2">
         {options.map((opt) => (
           <label
             key={opt.value}
             className={`cursor-pointer rounded-lg border px-4 py-3 text-center text-sm font-semibold transition ${
               value === opt.value
-                ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                ? 'border-[#253900] bg-[#253900] text-[#EEEEEE]'
+                : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
             }`}
           >
             <input
@@ -66,9 +75,12 @@ function ChoiceGroup({ label, name, options, value, onChange }) {
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const localProfile = safeJsonParse(localStorage.getItem('userProfile')) || {};
+  const [displayName, setDisplayName] = useState(localProfile.name || '');
   const [careerType, setCareerType] = useState('new');
   const [majorType, setMajorType] = useState('major');
   const [jobRole, setJobRole] = useState('backend');
+  const [interests, setInterests] = useState(localProfile.interests || 'Java, Spring Boot, MySQL');
   const [yearsExp, setYearsExp] = useState('');
   const [hasProfile, setHasProfile] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -92,6 +104,7 @@ function ProfilePage() {
         setMajorType(profile.major_type || 'major');
         setJobRole(profile.desired_job || 'backend');
         setYearsExp(String(profile.career_year ?? ''));
+        setDisplayName((prev) => prev || profile.name || localProfile.name || '');
       })
       .catch((err) => {
         if (!active) return;
@@ -118,9 +131,11 @@ function ProfilePage() {
     localStorage.setItem(
       'userProfile',
       JSON.stringify({
+        name: displayName,
         careerType,
         majorType,
         jobRole,
+        interests,
         yearsExp: String(careerYear),
       }),
     );
@@ -178,6 +193,24 @@ function ProfilePage() {
           <LoadingState title="프로필을 불러오는 중입니다" />
         ) : (
           <div className="space-y-6">
+            <Field label="이름">
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="이름을 입력하세요"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </Field>
+            <Field label="희망 직무" required>
+              <select className={inputClass} value={jobRole} onChange={(e) => setJobRole(e.target.value)}>
+                {JOB_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <ChoiceGroup
               label="경력 구분"
               name="careerType"
@@ -198,15 +231,6 @@ function ProfilePage() {
               value={majorType}
               onChange={setMajorType}
             />
-            <Field label="희망 직무" required>
-              <select className={inputClass} value={jobRole} onChange={(e) => setJobRole(e.target.value)}>
-                {JOB_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
             <Field label="경력 연차" hint="신입이면 0을 입력해주세요.">
               <div className="flex items-center gap-2">
                 <input
@@ -218,8 +242,17 @@ function ProfilePage() {
                   value={yearsExp}
                   onChange={(e) => setYearsExp(e.target.value)}
                 />
-                <span className="text-sm text-slate-500">년</span>
+                <span className="text-sm font-bold text-[#000000]">년</span>
               </div>
+            </Field>
+            <Field label="관심 분야 · 기술스택" hint="쉼표로 구분해 입력하면 마이페이지와 추천 질문 문맥에 활용됩니다.">
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="Java, Spring Boot, MySQL"
+                value={interests}
+                onChange={(e) => setInterests(e.target.value)}
+              />
             </Field>
             {error && <Alert tone="danger">{error}</Alert>}
             {success && <Alert tone="success">{success}</Alert>}
@@ -228,7 +261,7 @@ function ProfilePage() {
                 마이페이지로 이동
               </Button>
               <Button type="button" onClick={handleNext} disabled={saving}>
-                {saving ? '저장 중...' : '저장하고 JD 등록하기'}
+                {saving ? '저장 중...' : '저장하고 다음'}
               </Button>
             </div>
           </div>

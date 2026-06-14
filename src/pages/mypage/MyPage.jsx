@@ -2,13 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMe, logout as logoutApi } from '../../api/authApi';
 import { mypageApi } from '../../api/mypageApi';
-import { EmptyState, Button, Card, LoadingState, PageShell, StatCard, StatusBadge, Alert } from '../../components/ui/DemoLayout';
+import { reportApi } from '../../api/reportApi';
+import { Alert, Button, Card, DashboardCard, EmptyState, LoadingState, PageShell, StatCard, StatusBadge } from '../../components/ui/DemoLayout';
 import { useAuthStore } from '../../store/authStore';
-import { useJdStore } from '../../store/jdStore';
 import { getOverallScore } from '../../utils/reportSummary';
 import { getRecommendedQuestions } from '../../utils/recommendedQuestions';
-import MiniGrowthBars from '../../components/report/charts/MiniGrowthBars';
-import { reportApi } from '../../api/reportApi';
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('ko-KR') : '기록 없음');
@@ -37,7 +35,6 @@ function reportSessionId(report) {
   return report?.session_id ?? report?.interview_session_id ?? report?.session?.session_id ?? null;
 }
 
-// 정규화된 리포트에서 약점 목록 추출 (다양한 스키마 fallback)
 function extractWeaknesses(report) {
   if (!report) return [];
   const tags = Array.isArray(report.dynamically_triggered_tags) ? report.dynamically_triggered_tags : [];
@@ -66,16 +63,33 @@ function statusTone(status) {
 
 function InfoRow({ label, value }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-0">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-right text-sm font-semibold text-slate-900">{value || '-'}</span>
+    <div className="flex items-start justify-between gap-4 border-b border-[#000000] py-2 last:border-0">
+      <span className="text-sm font-bold text-[#253900]">{label}</span>
+      <span className="text-right text-sm font-black text-[#000000]">{value || '-'}</span>
+    </div>
+  );
+}
+
+function GrowthBars({ points }) {
+  const latest = points.slice(-5);
+  const max = Math.max(...latest.map((p) => p.overall_score), 100);
+
+  return (
+    <div className="flex h-44 items-end gap-3 rounded-lg border border-[#000000] p-4">
+      {latest.map((point) => (
+        <div key={point.session_id || point.label} className="flex flex-1 flex-col items-center gap-2">
+          <div className="flex h-28 w-full items-end border border-[#000000]">
+            <div className="w-full bg-[#08CB00]" style={{ height: `${Math.max(8, (point.overall_score / max) * 100)}%` }} />
+          </div>
+          <strong className="text-xs">{point.overall_score}</strong>
+        </div>
+      ))}
     </div>
   );
 }
 
 function MyPage() {
   const navigate = useNavigate();
-  const { jdData } = useJdStore();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const clearAuth = useAuthStore((s) => s.logout);
@@ -165,25 +179,15 @@ function MyPage() {
     }
   };
 
-  const profile = safeJsonParse(localStorage.getItem('userProfile'));
-  const docs = safeJsonParse(localStorage.getItem('userDocuments'));
-
-  const latestJd = summary?.latest_jd || null;
-  const latestResume = summary?.latest_resume || null;
-  const latestJdCreatedAt = latestJd?.created_at || summary?.latest_jd_created_at;
-  const latestJdStatus = latestJd?.analysis_status || summary?.latest_jd_analysis_status;
-  const latestResumeUpdatedAt = latestResume?.updated_at || summary?.latest_resume_updated_at;
-
+  const profile = safeJsonParse(localStorage.getItem('userProfile')) || {};
   const latestReport = useMemo(
     () => summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null,
     [summary, reports, history],
   );
   const latestReportScore = latestReport ? getOverallScore(latestReport, null) : null;
   const latestReportSessionId = reportSessionId(latestReport);
-  const latestHistory = history[0] || null;
   const interviewCount = summary?.interview_count ?? historyTotal;
 
-  // 최근 리포트 상세 조회(약점/추천질문용) — list 응답엔 약점이 없어 detail 을 별도 조회
   useEffect(() => {
     if (!latestReportSessionId) {
       setLatestReportDetail(null);
@@ -203,15 +207,11 @@ function MyPage() {
     };
   }, [latestReportSessionId]);
 
-  // 성장 추이: /reports 점수를 시간순 정렬해 막대로 표시
   const growthPoints = useMemo(
     () =>
       [...reports]
         .filter((r) => getOverallScore(r, null) != null)
-        .sort(
-          (a, b) =>
-            new Date(a.generated_at || a.created_at || 0) - new Date(b.generated_at || b.created_at || 0),
-        )
+        .sort((a, b) => new Date(a.generated_at || a.created_at || 0) - new Date(b.generated_at || b.created_at || 0))
         .map((r) => ({
           session_id: reportSessionId(r),
           overall_score: Number(getOverallScore(r, 0)) || 0,
@@ -227,58 +227,66 @@ function MyPage() {
   const weaknesses = useMemo(() => extractWeaknesses(latestReportDetail), [latestReportDetail]);
   const recommendedQuestions = useMemo(() => getRecommendedQuestions(weaknesses, 3), [weaknesses]);
 
-  const profileTags = [
-    profile?.careerType === 'career' ? '경력' : '신입',
-    profile?.majorType === 'non_major' ? '비전공자' : '전공자',
-    JOB_LABEL[profile?.jobRole] ?? profile?.jobRole,
-    profile?.yearsExp && profile.yearsExp !== '0' ? `${profile.yearsExp}년차` : '신입',
-  ].filter(Boolean);
+  const desiredJob = JOB_LABEL[profile.jobRole] ?? profile.jobRole ?? '미등록';
+  const careerLabel = profile.careerType === 'career' ? '경력' : '신입';
+  const majorLabel = profile.majorType === 'non_major' ? '비전공' : '전공';
 
   return (
     <PageShell
-      title="마이페이지"
-      description="최근 로그인, 활동 요약, 저장된 자료, 면접 리포트를 한 곳에서 확인합니다."
+      title={`${profile.name || user?.name || '회원'} 님의 성장 대시보드`}
+      description="최근 면접 리포트와 약점 기반 연습 흐름을 한 화면에서 확인하세요."
       actions={
-        <Button type="button" variant="secondary" onClick={handleLogout}>
-          로그아웃
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={() => navigate('/interview/setup')}>
+            면접 시작하기
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
+            내 정보 수정
+          </Button>
+          <Button type="button" variant="danger" onClick={handleLogout}>
+            로그아웃
+          </Button>
+        </div>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-[1.1fr_1.9fr]">
+      <div className="grid gap-5 lg:grid-cols-[0.9fr_2.1fr]">
         <div className="space-y-5">
           <Card className="p-5">
-            <p className="text-sm font-bold text-slate-900">사용자 정보</p>
-            <div className="mt-4 space-y-1">
-              <InfoRow label="이름" value={user?.name || '이름 없음'} />
-              <InfoRow label="이메일" value={user?.email} />
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#000000] bg-[#08CB00] text-2xl font-black">
+                {(profile.name || user?.name || user?.email || '?').slice(0, 1)}
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-[#253900]">{profile.name || user?.name || '이름 없음'}</h2>
+                <p className="mt-1 text-sm font-semibold">{user?.email || '-'}</p>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <StatusBadge>{careerLabel}</StatusBadge>
+              <StatusBadge>{majorLabel}</StatusBadge>
+              <StatusBadge>{desiredJob}</StatusBadge>
+            </div>
+            <div className="mt-5">
               <InfoRow label="최근 로그인" value={fmtDateTime(user?.last_login)} />
+              <InfoRow label="경력 구분" value={careerLabel} />
+              <InfoRow label="희망 직무" value={desiredJob} />
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {profileTags.length ? (
-                profileTags.map((tag) => <StatusBadge key={tag}>{tag}</StatusBadge>)
-              ) : (
-                <StatusBadge>프로필 미등록</StatusBadge>
-              )}
-            </div>
-            <Button type="button" variant="secondary" className="mt-4 w-full" onClick={() => navigate('/profile')}>
-              프로필 등록/수정
-            </Button>
           </Card>
 
-          <Card className="p-5">
-            <p className="text-sm font-bold text-slate-900">다음 행동</p>
+          <DashboardCard>
+            <h2 className="text-lg font-black text-[#253900]">추천 다음 행동</h2>
             <div className="mt-4 grid gap-2">
-              <Button type="button" onClick={() => navigate('/jd')}>
+              <Button type="button" onClick={() => navigate('/interview/setup')}>
+                다시 면접하기
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate('/jd')}>
                 JD 등록하기
               </Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/input/documents')}>
                 이력서 업로드하기
               </Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
-                면접 시작하기
-              </Button>
             </div>
-          </Card>
+          </DashboardCard>
         </div>
 
         <div className="space-y-5">
@@ -288,156 +296,143 @@ function MyPage() {
             <Alert tone="danger">{summaryError}</Alert>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <StatCard label="총 면접" value={interviewCount ?? 0} helper="완료/진행 기록 기준" />
-              <StatCard label="JD" value={summary?.jd_count ?? 0} helper={latestJdCreatedAt ? `최근 ${fmtDate(latestJdCreatedAt)}` : '등록 없음'} />
-              <StatCard label="이력서" value={summary?.resume_count ?? 0} helper={latestResumeUpdatedAt ? `최근 ${fmtDate(latestResumeUpdatedAt)}` : '등록 없음'} />
-              <StatCard label="자소서" value={summary?.cover_letter_count ?? 0} helper="저장된 자소서" />
-              <StatCard label="프로젝트" value={summary?.project_count ?? 0} helper="프로젝트 경험" />
+              <StatCard label="총 면접 수" value={interviewCount ?? 0} />
+              <StatCard label="등록 JD 수" value={summary?.jd_count ?? 0} />
+              <StatCard label="등록 이력서 수" value={summary?.resume_count ?? 0} />
+              <StatCard label="자소서 수" value={summary?.cover_letter_count ?? 0} />
+              <StatCard label="프로젝트 수" value={summary?.project_count ?? 0} />
             </div>
           )}
 
-          <section className="grid gap-5 lg:grid-cols-2">
-            <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-slate-900">최근 리포트</p>
-                {latestReportScore != null && <StatusBadge tone="success">{latestReportScore}점</StatusBadge>}
+          <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+            <DashboardCard>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-[#253900]">최근 리포트</h2>
+                  <p className="mt-2 text-sm leading-6">{latestReport ? '가장 최근 생성된 면접 리포트입니다.' : '면접을 완료하면 최근 리포트가 표시됩니다.'}</p>
+                </div>
+                {latestReportScore != null && <strong className="text-5xl font-black text-[#000000]">{latestReportScore}</strong>}
               </div>
               {latestReport ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-600">
-                    {latestReportScore != null ? '가장 최근 생성된 리포트 점수를 확인했습니다.' : '최근 리포트가 있으나 점수 정보는 아직 없습니다.'}
-                  </p>
-                  <p className="text-xs text-slate-500">{fmtDateTime(latestReport.generated_at || latestReport.created_at)}</p>
+                <div className="mt-5 space-y-4">
+                  <InfoRow label="생성일" value={fmtDateTime(latestReport.generated_at || latestReport.created_at)} />
+                  <InfoRow label="강점 요약" value={latestReportDetail?.summary?.strengths?.[0] || latestReportDetail?.score_interpretation?.strength || '리포트 상세에서 확인 가능'} />
+                  <InfoRow label="약점 요약" value={weaknesses[0] || '리포트 상세에서 확인 가능'} />
                   {latestReportSessionId ? (
                     <Button type="button" onClick={() => navigate(`/report/${latestReportSessionId}`)}>
-                      상세 리포트 보기
+                      리포트 상세 보기
                     </Button>
                   ) : (
                     <Alert tone="warning">상세 이동에 필요한 session_id가 응답에 없습니다.</Alert>
                   )}
                 </div>
               ) : (
-                <EmptyState
-                  title="아직 생성된 리포트가 없습니다"
-                  description="면접을 완료하면 최근 리포트와 점수가 이곳에 표시됩니다."
-                  actionLabel="면접 시작하기"
-                  actionTo="/interview/setup"
-                />
+                <EmptyState title="아직 생성된 리포트가 없습니다" description="면접을 완료하면 점수와 요약이 이곳에 표시됩니다." actionLabel="면접 시작하기" actionTo="/interview/setup" />
               )}
-            </Card>
+            </DashboardCard>
 
-            <Card className="p-5">
-              <p className="mb-4 text-sm font-bold text-slate-900">최근 JD / 이력서</p>
-              {latestJd || jdData ? (
-                <div className="rounded-lg bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {latestJd ? `${latestJd.company_name} · ${latestJd.position}` : `${jdData?.company_name || '회사명 없음'} · ${jdData?.position || '직무명 없음'}`}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <StatusBadge tone={statusTone(latestJdStatus)}>{latestJdStatus || '분석 상태 없음'}</StatusBadge>
-                    <StatusBadge>{latestJdCreatedAt ? fmtDate(latestJdCreatedAt) : '등록일 없음'}</StatusBadge>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState title="등록된 JD가 없습니다" description="JD를 등록하면 최근 회사명과 직무가 표시됩니다." actionLabel="JD 등록" actionTo="/jd" />
-              )}
-
-              <div className="mt-3 rounded-lg bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-900">{latestResume?.name || docs?.resume?.slice?.(0, 32) || '최근 이력서 없음'}</p>
-                <p className="mt-1 text-xs text-slate-500">최근 수정 {fmtDateTime(latestResumeUpdatedAt)}</p>
+            <DashboardCard>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-black text-[#253900]">성장 추이</h2>
+                {growthDelta != null && <StatusBadge tone={growthDelta >= 0 ? 'success' : 'warning'}>{growthDelta >= 0 ? `+${growthDelta}` : growthDelta}점</StatusBadge>}
               </div>
-            </Card>
+              <div className="mt-5">
+                {growthPoints.length >= 2 ? (
+                  <>
+                    <GrowthBars points={growthPoints} />
+                    <p className="mt-3 text-sm leading-6">최근 {Math.min(growthPoints.length, 5)}개 리포트 점수 변화입니다.</p>
+                  </>
+                ) : (
+                  <EmptyState title="성장 추이 데이터가 부족합니다" description="리포트가 2개 이상 쌓이면 변화가 표시됩니다." />
+                )}
+              </div>
+            </DashboardCard>
           </section>
 
-          <Card className="p-5">
+          <section className="grid gap-5 lg:grid-cols-2">
+            <DashboardCard>
+              <h2 className="text-xl font-black text-[#253900]">약점 TOP 3</h2>
+              {weaknesses.length ? (
+                <div className="mt-4 grid gap-3">
+                  {weaknesses.slice(0, 3).map((w, i) => (
+                    <div key={`${w}-${i}`} className="rounded-lg border border-[#000000] p-4">
+                      <span className="text-xs font-black text-[#253900]">TOP {i + 1}</span>
+                      <p className="mt-2 font-black">{typeof w === 'string' ? w : w.label || w.tag || '약점'}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="표시할 약점이 아직 없습니다" description="최근 리포트가 생성되면 개선 항목이 표시됩니다." />
+              )}
+            </DashboardCard>
+
+            <DashboardCard>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-black text-[#253900]">추천 연습 질문</h2>
+                <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
+                  다시 면접하기
+                </Button>
+              </div>
+              {recommendedQuestions.length ? (
+                <ul className="mt-4 space-y-3">
+                  {recommendedQuestions.map((rq, i) => (
+                    <li key={i} className="rounded-lg border border-[#000000] p-4 text-sm font-semibold leading-6">
+                      Q. {rq.question}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyState title="추천 질문을 준비 중입니다" description="약점 데이터가 생기면 맞춤 질문을 제안합니다." />
+              )}
+            </DashboardCard>
+          </section>
+
+          <DashboardCard>
             <div className="mb-4 flex items-center justify-between gap-2">
-              <p className="text-sm font-bold text-slate-900">최근 면접 기록</p>
-              {latestHistory?.status && <StatusBadge tone={statusTone(latestHistory.status)}>{latestHistory.status}</StatusBadge>}
+              <h2 className="text-xl font-black text-[#253900]">최근 면접 기록</h2>
+              <StatusBadge>{historyTotal}건</StatusBadge>
             </div>
             {historyLoading ? (
               <LoadingState title="면접 기록을 불러오는 중입니다" />
             ) : historyError ? (
               <Alert tone="danger">{historyError}</Alert>
             ) : history.length === 0 ? (
-              <EmptyState
-                title="아직 면접 기록이 없습니다"
-                description="JD와 이력서를 선택해 첫 면접을 시작해보세요."
-                actionLabel="면접 시작하기"
-                actionTo="/interview/setup"
-              />
+              <EmptyState title="아직 면접 기록이 없습니다" description="JD와 이력서를 선택해 첫 면접을 시작해보세요." actionLabel="면접 시작하기" actionTo="/interview/setup" />
             ) : (
-              <div className="space-y-2">
-                {history.slice(0, 5).map((rec) => (
-                  <div key={rec.session_id} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {rec.interview_type || '면접'} {rec.persona ? `· ${rec.persona}` : ''}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {fmtDateTime(rec.created_at)} · 질문 {rec.question_count ?? 0} / 답변 {rec.answer_count ?? 0}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {rec.has_report && rec.overall_score != null && <StatusBadge tone="success">{rec.overall_score}점</StatusBadge>}
-                      {rec.has_report && (
-                        <Button type="button" variant="secondary" onClick={() => navigate(`/report/${rec.session_id}`)}>
-                          결과 보기
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#000000] text-[#253900]">
+                      <th className="py-3 pr-4">날짜</th>
+                      <th className="py-3 pr-4">면접 유형</th>
+                      <th className="py-3 pr-4">상태</th>
+                      <th className="py-3 pr-4">점수</th>
+                      <th className="py-3 pr-4">동작</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.slice(0, 5).map((rec) => (
+                      <tr key={rec.session_id} className="border-b border-[#000000]">
+                        <td className="py-3 pr-4">{fmtDateTime(rec.created_at)}</td>
+                        <td className="py-3 pr-4 font-black">{rec.interview_type || '면접'}</td>
+                        <td className="py-3 pr-4"><StatusBadge tone={statusTone(rec.status)}>{rec.status || '기록됨'}</StatusBadge></td>
+                        <td className="py-3 pr-4">{rec.overall_score != null ? `${rec.overall_score}점` : '-'}</td>
+                        <td className="py-3 pr-4">
+                          {rec.has_report ? (
+                            <Button type="button" variant="secondary" onClick={() => navigate(`/report/${rec.session_id}`)}>
+                              리포트 보기
+                            </Button>
+                          ) : (
+                            <span className="font-bold">리포트 없음</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-          </Card>
-
-          <section className="grid gap-5 lg:grid-cols-2">
-            <Card className="p-5">
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-slate-900">성장 추이</p>
-                {growthDelta != null && (
-                  <StatusBadge tone={growthDelta >= 0 ? 'success' : 'danger'}>
-                    {growthDelta >= 0 ? `▲ ${growthDelta}` : `▼ ${Math.abs(growthDelta)}`}점
-                  </StatusBadge>
-                )}
-              </div>
-              {growthPoints.length >= 2 ? (
-                <div className="space-y-3">
-                  <MiniGrowthBars points={growthPoints} />
-                  <p className="text-xs text-slate-500">
-                    최근 {Math.min(growthPoints.length, 5)}개 리포트 점수 추이입니다.
-                    {growthDelta != null && (growthDelta >= 0 ? ' 직전 대비 상승했어요.' : ' 직전 대비 하락했어요.')}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">리포트가 2개 이상 쌓이면 성장 추이가 표시됩니다.</p>
-              )}
-            </Card>
-
-            <Card className="p-5">
-              <p className="mb-4 text-sm font-bold text-slate-900">약점 TOP 3 &amp; 추천 연습 질문</p>
-              {weaknesses.length ? (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {weaknesses.slice(0, 3).map((w, i) => (
-                      <StatusBadge key={i} tone="warning">
-                        {typeof w === 'string' ? w : w.label || w.tag || '약점'}
-                      </StatusBadge>
-                    ))}
-                  </div>
-                  <ul className="mt-4 space-y-2">
-                    {recommendedQuestions.map((rq, i) => (
-                      <li key={i} className="rounded-lg bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
-                        Q. {rq.question}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <p className="text-sm text-slate-500">리포트가 생성되면 약점과 추천 연습 질문이 표시됩니다.</p>
-              )}
-            </Card>
-          </section>
+          </DashboardCard>
         </div>
       </div>
     </PageShell>

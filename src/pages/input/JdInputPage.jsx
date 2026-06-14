@@ -15,7 +15,7 @@ import {
 } from '../../components/ui/DemoLayout';
 
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
-const STEPS = ['프로필', 'JD 등록', '이력서', '면접 설정'];
+const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트', '면접 설정'];
 
 const INPUT_MODES = [
   { id: 'manual', label: '직접 입력' },
@@ -178,6 +178,7 @@ function JdInputPage() {
       const data = await jdApi.createJd(buildPayload());
       rememberJd(data);
       setSuccessData(data);
+      navigate('/input/documents');
     } catch (err) {
       setError(formatApiError(err, 'JD 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -220,6 +221,7 @@ function JdInputPage() {
       const data = await jobsApi.saveJobAsJd(selectedMockJob);
       rememberJd(data);
       setSuccessData(data);
+      navigate('/input/documents');
     } catch (err) {
       setError(formatApiError(err, 'Mock 공고 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -255,6 +257,7 @@ function JdInputPage() {
       });
       rememberJd(data);
       setSuccessData(data);
+      navigate('/input/documents');
     } catch (err) {
       setError(formatApiError(err, 'JD PDF 업로드에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -274,7 +277,7 @@ function JdInputPage() {
   return (
     <PageShell
       eyebrow="Step 2"
-      title="JD 등록"
+      title="JD 입력"
       description="직접 입력, Mock 채용공고 저장, PDF 업로드 중 하나를 선택해 면접 질문의 기준이 될 JD를 저장합니다."
       steps={STEPS}
       currentStep={2}
@@ -286,13 +289,13 @@ function JdInputPage() {
               JD가 저장되었습니다. {successData.company_name || ''} {successData.position || ''}
             </Alert>
             {(successData.jd_id ?? successData.id) && (
-              <p className="text-sm text-slate-500">
-                JD ID: <span className="font-mono font-semibold text-slate-700">{successData.jd_id ?? successData.id}</span>
+              <p className="text-sm text-[#000000]">
+                JD ID: <span className="font-mono font-semibold text-[#253900]">{successData.jd_id ?? successData.id}</span>
               </p>
             )}
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={() => navigate('/input/documents')}>
-                이력서 등록하기
+                저장하고 다음
               </Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
                 면접 설정으로 이동
@@ -304,7 +307,7 @@ function JdInputPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-100 p-1">
+            <div className="grid grid-cols-3 gap-2 rounded-lg border border-[#000000] bg-[#EEEEEE] p-1">
               {INPUT_MODES.map((mode) => (
                 <button
                   key={mode.id}
@@ -314,7 +317,7 @@ function JdInputPage() {
                     setError('');
                   }}
                   className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    activeMode === mode.id ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    activeMode === mode.id ? 'bg-[#253900] text-[#EEEEEE]' : 'text-[#000000] hover:opacity-80'
                   }`}
                 >
                   {mode.label}
@@ -355,7 +358,7 @@ function JdInputPage() {
                   </Field>
                 </div>
                 <div>
-                  <p className="mb-2 text-sm font-semibold text-slate-800">기술 스택</p>
+                  <p className="mb-2 text-sm font-black text-[#253900]">기술 스택</p>
                   <div className="flex flex-wrap gap-2">
                     {TECH_STACK_OPTIONS.map((stack) => {
                       const checked = form.tech_stacks.includes(stack);
@@ -365,7 +368,7 @@ function JdInputPage() {
                           type="button"
                           onClick={() => handleTechStackToggle(stack)}
                           className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                            checked ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'
+                            checked ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
                           }`}
                         >
                           {stack}
@@ -393,12 +396,12 @@ function JdInputPage() {
                   <input name="custom_keywords" type="text" className={inputClass} placeholder="API, 인증, 배포" value={form.custom_keywords} onChange={handleChange} />
                 </Field>
                 {error && <Alert tone="danger">{error}</Alert>}
-                <div className="flex flex-wrap gap-2">
-                  <Button type="submit" disabled={loading}>
-                    {loading ? '저장 중...' : 'JD 저장'}
+                <div className="flex flex-wrap justify-between gap-2">
+                  <Button type="button" variant="secondary" onClick={() => navigate('/profile')} disabled={loading}>
+                    이전
                   </Button>
-                  <Button type="button" variant="secondary" onClick={handleReset} disabled={loading}>
-                    초기화
+                  <Button type="submit" disabled={loading}>
+                    {loading ? '저장 중...' : '저장하고 다음'}
                   </Button>
                 </div>
               </form>
@@ -436,13 +439,13 @@ function JdInputPage() {
                           type="button"
                           onClick={() => setSelectedMockJob(job)}
                           className={`rounded-lg border p-4 text-left transition ${
-                            selected ? 'border-emerald-600 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white hover:border-slate-300'
+                            selected ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
                           }`}
                         >
                           <p className="text-sm font-bold">
                             {job.company_name || '회사명 없음'} · {job.position || '직무명 없음'}
                           </p>
-                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#000000]">
                             {job.job_description || job.requirements || '공고 요약이 없습니다.'}
                           </p>
                         </button>
@@ -451,9 +454,14 @@ function JdInputPage() {
                   </div>
                 )}
                 {error && <Alert tone="danger">{error}</Alert>}
-                <Button type="button" disabled={loading || !selectedMockJob} onClick={handleMockSave}>
-                  {loading ? '저장 중...' : '선택 공고를 JD로 저장'}
-                </Button>
+                <div className="flex flex-wrap justify-between gap-2">
+                  <Button type="button" variant="secondary" onClick={() => navigate('/profile')} disabled={loading}>
+                    이전
+                  </Button>
+                  <Button type="button" disabled={loading || !selectedMockJob} onClick={handleMockSave}>
+                    {loading ? '저장 중...' : '선택 공고를 저장하고 다음'}
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -488,12 +496,12 @@ function JdInputPage() {
                   />
                 </Field>
                 {error && <Alert tone="danger">{error}</Alert>}
-                <div className="flex flex-wrap gap-2">
-                  <Button type="submit" disabled={loading}>
-                    {loading ? '업로드 중...' : 'PDF 업로드'}
+                <div className="flex flex-wrap justify-between gap-2">
+                  <Button type="button" variant="secondary" onClick={() => navigate('/profile')} disabled={loading}>
+                    이전
                   </Button>
-                  <Button type="button" variant="secondary" onClick={handleReset} disabled={loading}>
-                    초기화
+                  <Button type="submit" disabled={loading}>
+                    {loading ? '업로드 중...' : 'PDF 업로드하고 다음'}
                   </Button>
                 </div>
               </form>
