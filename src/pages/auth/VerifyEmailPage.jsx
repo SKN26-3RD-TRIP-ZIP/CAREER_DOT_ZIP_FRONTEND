@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { verifyCode, resendVerification } from '../../api/authApi';
 import { Alert, AuthShell, Button, Field, inputClass } from '../../components/ui/DemoLayout';
@@ -11,6 +11,13 @@ function VerifyEmailPage() {
   const [error, setError] = useState('');
   const [resendState, setResendState] = useState('idle');
   const [resendMessage, setResendMessage] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const t = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -31,12 +38,13 @@ function VerifyEmailPage() {
   };
 
   const handleResend = async () => {
-    if (!email.trim() || resendState === 'sending') return;
+    if (!email.trim() || resendState === 'sending' || cooldown > 0) return;
     setResendState('sending');
     setResendMessage('');
     try {
       const res = await resendVerification(email.trim());
       setResendMessage(res.data?.message || '인증번호를 다시 보냈습니다. 메일함을 확인해주세요.');
+      setCooldown(60);
     } catch (err) {
       setResendMessage(err.response?.data?.detail || '인증번호 재발송에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -62,10 +70,14 @@ function VerifyEmailPage() {
         <button
           type="button"
           onClick={handleResend}
-          disabled={resendState === 'sending' || !email.trim()}
+          disabled={resendState === 'sending' || !email.trim() || cooldown > 0}
           className="font-semibold text-emerald-700 disabled:text-slate-400"
         >
-          {resendState === 'sending' ? '재발송 중...' : '인증번호 재발송'}
+          {resendState === 'sending'
+            ? '재발송 중...'
+            : cooldown > 0
+              ? `${cooldown}초 후 재발송 가능`
+              : '인증번호 재발송'}
         </button>
       }
     >
