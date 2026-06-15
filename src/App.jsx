@@ -1,13 +1,16 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
+import HomePage from './pages/HomePage.jsx'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import InterviewQuestionCheckPage from './pages/interview/InterviewQuestionCheckPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
 import DocumentsInputPage from './pages/input/DocumentsInputPage.jsx'
+import CoverLetterProjectPage from './pages/input/CoverLetterProjectPage.jsx'
 import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
 import ProfilePage from './pages/profile/ProfilePage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
+import SignupCompletePage from './pages/auth/SignupCompletePage.jsx'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx'
 import MyPage from './pages/mypage/MyPage.jsx'
 import Login from './pages/admin/Login.jsx'
@@ -24,7 +27,6 @@ import ResultPage from './pages/analysis/ResultPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
 
 const prototypeRoutes = [
-  '/',
   '/onboarding',
   '/dashboard',
   '/data',
@@ -57,6 +59,8 @@ const prototypeRoutes = [
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<HomePage />} />
+
       <Route element={<AppLayout />}>
         <Route path="/analysis" element={<SourceSelectionPage />} />
         <Route path="/analysis/source" element={<SourceSelectionPage />} />
@@ -76,6 +80,8 @@ function App() {
       <Route path="/JD" element={<JdInputPage />} />
       <Route path="/input/jd" element={<JdInputPage />} />
       <Route path="/input/documents" element={<DocumentsInputPage />} />
+      <Route path="/input/cover-letter-project" element={<CoverLetterProjectPage />} />
+      <Route path="/input/session-setup" element={<SessionSetupPage />} />
 
       {/* 면접 설정 → 세션/질문 생성 진입 (QA P0: JD 저장 후 면접 설정 화면) */}
       <Route path="/session-setup" element={<SessionSetupPage />} />
@@ -94,6 +100,7 @@ function App() {
       {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
       <Route path="/auth/login" element={<AuthLoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />
+      <Route path="/auth/signup/complete" element={<SignupCompletePage />} />
       <Route path="/login" element={<Navigate to="/auth/login" replace />} />
       <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />

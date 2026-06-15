@@ -26,19 +26,19 @@ export default function GrowthLineChart({ points = [] }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="h-72 w-full" preserveAspectRatio="xMidYMid meet">
         {gridVals.map((v) => (
           <g key={v}>
-            <line x1={padL} y1={y(v)} x2={W - padR} y2={y(v)} stroke="#eef0f1" strokeWidth="1" />
-            <text x={padL - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#9ca3af">{v}</text>
+            <line x1={padL} y1={y(v)} x2={W - padR} y2={y(v)} stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+            <text x={padL - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="rgba(0,0,0,0.45)">{v}</text>
           </g>
         ))}
         {n > 0 && <path d={linePath} fill="none" stroke="#08CB00" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />}
         {points.map((p, i) => (
           <g key={p.session_id ?? i}>
             <circle cx={x(i)} cy={y(p.overall_score)} r="4" fill="#08CB00" />
-            <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="#9ca3af">{p.label}</text>
+            <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="rgba(0,0,0,0.45)">{p.label}</text>
           </g>
         ))}
       </svg>
-      <div className="pr-2 text-right text-[11px] text-slate-400">Interview Session Date</div>
+      <div className="pr-2 text-right text-[11px] text-[rgba(0,0,0,0.45)]">Interview Session Date</div>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default function OverallScorePage() {
   const report = useFinalReport(sessionId);
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-white hover:bg-[#1A2900]">
+    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
       리포트로 돌아가기
     </button>
   );
@@ -56,54 +56,54 @@ export default function OverallScorePage() {
       <section className="grid gap-4 lg:grid-cols-3">
         {/* 좌측: OVERALL + 페르소나 (Radar 카드 높이에 맞춰 stretch) */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-1 flex-col justify-between rounded-xl bg-[#253900] p-6 text-white shadow-sm">
-            <div className="text-[11px] font-bold tracking-wide text-white/70">OVERALL SCORE</div>
+          <div className="flex flex-1 flex-col justify-between rounded-xl bg-[#253900] p-6 text-[#EEEEEE] shadow-sm">
+            <div className="text-[11px] font-bold tracking-wide text-[#EEEEEE]/70">OVERALL SCORE</div>
             <div className="mt-2 text-5xl font-extrabold">{r.score_summary.overall_score} 점</div>
-            <div className="mt-3 text-xs text-white/70">답변 구조와 기술 깊이가 종합 점수를 견인했습니다.</div>
+            <div className="mt-3 text-xs text-[#EEEEEE]/70">답변 구조와 기술 깊이가 종합 점수를 견인했습니다.</div>
           </div>
           <button
             type="button"
             onClick={() => navigate(`/report/${sessionId}/feedback`)}
-            className="flex flex-1 w-full items-center gap-4 rounded-xl bg-[#08CB00] p-6 text-left text-white shadow-sm transition-colors hover:bg-[#06A800]"
+            className="flex flex-1 w-full items-center gap-4 rounded-xl bg-[#08CB00] p-6 text-left text-[#EEEEEE] shadow-sm transition-colors hover:opacity-90"
           >
             <div className="text-6xl leading-none">{persona.avatar_emoji}</div>
             <div className="flex-1">
-              <div className="text-xs font-semibold text-white/80">면접관 페르소나</div>
+              <div className="text-xs font-semibold text-[#EEEEEE]/80">면접관 페르소나</div>
               <div className="text-2xl font-extrabold leading-tight">{persona.short_name}<br />면접관</div>
-              <div className="mt-2 text-xs font-semibold text-white/90">면접관 피드백 보기 →</div>
+              <div className="mt-2 text-xs font-semibold text-[#EEEEEE]/90">면접관 피드백 보기 →</div>
             </div>
           </button>
         </div>
 
         {/* 중앙: 레이더 */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900">Radar Analysis (5-Axis)</h3>
-          <p className="mb-2 text-xs text-slate-400">현재 면접 점수의 이전 세션 평균을 5축에 비교합니다.</p>
+        <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm">
+          <h3 className="text-base font-bold text-[#000000]">Radar Analysis (5-Axis)</h3>
+          <p className="mb-2 text-xs text-[rgba(0,0,0,0.45)]">현재 면접 점수의 이전 세션 평균을 5축에 비교합니다.</p>
           <RadarChart data={radarData} />
         </div>
 
         {/* 우측: Score Breakdown */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-base font-bold text-slate-900">Score Breakdown</h3>
+        <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm">
+          <h3 className="mb-4 text-base font-bold text-[#000000]">Score Breakdown</h3>
           <ScoreBreakdownBars rows={breakdownRows} />
         </div>
       </section>
 
       {/* 점수 해석 */}
-      <section className="mt-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-base font-bold text-slate-900">점수 해석</h3>
+      <section className="mt-4 rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm">
+        <h3 className="mb-4 text-base font-bold text-[#000000]">점수 해석</h3>
         <div className="space-y-3 text-sm">
           <div className="flex gap-3">
             <span className="h-fit shrink-0 rounded-md bg-[#08CB00]/15 px-2 py-0.5 text-xs font-bold text-[#253900]">강점</span>
-            <p className="text-slate-600">{interp.strength}</p>
+            <p className="text-[rgba(0,0,0,0.6)]">{interp.strength}</p>
           </div>
           <div className="flex gap-3">
-            <span className="h-fit shrink-0 rounded-md bg-[#E5342B]/15 px-2 py-0.5 text-xs font-bold text-[#E5342B]">보완</span>
-            <p className="text-slate-600">{interp.improvement}</p>
+            <span className="h-fit shrink-0 rounded-md bg-[#000000]/15 px-2 py-0.5 text-xs font-bold text-[#000000]">보완</span>
+            <p className="text-[rgba(0,0,0,0.6)]">{interp.improvement}</p>
           </div>
           <div className="flex gap-3">
             <span className="h-fit shrink-0 rounded-md bg-[#08CB00]/10 px-2 py-0.5 text-xs font-bold text-[#253900]">추천</span>
-            <p className="text-slate-600">{interp.recommendation}</p>
+            <p className="text-[rgba(0,0,0,0.6)]">{interp.recommendation}</p>
           </div>
         </div>
       </section>

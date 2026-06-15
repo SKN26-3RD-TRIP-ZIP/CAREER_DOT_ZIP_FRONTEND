@@ -7,10 +7,10 @@ export default function MiniGrowthBars({ points = [] }) {
     <div className="flex items-end gap-3">
       {recent.map((p, i) => (
         <div key={p.session_id ?? i} className="flex flex-col items-center gap-1">
-          <div className="flex h-12 w-7 items-end overflow-hidden rounded-md bg-slate-100">
+          <div className="flex h-12 w-7 items-end overflow-hidden rounded-md bg-[rgba(0,0,0,0.08)]">
             <div className={`w-full rounded-md ${scoreBarClass(p.overall_score)}`} style={{ height: `${p.overall_score}%` }} />
           </div>
-          <span className="text-[10px] text-slate-400">{p.label}</span>
+          <span className="text-[10px] text-[rgba(0,0,0,0.45)]">{p.label}</span>
         </div>
       ))}
     </div>

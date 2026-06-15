@@ -1,9 +1,10 @@
 /**
- * 점수 색상 규칙 (디자인 시스템 기준)
- *   80점 이상 : 초록 (good)
- *   70~79     : 노랑 (warn)
- *   50~69     : 주황 (alert)
- *   50 미만   : 빨강 (danger)
+ * 점수 색상 규칙 (4색 팔레트로 통일)
+ *   80점 이상 : 브랜드 그린(#08CB00)
+ *   70~79     : 딥 그린(#253900)
+ *   50~69     : 딥 그린(#253900)
+ *   50 미만   : 블랙(#000000)
+ * (티어 구분 로직은 그대로 유지하고 색상만 팔레트로 매핑)
  */
 export function scoreTier(score) {
   if (score >= 80) return 'good';
@@ -12,12 +13,11 @@ export function scoreTier(score) {
   return 'danger';
 }
 
-// 브랜드 그린(#08CB00) 기준으로 통일한 선명한 톤 팔레트
 export const TIER_HEX = {
   good: '#08CB00',
-  warn: '#F5B400',
-  alert: '#F5772B',
-  danger: '#E5342B',
+  warn: '#253900',
+  alert: '#253900',
+  danger: '#000000',
 };
 
 /** 차트 fill/stroke 용 hex */
@@ -31,11 +31,11 @@ export function scoreBadgeClass(score) {
     case 'good':
       return 'bg-[#08CB00]/15 text-[#253900]';
     case 'warn':
-      return 'bg-[#F5B400]/20 text-[#8A6500]';
+      return 'bg-[#253900]/15 text-[#253900]';
     case 'alert':
-      return 'bg-[#F5772B]/20 text-[#A33E0C]';
+      return 'bg-[#253900]/10 text-[#253900]';
     default:
-      return 'bg-[#E5342B]/15 text-[#E5342B]';
+      return 'bg-[rgba(0,0,0,0.1)] text-[#000000]';
   }
 }
 
@@ -45,11 +45,11 @@ export function scoreBarClass(score) {
     case 'good':
       return 'bg-[#08CB00]';
     case 'warn':
-      return 'bg-[#F5B400]';
+      return 'bg-[#253900]';
     case 'alert':
-      return 'bg-[#F5772B]';
+      return 'bg-[#253900]';
     default:
-      return 'bg-[#E5342B]';
+      return 'bg-[#000000]';
   }
 }
 
