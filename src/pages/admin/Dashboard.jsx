@@ -16,12 +16,12 @@ function WeeklyBarChart({ data = [] }) {
 
         return (
           <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-            <span className="text-[11px] text-slate-400">{d.count || ''}</span>
+            <span className="text-[11px] text-[#666666]">{d.count || ''}</span>
             <div
-              className="w-full rounded-t-[3px] bg-emerald-400"
+              className="w-full rounded-t-[3px] bg-[#08CB00]"
               style={{ height: barH }}
             />
-            <span className="text-[11px] text-slate-500">{label}</span>
+            <span className="text-[11px] text-[#AAAAAA]">{label}</span>
           </div>
         )
       })}
@@ -32,9 +32,9 @@ function WeeklyBarChart({ data = [] }) {
 /* ── Status badge ──────────────────────────────────────────────────────── */
 function StatusBadge({ status }) {
   const cfg = {
-    normal: { label: '정상', cls: 'bg-emerald-100 text-emerald-700' },
-    warning: { label: '주의', cls: 'bg-amber-100 text-amber-700' },
-    error: { label: '오류', cls: 'bg-red-100 text-red-600' },
+    normal: { label: '정상', cls: 'bg-[#0A2200] text-[#3DDD37]' },
+    warning: { label: '주의', cls: 'bg-[#2A2000] text-[#DDAA00]' },
+    error: { label: '오류', cls: 'bg-[#2A0000] text-[#FF5555]' },
   }
   const { label, cls } = cfg[status] ?? cfg.normal
   return (
@@ -47,17 +47,17 @@ function StatusBadge({ status }) {
 /* ── Stat card ─────────────────────────────────────────────────────────── */
 function StatCard({ label, value, icon }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-white p-5 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl bg-[#1A2200] p-5 shadow-sm">
       {/* Icon top-left */}
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50">
-        <span className="text-base text-emerald-500">{icon}</span>
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0A1A00]">
+        <span className="text-base text-[#08CB00]">{icon}</span>
       </div>
       {/* Value */}
-      <p className="text-[28px] font-bold leading-none tracking-tight text-slate-900">
+      <p className="text-[28px] font-bold leading-none tracking-tight text-[#EEEEEE]">
         {value}
       </p>
       {/* Label */}
-      <p className="text-sm text-slate-500">{label}</p>
+      <p className="text-sm text-[#AAAAAA]">{label}</p>
     </div>
   )
 }
@@ -134,8 +134,8 @@ export default function Dashboard() {
     <div className="flex flex-col gap-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">대시보드</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-[#EEEEEE]">대시보드</h1>
+        <p className="mt-1 text-sm text-[#AAAAAA]">
           서비스 운영 현황과 시스템 상태를 한눈에 확인하세요.
         </p>
       </div>
@@ -150,26 +150,26 @@ export default function Dashboard() {
       {/* Chart + System status */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* Weekly bar chart */}
-        <div className="col-span-2 rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">주간 면접 세션</h2>
-          <p className="mt-0.5 text-xs text-slate-400">최근 7일 일별 진행 수</p>
+        <div className="col-span-2 rounded-xl bg-[#1A2200] p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
+          <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
           <div className="mt-6">
             <WeeklyBarChart data={stats?.weekly_sessions ?? []} />
           </div>
         </div>
 
         {/* System status */}
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">시스템 상태</h2>
+        <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-[#EEEEEE]">시스템 상태</h2>
           <div className="mt-4 flex flex-col gap-0">
             {SYSTEM_ROWS.map((row, i) => (
               <div
                 key={row.label}
-                className={`flex items-center justify-between py-4 ${i < SYSTEM_ROWS.length - 1 ? 'border-b border-slate-100' : ''}`}
+                className={`flex items-center justify-between py-4 ${i < SYSTEM_ROWS.length - 1 ? 'border-b border-[#253900]' : ''}`}
               >
-                <span className="text-sm text-slate-700">{row.label}</span>
+                <span className="text-sm text-[#CCCCCC]">{row.label}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-slate-800">{row.value}</span>
+                  <span className="text-sm font-semibold text-[#EEEEEE]">{row.value}</span>
                   <StatusBadge status={row.status} />
                 </div>
               </div>

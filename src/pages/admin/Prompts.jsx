@@ -26,8 +26,8 @@ const PERSONA_TYPE_LABEL = {
 function Modal({ onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
-      <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-[#1A2200] p-8 shadow-2xl">
         {children}
       </div>
     </div>
@@ -39,21 +39,21 @@ function PreviewModal({ template, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div className="mb-1 flex items-center gap-2">
-        <h2 className="text-xl font-bold text-slate-900">제목: {template.title}</h2>
-        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">활성</span>
+        <h2 className="text-xl font-bold text-[#EEEEEE]">제목: {template.title}</h2>
+        <span className="rounded-full bg-[#0A2200] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">활성</span>
       </div>
-      <p className="mb-5 text-sm text-slate-400">
+      <p className="mb-5 text-sm text-[#666666]">
         v{template.default_version_number ?? '—'} · 버전 {template.version_count ?? 0}개
       </p>
       <textarea
         readOnly
         value={template.default_version_content ?? ''}
-        className="h-64 w-full resize-none rounded-xl border border-slate-200 p-4 text-sm text-slate-700 outline-none"
+        className="h-64 w-full resize-none rounded-xl border border-[#253900] bg-[#111400] p-4 text-sm text-[#CCCCCC] outline-none"
       />
       <div className="mt-6 flex justify-end">
         <button
           onClick={onClose}
-          className="rounded-xl bg-emerald-500 px-10 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600"
+          className="rounded-xl bg-[#08CB00] px-10 py-2.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000]"
         >
           확인
         </button>
@@ -64,7 +64,7 @@ function PreviewModal({ template, onClose }) {
 
 /* ── 템플릿 선택(편집) 모달 ──────────────────────────────────────────────── */
 function TemplateSelectModal({ persona, templates, onClose, onActivate }) {
-  const [detail, setDetail] = useState(null) // 단일 템플릿 상세뷰
+  const [detail, setDetail] = useState(null)
 
   const personaTemplates = templates.filter(
     (t) => t.persona_type === persona.persona_type
@@ -73,30 +73,30 @@ function TemplateSelectModal({ persona, templates, onClose, onActivate }) {
   if (detail) {
     return (
       <Modal onClose={onClose}>
-        <h2 className="mb-1 text-xl font-bold text-slate-900">
+        <h2 className="mb-1 text-xl font-bold text-[#EEEEEE]">
           템플릿 선택-{PERSONA_TYPE_LABEL[persona.persona_type]}
         </h2>
-        <p className="mb-6 text-sm text-slate-400">해당 면접관의 템플릿을 선택합니다.</p>
+        <p className="mb-6 text-sm text-[#666666]">해당 면접관의 템플릿을 선택합니다.</p>
 
-        <div className="rounded-xl border border-slate-200 p-5">
+        <div className="rounded-xl border border-[#253900] p-5">
           <div className="mb-1 flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-900">제목: {detail.title}</h3>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">활성</span>
+            <h3 className="text-base font-bold text-[#EEEEEE]">제목: {detail.title}</h3>
+            <span className="rounded-full bg-[#0A2200] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">활성</span>
           </div>
-          <p className="mb-4 text-xs text-slate-400">
+          <p className="mb-4 text-xs text-[#666666]">
             v{detail.default_version_number ?? '—'} · 버전 {detail.version_count ?? 0}개
           </p>
           <textarea
             readOnly
             value={detail.default_version_content ?? ''}
-            className="h-52 w-full resize-none rounded-xl border border-slate-200 p-4 text-sm text-slate-700 outline-none"
+            className="h-52 w-full resize-none rounded-xl border border-[#253900] bg-[#111400] p-4 text-sm text-[#CCCCCC] outline-none"
           />
         </div>
 
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="rounded-xl bg-emerald-500 px-10 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600"
+            className="rounded-xl bg-[#08CB00] px-10 py-2.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000]"
           >
             확인
           </button>
@@ -107,44 +107,44 @@ function TemplateSelectModal({ persona, templates, onClose, onActivate }) {
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-1 text-xl font-bold text-slate-900">
+      <h2 className="mb-1 text-xl font-bold text-[#EEEEEE]">
         템플릿 선택-{PERSONA_TYPE_LABEL[persona.persona_type]}
       </h2>
-      <p className="mb-6 text-sm text-slate-400">해당 면접관의 템플릿을 선택합니다.</p>
+      <p className="mb-6 text-sm text-[#666666]">해당 면접관의 템플릿을 선택합니다.</p>
 
       {personaTemplates.length === 0 ? (
-        <p className="py-10 text-center text-sm text-slate-400">등록된 템플릿이 없습니다.</p>
+        <p className="py-10 text-center text-sm text-[#666666]">등록된 템플릿이 없습니다.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {personaTemplates.map((tpl) => {
             const isActive = tpl.template_id === persona.active_template_id
             return (
-              <div key={tpl.template_id} className="rounded-xl border border-slate-200 p-4">
+              <div key={tpl.template_id} className="rounded-xl border border-[#253900] p-4">
                 <div className="mb-1 flex items-center gap-2">
-                  <p className="truncate text-sm font-bold text-slate-900">제목: {tpl.title}</p>
+                  <p className="truncate text-sm font-bold text-[#EEEEEE]">제목: {tpl.title}</p>
                   {isActive && (
-                    <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    <span className="shrink-0 rounded-full bg-[#0A2200] px-2 py-0.5 text-[10px] font-semibold text-[#3DDD37]">
                       활성
                     </span>
                   )}
                 </div>
-                <p className="mb-3 text-xs text-slate-400">
+                <p className="mb-3 text-xs text-[#666666]">
                   v{tpl.default_version_number ?? '—'} · 버전 {tpl.version_count ?? 0}개
                 </p>
-                <div className="mb-3 h-20 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 line-clamp-4">
+                <div className="mb-3 h-20 overflow-hidden rounded-lg border border-[#253900] bg-[#111400] p-3 text-xs text-[#AAAAAA] line-clamp-4">
                   {tpl.default_version_content ?? '내용 없음'}
                 </div>
                 {isActive ? (
                   <button
                     onClick={() => setDetail(tpl)}
-                    className="w-full rounded-lg bg-emerald-500 py-1.5 text-sm font-semibold text-white hover:bg-emerald-600"
+                    className="w-full rounded-lg bg-[#08CB00] py-1.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000]"
                   >
                     편집
                   </button>
                 ) : (
                   <button
                     onClick={() => onActivate(persona, tpl.template_id)}
-                    className="w-full rounded-lg bg-orange-400 py-1.5 text-sm font-semibold text-white hover:bg-orange-500"
+                    className="w-full rounded-lg bg-orange-500 py-1.5 text-sm font-semibold text-white hover:bg-orange-600"
                   >
                     활성화
                   </button>
@@ -158,7 +158,7 @@ function TemplateSelectModal({ persona, templates, onClose, onActivate }) {
       <div className="mt-6 flex justify-end">
         <button
           onClick={onClose}
-          className="rounded-xl bg-emerald-500 px-10 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600"
+          className="rounded-xl bg-[#08CB00] px-10 py-2.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000]"
         >
           확인
         </button>
@@ -201,13 +201,13 @@ function CreateModal({ personas, onClose, onCreated }) {
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-6 text-xl font-bold text-slate-900">새 템플릿 생성</h2>
+      <h2 className="mb-6 text-xl font-bold text-[#EEEEEE]">새 템플릿 생성</h2>
 
       {/* 템플릿 이름 */}
       <div className="mb-5">
-        <label className="mb-2 block text-sm font-semibold text-slate-800">템플릿 이름</label>
+        <label className="mb-2 block text-sm font-semibold text-[#CCCCCC]">템플릿 이름</label>
         <input
-          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none placeholder:text-slate-300 focus:border-emerald-400"
+          className="w-full rounded-xl border border-[#253900] bg-[#111400] px-4 py-2.5 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
           placeholder="예: 압박형 면접관"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -216,8 +216,8 @@ function CreateModal({ personas, onClose, onCreated }) {
 
       {/* 페르소나 타입 */}
       <div className="mb-5">
-        <label className="mb-1 block text-sm font-semibold text-slate-800">페르소나 타입</label>
-        <p className="mb-3 text-xs text-slate-400">면접관의 성격과 질문 방식을 결정합니다</p>
+        <label className="mb-1 block text-sm font-semibold text-[#CCCCCC]">페르소나 타입</label>
+        <p className="mb-3 text-xs text-[#666666]">면접관의 성격과 질문 방식을 결정합니다</p>
         <div className="flex gap-2">
           {personas.map((p) => (
             <button
@@ -226,8 +226,8 @@ function CreateModal({ personas, onClose, onCreated }) {
               className={[
                 'rounded-xl border px-4 py-2 text-sm font-medium transition-colors',
                 personaType === p.persona_type
-                  ? 'border-emerald-500 bg-white text-emerald-600'
-                  : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300',
+                  ? 'border-[#08CB00] bg-[#0A2200] text-[#08CB00]'
+                  : 'border-[#253900] bg-[#1A2200] text-[#AAAAAA] hover:border-[#08CB00]',
               ].join(' ')}
             >
               {PERSONA_TYPE_LABEL[p.persona_type] ?? p.persona_type}
@@ -238,9 +238,9 @@ function CreateModal({ personas, onClose, onCreated }) {
 
       {/* 프롬프트 내용 */}
       <div className="mb-2">
-        <label className="mb-2 block text-sm font-semibold text-slate-800">프롬프트 내용</label>
+        <label className="mb-2 block text-sm font-semibold text-[#CCCCCC]">프롬프트 내용</label>
         <textarea
-          className="h-52 w-full resize-none rounded-xl border border-slate-200 p-4 text-sm outline-none placeholder:text-slate-300 focus:border-emerald-400"
+          className="h-52 w-full resize-none rounded-xl border border-[#253900] bg-[#111400] p-4 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
           placeholder="당신은 [페르소나] 면접관 입니다. 지원자의 답변을 분석하고..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -253,7 +253,7 @@ function CreateModal({ personas, onClose, onCreated }) {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="rounded-xl bg-emerald-500 px-10 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+          className="rounded-xl bg-[#08CB00] px-10 py-2.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000] disabled:opacity-50"
         >
           {loading ? '생성 중...' : '확인'}
         </button>
@@ -265,19 +265,19 @@ function CreateModal({ personas, onClose, onCreated }) {
 /* ── 페르소나 카드 ───────────────────────────────────────────────────────── */
 function PersonaCard({ persona, activeTemplate, onPreview, onEdit }) {
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm">
+    <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
       {/* 헤더 */}
       <div className="mb-1 flex items-center gap-2">
-        <h3 className="text-base font-bold text-slate-900">
+        <h3 className="text-base font-bold text-[#EEEEEE]">
           {PERSONA_LABEL[persona.persona_type] ?? persona.persona_type}
         </h3>
         {persona.is_active && (
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+          <span className="rounded-full bg-[#0A2200] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">
             활성
           </span>
         )}
       </div>
-      <p className="mb-4 text-xs text-slate-400">
+      <p className="mb-4 text-xs text-[#666666]">
         persona_type: {persona.persona_type}
         {activeTemplate && (
           <>
@@ -288,9 +288,9 @@ function PersonaCard({ persona, activeTemplate, onPreview, onEdit }) {
       </p>
 
       {/* 프롬프트 미리보기 */}
-      <div className="mb-4 min-h-[72px] rounded-xl border border-slate-200 p-3 text-sm text-slate-500 line-clamp-3">
+      <div className="mb-4 min-h-[72px] rounded-xl border border-[#253900] p-3 text-sm text-[#AAAAAA] line-clamp-3">
         {activeTemplate?.default_version_content ?? (
-          <span className="text-slate-300">활성 템플릿이 없습니다.</span>
+          <span className="text-[#444444]">활성 템플릿이 없습니다.</span>
         )}
       </div>
 
@@ -299,13 +299,13 @@ function PersonaCard({ persona, activeTemplate, onPreview, onEdit }) {
         <button
           onClick={onPreview}
           disabled={!activeTemplate}
-          className="rounded-lg border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          className="rounded-lg border border-[#253900] px-4 py-1.5 text-sm font-medium text-[#AAAAAA] hover:bg-[#253900] disabled:opacity-40"
         >
           미리보기
         </button>
         <button
           onClick={onEdit}
-          className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-600"
+          className="rounded-lg bg-[#08CB00] px-4 py-1.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000]"
         >
           편집
         </button>
@@ -350,15 +350,15 @@ export default function Prompts() {
       {/* 헤더 */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">프롬프트 관리</h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <h1 className="text-2xl font-bold text-[#EEEEEE]">프롬프트 관리</h1>
+          <p className="mt-1 text-xs text-[#666666]">
             prompts_personaconfig · prompts_prompttemplate — 페르소나별 면접관 템플릿
           </p>
         </div>
         <button
           onClick={() => setCreateOpen(true)}
           disabled={personas.length === 0}
-          className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+          className="rounded-xl bg-[#08CB00] px-5 py-2.5 text-sm font-semibold text-[#000000] hover:bg-[#05A000] disabled:opacity-50"
         >
           + 새 템플릿
         </button>
@@ -366,8 +366,8 @@ export default function Prompts() {
 
       {/* 페르소나 2×2 그리드 */}
       {personas.length === 0 ? (
-        <div className="flex items-center justify-center rounded-xl bg-white py-20 shadow-sm">
-          <p className="text-sm text-slate-400">페르소나 데이터가 없습니다.</p>
+        <div className="flex items-center justify-center rounded-xl bg-[#1A2200] py-20 shadow-sm">
+          <p className="text-sm text-[#666666]">페르소나 데이터가 없습니다.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

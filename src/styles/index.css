@@ -19,6 +19,28 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* ── Admin 다크모드 네비 ─────────────────────────────────────────────────── */
+.admin-nav-link {
+  color: #AAAAAA;
+}
+.admin-nav-link:hover {
+  color: #EEEEEE;
+}
+.admin-nav-link-active {
+  color: #EEEEEE;
+  font-weight: 600;
+}
+.admin-nav-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0.75rem;
+  right: 0.75rem;
+  height: 2px;
+  border-radius: 9999px;
+  background: #08CB00;
+}
+
 /* 리포트 PDF 저장(window.print) 시 네비/액션 버튼 숨김 + 인쇄 가독성 */
 @media print {
   .no-print {
