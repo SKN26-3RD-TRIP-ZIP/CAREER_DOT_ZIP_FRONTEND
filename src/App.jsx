@@ -20,6 +20,7 @@ import Members from './pages/admin/Members.jsx'
 import MemberDetail from './pages/admin/MemberDetail.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import AuditLogs from './pages/admin/AuditLogs.jsx'
+import Versions from './pages/admin/Versions.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
 import SourceSelectionPage from './pages/analysis/SourceSelectionPage.jsx'
@@ -53,16 +54,6 @@ const prototypeRoutes = [
   '/mypage/interviews',
   '/mypage/reports',
   '/mypage/settings',
-  '/admin',
-  '/admin/login',
-  '/admin/dashboard',
-  '/admin/members',
-  '/admin/member-detail',
-  '/admin/prompts',
-  '/admin/template-create',
-  '/admin/versions',
-  '/admin/version-test',
-  '/admin/audit-logs',
   '/prototype',
 ]
 
@@ -115,15 +106,15 @@ function App() {
       <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      {/* develop 기존 어드민 라우트 보존 */}
-      <Route path="/admin/live/login" element={<Login />} />
+      {/* 어드민 라우트 */}
+      <Route path="/admin/login" element={<Login />} />
       <Route element={<PrivateRoute />}>
-        <Route path="/admin/live" element={<Dashboard />} />
-        <Route path="/admin/live/dashboard" element={<Dashboard />} />
-        <Route path="/admin/live/members" element={<Members />} />
-        <Route path="/admin/live/members/:userId" element={<MemberDetail />} />
-        <Route path="/admin/live/prompts" element={<Prompts />} />
-        <Route path="/admin/live/audit-logs" element={<AuditLogs />} />
+        <Route path="/admin/dashboard" element={<Dashboard />} />
+        <Route path="/admin/members" element={<Members />} />
+        <Route path="/admin/members/:userId" element={<MemberDetail />} />
+        <Route path="/admin/prompts" element={<Prompts />} />
+        <Route path="/admin/audit-logs" element={<AuditLogs />} />
+        <Route path="/admin/versions" element={<Versions />} />
       </Route>
 
       {/* fallback */}
