@@ -271,9 +271,13 @@ function PersonaCard({ persona, activeTemplate, onPreview, onEdit }) {
         <h3 className="text-base font-bold text-[#EEEEEE]">
           {PERSONA_LABEL[persona.persona_type] ?? persona.persona_type}
         </h3>
-        {persona.is_active && (
+        {activeTemplate ? (
           <span className="rounded-full bg-[#0A2200] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">
             활성
+          </span>
+        ) : (
+          <span className="rounded-full bg-[#2A2A2A] px-2.5 py-0.5 text-xs font-semibold text-[#888888]">
+            비활성
           </span>
         )}
       </div>

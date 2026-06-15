@@ -176,13 +176,18 @@ function MemberModal({ user, onClose, onSetStatus, onDelete }) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {user.status !== 'active' && (
+            {user.status === 'dormant' && (
               <button
                 onClick={() => setConfirmAction('active')}
                 className="w-full rounded-lg bg-[#08CB00] py-3 text-sm font-semibold text-[#000000] hover:bg-[#05A000]"
               >
                 활성화
               </button>
+            )}
+            {user.status === 'banned' && (
+              <p className="rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-xs text-red-400 text-center">
+                차단된 회원은 <span className="font-semibold text-red-300">회원 초대</span>를 통해서만 재활성화할 수 있습니다.
+              </p>
             )}
             {user.status !== 'dormant' && user.status !== 'banned' && (
               <button
