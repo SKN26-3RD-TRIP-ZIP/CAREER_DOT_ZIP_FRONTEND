@@ -1,4 +1,6 @@
-import { Navigate, NavLink, Outlet } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { LogOut } from 'lucide-react'
 import { useAuthStore } from '../../../store/authStore'
 
 const NAV_ITEMS = [
@@ -10,6 +12,58 @@ const NAV_ITEMS = [
   { to: '/admin/api-usage', label: 'API 사용량' },
   { to: '/admin/audit-logs', label: '서비스 통계' },
 ]
+
+function ProfileMenu() {
+  const logout = useAuthStore((s) => s.logout)
+  const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  const displayName = user?.name ?? user?.email ?? 'admin@career.zip'
+  const initial = displayName.charAt(0).toUpperCase()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/admin/login', { replace: true })
+  }
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-slate-500">{displayName}</span>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white hover:bg-blue-600 transition-colors"
+        >
+          {initial}
+        </button>
+      </div>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg z-50">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            로그아웃
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function PrivateRoute() {
   const token = useAuthStore((s) => s.token)
@@ -49,13 +103,8 @@ export default function PrivateRoute() {
           </nav>
         </div>
 
-        {/* Admin info */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-500">admin@career.zip</span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
-            A
-          </div>
-        </div>
+        {/* Profile + logout dropdown */}
+        <ProfileMenu />
       </header>
 
       {/* Page content */}

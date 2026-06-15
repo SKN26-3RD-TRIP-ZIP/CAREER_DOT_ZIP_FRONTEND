@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../../api/adminApi'
+import { getMe } from '../../api/authApi'
 import { useAuthStore } from '../../store/authStore'
 
 export default function Login() {
   const navigate = useNavigate()
   const loginStore = useAuthStore((s) => s.login)
+  const setUser = useAuthStore((s) => s.setUser)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,6 +21,12 @@ export default function Login() {
     try {
       const data = await login({ email, password })
       loginStore(data.access_token)
+      try {
+        const res = await getMe()
+        setUser(res.data)
+      } catch {
+        // 사용자 정보 조회 실패해도 로그인은 유지
+      }
       navigate('/admin/dashboard')
     } catch (err) {
       const msg = err?.response?.data?.error ?? '로그인에 실패했습니다.'
