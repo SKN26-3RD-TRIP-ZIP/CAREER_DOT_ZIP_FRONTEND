@@ -53,7 +53,7 @@ function CoverLetterProjectPage() {
         </Alert>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-lg border border-[#000000] p-5">
+          <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-5">
             <h2 className="text-xl font-black text-[#253900]">자기소개서</h2>
             <p className="mt-2 text-sm leading-6">지원동기, 성장과정, 직무역량 등 문항별 답변을 붙여넣어 보완 포인트를 정리하세요.</p>
             <Field label="자기소개서 내용" hint="선택 입력입니다. 비워두어도 다음 단계로 이동할 수 있습니다.">
@@ -67,7 +67,7 @@ function CoverLetterProjectPage() {
             </Field>
           </section>
 
-          <section className="rounded-lg border border-[#000000] p-5">
+          <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-5">
             <h2 className="text-xl font-black text-[#253900]">프로젝트 경험</h2>
             <p className="mt-2 text-sm leading-6">프로젝트명, 역할, 기술 스택, 성과를 함께 적으면 STAR 기반 심화 질문 준비에 도움이 됩니다.</p>
             <div className="mt-4 space-y-4">

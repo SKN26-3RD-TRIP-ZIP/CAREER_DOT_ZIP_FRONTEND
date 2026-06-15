@@ -34,16 +34,16 @@ function ReportPage() {
     <PageShell title="면접 결과 리포트" description="현재 세션에서 전달된 리포트 데이터를 간단히 확인합니다.">
       <div className="grid gap-5">
         <Card className="p-6 text-center">
-          <p className="text-sm font-bold text-slate-500">종합 점수</p>
-          <p className="mt-2 text-5xl font-bold text-emerald-700">{score ?? '-'}</p>
+          <p className="text-sm font-bold text-[rgba(0,0,0,0.5)]">종합 점수</p>
+          <p className="mt-2 text-5xl font-bold text-[#08CB00]">{score ?? '-'}</p>
         </Card>
         <Card className="p-6">
-          <p className="text-sm font-bold text-slate-900">강점</p>
-          <p className="mt-2 text-sm text-slate-600">{strengths.join(', ') || '강점 정보가 없습니다.'}</p>
+          <p className="text-sm font-bold text-[#253900]">강점</p>
+          <p className="mt-2 text-sm text-[rgba(0,0,0,0.6)]">{strengths.join(', ') || '강점 정보가 없습니다.'}</p>
         </Card>
         <Card className="p-6">
-          <p className="text-sm font-bold text-slate-900">개선 필요</p>
-          <p className="mt-2 text-sm text-slate-600">{weaknesses.join(', ') || improvements.join(', ') || '개선 정보가 없습니다.'}</p>
+          <p className="text-sm font-bold text-[#253900]">개선 필요</p>
+          <p className="mt-2 text-sm text-[rgba(0,0,0,0.6)]">{weaknesses.join(', ') || improvements.join(', ') || '개선 정보가 없습니다.'}</p>
         </Card>
         <div className="flex flex-wrap gap-2">
           {sessionId && (

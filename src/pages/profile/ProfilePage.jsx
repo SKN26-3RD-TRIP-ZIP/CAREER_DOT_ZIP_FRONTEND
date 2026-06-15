@@ -51,10 +51,10 @@ function ChoiceGroup({ label, name, options, value, onChange }) {
         {options.map((opt) => (
           <label
             key={opt.value}
-            className={`cursor-pointer rounded-lg border px-4 py-3 text-center text-sm font-semibold transition ${
+            className={`cursor-pointer rounded-lg border px-4 py-3 text-center text-sm font-bold transition ${
               value === opt.value
-                ? 'border-[#253900] bg-[#253900] text-[#EEEEEE]'
-                : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
+                ? 'border-[#08CB00] bg-[#08CB00] text-[#EEEEEE]'
+                : 'border-[rgba(0,0,0,0.18)] bg-[#EEEEEE] text-[#000000] hover:border-[#253900]'
             }`}
           >
             <input
@@ -188,7 +188,7 @@ function ProfilePage() {
       steps={STEPS}
       currentStep={1}
     >
-      <Card className="mx-auto max-w-2xl p-6">
+      <Card className="mx-auto max-w-3xl p-8">
         {loading ? (
           <LoadingState title="프로필을 불러오는 중입니다" />
         ) : (

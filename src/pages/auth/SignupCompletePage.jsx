@@ -15,9 +15,12 @@ function SignupCompletePage() {
       }
     >
       <StepIndicator steps={SIGNUP_STEPS} currentStep={4} />
-      <div className="rounded-lg border border-[#000000] p-6 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#08CB00] text-2xl font-black">✓</div>
-        <p className="mt-5 text-sm leading-6">첫 면접 리포트를 만들기 위해 기본 프로필부터 입력해 주세요.</p>
+      <div className="rounded-xl border border-[rgba(0,0,0,0.08)] bg-[#EEEEEE] p-8 text-center shadow-[0_6px_20px_rgba(0,0,0,0.06)]">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(8,203,0,0.15)]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#08CB00] text-2xl font-black text-[#EEEEEE]">✓</span>
+        </div>
+        <p className="mt-5 text-lg font-black text-[#253900]">가입이 완료되었습니다.</p>
+        <p className="mt-2 text-sm leading-6 text-[rgba(0,0,0,0.6)]">첫 면접 리포트를 만들기 위해 기본 프로필부터 입력해 주세요.</p>
       </div>
       <Button as={Link} to="/profile" className="mt-5 w-full">
         프로필 입력 시작하기
