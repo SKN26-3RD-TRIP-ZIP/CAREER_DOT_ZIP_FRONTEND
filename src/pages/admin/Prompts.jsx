@@ -12,14 +12,12 @@ const PERSONA_LABEL = {
   coach:     '코치형 면접관',
   practical: '실무형 면접관',
   verifier:  '검증형 면접관',
-  pressure:  '압박형 면접관',
 }
 
 const PERSONA_TYPE_LABEL = {
   coach:     '코치형',
   practical: '실무형',
   verifier:  '검증형',
-  pressure:  '압박형',
 }
 
 /* ── 공통 모달 래퍼 ──────────────────────────────────────────────────────── */
@@ -208,7 +206,7 @@ function CreateModal({ personas, onClose, onCreated }) {
         <label className="mb-2 block text-sm font-semibold text-[#CCCCCC]">템플릿 이름</label>
         <input
           className="w-full rounded-xl border border-[#253900] bg-[#111400] px-4 py-2.5 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
-          placeholder="예: 압박형 면접관"
+          placeholder="예: 코치형 면접관"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
