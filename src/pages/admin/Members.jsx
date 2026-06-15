@@ -404,13 +404,13 @@ export default function Members() {
         <StatCard
           label="전체 회원"
           value={stats?.total}
-          badge="+8.4%"
+          badge={stats?.total_growth_rate != null ? `${stats.total_growth_rate > 0 ? '+' : ''}${stats.total_growth_rate}%` : undefined}
           badgeColor="bg-[#0A2200] text-[#3DDD37]"
         />
         <StatCard
           label="활성 회원"
           value={stats?.active}
-          badge="+4.1%"
+          badge={stats?.active_growth_rate != null ? `${stats.active_growth_rate > 0 ? '+' : ''}${stats.active_growth_rate}%` : undefined}
           badgeColor="bg-[#0A2200] text-[#3DDD37]"
         />
         <StatCard

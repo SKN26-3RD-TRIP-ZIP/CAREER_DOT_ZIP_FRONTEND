@@ -27,9 +27,9 @@ const INTERVIEW_TYPE_OPTIONS = [
 ];
 
 const PERSONA_OPTIONS = [
-  { value: 'friendly', label: '친절한 코치형', desc: '답변을 부드럽게 이끌어주고 개선 방향을 제안하는 면접관입니다.' },
-  { value: 'verify', label: '검증형 면접관', desc: '답변의 근거와 일관성을 확인하며 꼬리질문을 이어가는 면접관입니다.' },
-  { value: 'practical', label: '실무형 면접관', desc: '실제 업무 상황과 협업 경험을 중심으로 질문하는 면접관입니다.' },
+  { value: 'coach', label: '코치형', desc: '답변의 장점과 개선 포인트를 부드럽게 끌어냅니다.' },
+  { value: 'practical', label: '실무형', desc: '현업 상황과 문제 해결 과정을 현실적으로 확인합니다.' },
+  { value: 'verify', label: '검증형', desc: '경험의 근거, 역할, 성과를 꼼꼼히 확인합니다.' },
 ];
 
 const INTERVIEW_MODE_OPTIONS = [

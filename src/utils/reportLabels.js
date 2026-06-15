@@ -31,7 +31,6 @@ export const PERSONA_LABELS = {
   practical: { short_name: '실무형', name: '실무형 면접관', avatar_emoji: '💼' },
   coach: { short_name: '코치형', name: '코치형 면접관', avatar_emoji: '🎯' },
   verifier: { short_name: '검증형', name: '검증형 면접관', avatar_emoji: '🔎' },
-  pressure: { short_name: '압박형', name: '압박형 면접관', avatar_emoji: '🔥' },
 };
 
 export function personaMeta(personaType) {

@@ -107,7 +107,11 @@ export default function AuditLogs() {
                   </td>
                   <td className="px-3 py-2 font-medium text-[#EEEEEE]">{log.action_type}</td>
                   <td className="px-3 py-2">{log.target_type}</td>
-                  <td className="px-3 py-2">{log.target_id}</td>
+                  <td className="px-3 py-2">
+                    {log.target_name != null
+                      ? `${log.target_id}(${log.target_name})`
+                      : log.target_id}
+                  </td>
                   <td className="px-3 py-2"><JsonCell value={log.before_value} /></td>
                   <td className="px-3 py-2"><JsonCell value={log.after_value} /></td>
                   <td className="px-3 py-2 text-xs text-[#666666]">
