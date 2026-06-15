@@ -41,20 +41,20 @@ function ProfileMenu() {
   return (
     <div className="relative" ref={menuRef}>
       <div className="flex items-center gap-3">
-        <span className="text-sm text-slate-500">{displayName}</span>
+        <span className="text-sm text-[#AAAAAA]">{displayName}</span>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white hover:bg-blue-600 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#08CB00] text-sm font-bold text-[#000000] hover:bg-[#05A000] transition-colors"
         >
           {initial}
         </button>
       </div>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg z-50">
+        <div className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-lg border border-[#253900] bg-[#1A2200] shadow-lg z-50">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-[#AAAAAA] hover:bg-[#253900] hover:text-[#EEEEEE] transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             로그아웃
@@ -67,19 +67,24 @@ function ProfileMenu() {
 
 export default function PrivateRoute() {
   const token = useAuthStore((s) => s.token)
+  const user = useAuthStore((s) => s.user)
 
   if (!token) {
     return <Navigate to="/admin/login" replace />
   }
 
+  if (user && !user.is_staff) {
+    return <Navigate to="/admin/login" replace />
+  }
+
   return (
-    <div className="flex min-h-screen flex-col bg-[#f0f0f0]">
-      {/* Top navigation — white background */}
-      <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
+    <div className="flex min-h-screen flex-col bg-[#000000]">
+      {/* Top navigation */}
+      <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-[#253900] bg-[#111400] px-6">
         {/* Logo */}
         <div className="flex items-center gap-6">
-          <div className="rounded-md bg-[#1a2e05] px-3 py-1.5">
-            <span className="text-sm font-bold text-white">Career.zip</span>
+          <div className="rounded-md bg-[#08CB00] px-3 py-1.5">
+            <span className="text-sm font-bold text-[#000000]">Career.zip</span>
           </div>
 
           {/* Nav links */}
@@ -89,12 +94,7 @@ export default function PrivateRoute() {
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  [
-                    'relative px-3 py-[14px] text-sm transition-colors',
-                    isActive
-                      ? 'font-semibold text-slate-900 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:rounded-full after:bg-emerald-500 after:content-[""]'
-                      : 'font-medium text-slate-500 hover:text-slate-800',
-                  ].join(' ')
+                  `relative px-3 py-[14px] text-sm transition-colors ${isActive ? 'admin-nav-link-active' : 'admin-nav-link'}`
                 }
               >
                 {label}
