@@ -100,7 +100,11 @@ export default function AuditLogs() {
               {logs.map((log) => (
                 <tr key={log.audit_log_id} className="border-t border-[#253900] text-[#CCCCCC]">
                   <td className="px-3 py-2">{log.audit_log_id}</td>
-                  <td className="px-3 py-2">{log.actor_id ?? '-'}</td>
+                  <td className="px-3 py-2">
+                    {log.actor_id != null
+                      ? `${log.actor_id}(${log.actor_name ?? '알 수 없음'})`
+                      : '-'}
+                  </td>
                   <td className="px-3 py-2 font-medium text-[#EEEEEE]">{log.action_type}</td>
                   <td className="px-3 py-2">{log.target_type}</td>
                   <td className="px-3 py-2">{log.target_id}</td>

@@ -8,8 +8,6 @@ const NAV_ITEMS = [
   { to: '/admin/members', label: '회원관리' },
   { to: '/admin/prompts', label: '프롬프트 관리' },
   { to: '/admin/versions', label: '버전 관리' },
-  { to: '/admin/ai-usage', label: 'AI 사용량' },
-  { to: '/admin/api-usage', label: 'API 사용량' },
   { to: '/admin/audit-logs', label: '서비스 통계' },
 ]
 

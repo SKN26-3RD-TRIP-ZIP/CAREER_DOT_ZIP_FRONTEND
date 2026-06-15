@@ -38,10 +38,6 @@ export async function setUserStatus(id, newStatus) {
   await axiosInstance.patch(`/admin/members/${id}/status`, { status: newStatus })
 }
 
-export async function toggleUserStatus(id, currentStatus) {
-  const newStatus = currentStatus === 'active' ? 'dormant' : 'active'
-  await axiosInstance.patch(`/admin/members/${id}/status`, { status: newStatus })
-}
 
 export async function deleteMember(id) {
   await axiosInstance.delete(`/admin/members/${id}`)
@@ -67,12 +63,6 @@ export async function switchTemplate(personaId, templateId) {
 
 // ── Prompt Templates ──────────────────────────────────────────────────────────
 
-export async function getTemplates(personaType) {
-  const res = await axiosInstance.get('/admin/prompt-templates', {
-    params: { persona_type: personaType },
-  })
-  return res.data.results
-}
 
 export async function getAllTemplates() {
   const res = await axiosInstance.get('/admin/prompt-templates')
@@ -95,9 +85,6 @@ export async function createTemplateWithContent({ persona_config_id, title, cont
   return res.data
 }
 
-export async function deleteTemplate(templateId) {
-  await axiosInstance.delete(`/admin/prompt-templates/${templateId}`)
-}
 
 // ── Prompt Versions ───────────────────────────────────────────────────────────
 
