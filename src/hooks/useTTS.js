@@ -7,14 +7,18 @@ export function useTTS() {
   const [lastVoice, setLastVoice] = useState(null);
   const audioRef = useRef(null);
   const audioUrlRef = useRef(null);
+  const requestIdRef = useRef(0);
   const browserTtsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const audioSupported = typeof Audio !== 'undefined';
   const isSupported = browserTtsSupported || audioSupported;
 
   const cleanupOpenAiAudio = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
+      const audio = audioRef.current;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.pause();
+      audio.src = '';
       audioRef.current = null;
     }
     if (audioUrlRef.current) {
@@ -24,8 +28,9 @@ export function useTTS() {
   }, []);
 
   const speakWithBrowser = useCallback(
-    (text) => {
+    (text, requestId = requestIdRef.current) => {
       if (!browserTtsSupported || !text) return false;
+      if (requestId !== requestIdRef.current) return false;
 
       window.speechSynthesis.cancel();
 
@@ -35,12 +40,17 @@ export function useTTS() {
       utterance.pitch = 1;
 
       utterance.onstart = () => {
+        if (requestId !== requestIdRef.current) return;
         setLastMethod('browser');
         setLastVoice(null);
         setIsSpeaking(true);
       };
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onend = () => {
+        if (requestId === requestIdRef.current) setIsSpeaking(false);
+      };
+      utterance.onerror = () => {
+        if (requestId === requestIdRef.current) setIsSpeaking(false);
+      };
 
       window.speechSynthesis.speak(utterance);
       return true;
@@ -49,6 +59,7 @@ export function useTTS() {
   );
 
   const stop = useCallback(() => {
+    requestIdRef.current += 1;
     cleanupOpenAiAudio();
     if (browserTtsSupported) {
       window.speechSynthesis.cancel();
@@ -61,6 +72,8 @@ export function useTTS() {
       if (!isSupported || !text) return;
 
       stop();
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
 
       if (options.sessionId && audioSupported) {
         try {
@@ -69,8 +82,15 @@ export function useTTS() {
             session_id: options.sessionId,
             text
           });
+          if (requestId !== requestIdRef.current) return;
+
           const audioUrl = URL.createObjectURL(result.audioBlob);
           const audio = new Audio(audioUrl);
+
+          if (requestId !== requestIdRef.current) {
+            URL.revokeObjectURL(audioUrl);
+            return;
+          }
 
           audioRef.current = audio;
           audioUrlRef.current = audioUrl;
@@ -78,30 +98,34 @@ export function useTTS() {
           setLastVoice(result.voice || null);
 
           audio.onended = () => {
+            if (requestId !== requestIdRef.current) return;
             cleanupOpenAiAudio();
             setIsSpeaking(false);
           };
           audio.onerror = () => {
+            if (requestId !== requestIdRef.current) return;
             cleanupOpenAiAudio();
             setIsSpeaking(false);
-            speakWithBrowser(text);
+            speakWithBrowser(text, requestId);
           };
 
           await audio.play();
           return;
         } catch (error) {
+          if (requestId !== requestIdRef.current) return;
           cleanupOpenAiAudio();
           setIsSpeaking(false);
         }
       }
 
-      speakWithBrowser(text);
+      speakWithBrowser(text, requestId);
     },
     [audioSupported, cleanupOpenAiAudio, isSupported, speakWithBrowser, stop]
   );
 
   useEffect(() => {
     return () => {
+      requestIdRef.current += 1;
       cleanupOpenAiAudio();
       if (browserTtsSupported) {
         window.speechSynthesis.cancel();

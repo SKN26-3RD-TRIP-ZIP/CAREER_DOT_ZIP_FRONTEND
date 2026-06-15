@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Check, Mic, RotateCcw } from 'lucide-react';
 import { coverLetterApi } from '../../api/coverLetterApi';
 import { interviewApi } from '../../api/interviewApi';
 import { jdApi } from '../../api/jdApi';
 import { resumeApi } from '../../api/resumeApi';
 import { useJdStore } from '../../store/jdStore';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useMicrophoneSetupCheck } from '../../hooks/useMicrophoneSetupCheck';
 import {
   Alert,
   Button,
@@ -34,7 +36,7 @@ const PERSONA_OPTIONS = [
 
 const INTERVIEW_MODE_OPTIONS = [
   { value: 'voice', label: '음성 면접', desc: '마이크로 답변하며 실전 면접 흐름에 맞춰 진행합니다.' },
-  { value: 'text', label: '텍스트 면접', desc: '키보드 답변으로 질문과 답변을 차분히 정리합니다.' },
+  { value: 'text', label: '텍스트 면접', desc: '키보드 답변으로 질문과 답변을 차분히 정리합니다.', disabled: true },
 ];
 
 const DEFAULT_QUESTION_COUNT = 5;
@@ -46,6 +48,11 @@ function fmtDateTime(v) {
 function getResults(data) {
   if (Array.isArray(data)) return data;
   return Array.isArray(data?.results) ? data.results : [];
+}
+
+function normalizeQuestions(response) {
+  const items = getResults(response);
+  return [...items].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 }
 
 function formatApiError(err, fallback) {
@@ -69,12 +76,16 @@ function SectionTitle({ kicker, title, description }) {
 }
 
 function OptionCard({ option, checked, name, onChange }) {
+  const disabled = Boolean(option.disabled);
+
   return (
     <label
-      className={`flex min-h-[128px] cursor-pointer flex-col justify-between rounded-lg border p-4 transition ${
-        checked
+      className={`flex min-h-[128px] flex-col justify-between rounded-lg border p-4 transition ${
+        disabled
+          ? 'cursor-not-allowed border-[rgba(0,0,0,0.10)] bg-[rgba(0,0,0,0.04)] text-[rgba(0,0,0,0.35)] opacity-70'
+          : checked
           ? 'border-[#253900] bg-[#08CB00] text-[#000000] shadow-[0_10px_22px_rgba(0,0,0,0.16)]'
-          : 'border-[rgba(0,0,0,0.14)] bg-[#EEEEEE] text-[#000000] hover:border-[#253900]'
+          : 'cursor-pointer border-[rgba(0,0,0,0.14)] bg-[#EEEEEE] text-[#000000] hover:border-[#253900]'
       }`}
     >
       <input
@@ -82,17 +93,27 @@ function OptionCard({ option, checked, name, onChange }) {
         name={name}
         value={option.value}
         checked={checked}
-        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        onChange={(e) => {
+          if (!disabled) onChange(e.target.value);
+        }}
         className="sr-only"
       />
       <span className="flex items-start justify-between gap-3">
         <span>
-          <span className="block text-base font-black">{option.label}</span>
+          <span className="flex items-center gap-2 text-base font-black">
+            {option.label}
+            {disabled && <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[rgba(0,0,0,0.46)]">준비중</span>}
+          </span>
           <span className="mt-2 block text-sm leading-6">{option.desc}</span>
         </span>
         <span
           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-black ${
-            checked ? 'border-[#253900] bg-[#253900] text-[#EEEEEE]' : 'border-[rgba(0,0,0,0.25)] text-[rgba(0,0,0,0.45)]'
+            checked
+              ? 'border-[#253900] bg-[#253900] text-[#EEEEEE]'
+              : disabled
+                ? 'border-[rgba(0,0,0,0.18)] bg-[rgba(0,0,0,0.05)] text-transparent'
+                : 'border-[rgba(0,0,0,0.25)] text-[rgba(0,0,0,0.45)]'
           }`}
           aria-hidden="true"
         >
@@ -123,10 +144,137 @@ function SelectableItem({ selected, title, meta, onClick }) {
   );
 }
 
+function MicrophoneCheckPanel({ micCheck, required }) {
+  const {
+    isSupported,
+    permissionStatus,
+    inputStatus,
+    message,
+    devices,
+    selectedDeviceId,
+    level,
+    waveform,
+    isTesting,
+    isVerified,
+    requestMicrophone,
+    retry,
+    handleDeviceChange,
+  } = micCheck;
+  const [displayInputStatus, setDisplayInputStatus] = useState(inputStatus);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setDisplayInputStatus(inputStatus);
+    }, 650);
+
+    return () => window.clearTimeout(timerId);
+  }, [inputStatus]);
+
+  const statusLabel = isVerified
+    ? '확인 완료'
+    : permissionStatus === 'granted'
+      ? '테스트 진행 중'
+      : permissionStatus === 'checking'
+        ? '권한 확인 중'
+        : permissionStatus === 'denied'
+          ? '권한 거부'
+          : permissionStatus === 'no-device'
+            ? '장치 없음'
+            : permissionStatus === 'unsupported'
+              ? '미지원'
+              : '대기';
+
+  return (
+    <section className="space-y-4 rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <SectionTitle
+          kicker="Microphone"
+          title="마이크 점검"
+          description={required ? '음성 면접을 시작하기 전에 마이크 입력이 정상인지 확인합니다.' : '텍스트 면접에서는 마이크 점검이 필수는 아닙니다.'}
+        />
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-black ${
+            isVerified ? 'bg-[#08CB00] text-[#000000]' : 'bg-white text-[rgba(0,0,0,0.62)]'
+          }`}
+        >
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+        <div className="space-y-3">
+          <Field label="마이크 장치">
+            <select
+              className={inputClass}
+              value={selectedDeviceId}
+              disabled={!isSupported || devices.length === 0}
+              onChange={(e) => handleDeviceChange(e.target.value)}
+            >
+              {devices.length === 0 ? (
+                <option value="">사용 가능한 마이크 없음</option>
+              ) : (
+                devices.map((device) => (
+                  <option key={device.deviceId || device.label} value={device.deviceId}>
+                    {device.label}
+                  </option>
+                ))
+              )}
+            </select>
+          </Field>
+          <div className="flex gap-2">
+            <Button type="button" variant="secondary" onClick={requestMicrophone} disabled={!isSupported || permissionStatus === 'checking'}>
+              <Mic size={16} />
+              마이크 확인
+            </Button>
+            {(permissionStatus === 'denied' || permissionStatus === 'error' || permissionStatus === 'no-device') && (
+              <Button type="button" variant="ghost" onClick={retry}>
+                <RotateCcw size={16} />
+                재시도
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-[rgba(0,0,0,0.10)] bg-white p-4">
+          <div className="flex items-center justify-between gap-3 text-xs font-black text-[#253900]">
+            <span>입력 레벨</span>
+            <span>{Math.round(level * 100)}%</span>
+          </div>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-[rgba(8,203,0,0.12)]">
+            <span className="block h-full rounded-full bg-[#08CB00] transition-all" style={{ width: `${Math.round(level * 100)}%` }} />
+          </div>
+          <div className="mt-4 flex h-16 items-end gap-1 rounded-lg bg-[rgba(8,203,0,0.10)] px-3 py-2">
+            {waveform.map((value, index) => (
+              <span
+                key={`${index}-${value}`}
+                className={`flex-1 rounded-full ${isTesting ? 'bg-[#08CB00]' : 'bg-[rgba(37,57,0,0.22)]'}`}
+                style={{ height: `${Math.max(8, Math.round(value * 52))}px` }}
+              />
+            ))}
+          </div>
+          <div className="mt-3 min-h-[72px] space-y-1">
+            <div className="flex items-start gap-2 text-sm leading-6 text-[rgba(0,0,0,0.70)]">
+              {isVerified ? <Check size={17} className="mt-1 shrink-0 text-[#08CB00]" /> : <Mic size={17} className="mt-1 shrink-0 text-[#253900]" />}
+              <span className="line-clamp-2">{message}</span>
+            </div>
+            <p className="h-5 text-xs font-bold text-[#A05A00]">
+              {!isVerified && displayInputStatus === 'too_low' ? '소리가 조금 작습니다. 평소 말하는 목소리로 한 번 더 말해 주세요.' : ''}
+            </p>
+            <p className="h-5 text-xs font-bold text-[#C01616]">
+              {required && !isVerified ? '음성 면접은 마이크 확인 완료 후 시작할 수 있습니다.' : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SessionSetupPage() {
   const navigate = useNavigate();
   const { jdId, setJd } = useJdStore();
-  const { setSessionId, resetInterview } = useInterviewStore();
+  const { setSessionId, setQuestions, setCurrentQuestionIndex, resetInterview } = useInterviewStore();
+  const micCheck = useMicrophoneSetupCheck();
   const [jds, setJds] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [coverLetters, setCoverLetters] = useState([]);
@@ -150,6 +298,7 @@ function SessionSetupPage() {
     () => coverLetters.find((item) => item.cover_letter_id === selectedCoverLetterId) || null,
     [coverLetters, selectedCoverLetterId],
   );
+  const requiresMicrophone = interviewMode === 'voice';
 
   const fetchSources = async () => {
     setInitialLoading(true);
@@ -230,6 +379,10 @@ function SessionSetupPage() {
       setError('면접에 사용할 이력서를 선택해주세요. 이력서가 없다면 먼저 업로드해야 합니다.');
       return;
     }
+    if (requiresMicrophone && !micCheck.isVerified) {
+      setError('음성 면접을 시작하려면 마이크 점검을 먼저 완료해 주세요.');
+      return;
+    }
     if (!localStorage.getItem('access_token')) {
       setError('로그인이 필요합니다. 다시 로그인해주세요.');
       navigate('/auth/login');
@@ -262,7 +415,14 @@ function SessionSetupPage() {
 
       setLoadingStep('면접 질문 생성 중...');
       await interviewApi.generateQuestions(newSessionId, { question_count: questionCount });
-      navigate(interviewMode === 'text' ? '/interview/question' : '/interview');
+
+      setLoadingStep('생성된 질문을 불러오는 중...');
+      const questionResponse = await interviewApi.getQuestions(newSessionId);
+      const orderedQuestions = normalizeQuestions(questionResponse);
+      setQuestions(orderedQuestions);
+      setCurrentQuestionIndex(0);
+
+      navigate('/interview/question');
     } catch (err) {
       setError(formatApiError(err, newSessionId ? '질문 생성에 실패했습니다.' : '세션 생성에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -486,13 +646,15 @@ function SessionSetupPage() {
               </div>
             </section>
 
+            <MicrophoneCheckPanel micCheck={micCheck} required={requiresMicrophone} />
+
             {error && <Alert tone="danger">{error}</Alert>}
 
             <div className="flex flex-wrap justify-between gap-3 border-t border-[rgba(0,0,0,0.10)] pt-6">
               <Button type="button" variant="secondary" onClick={() => navigate('/input/cover-letter-project')} disabled={loading}>
                 이전
               </Button>
-              <Button type="submit" disabled={loading || !selectedJdId || !selectedResumeId} className="min-w-36">
+              <Button type="submit" disabled={loading || !selectedJdId || !selectedResumeId || (requiresMicrophone && !micCheck.isVerified)} className="min-w-36">
                 {loading ? loadingStep || '처리 중...' : '면접 시작'}
               </Button>
             </div>

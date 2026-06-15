@@ -46,6 +46,7 @@ function getQuestionType(question) {
   if (type === 'technical') return '기술';
   if (type === 'personality') return '인성';
   if (type === 'job') return '직무';
+  if (type === 'follow_up') return '꼬리질문';
   return type;
 }
 
@@ -61,6 +62,29 @@ function getErrorMessage(error, fallback) {
 function normalizeQuestions(response) {
   const items = Array.isArray(response?.results) ? response.results : Array.isArray(response) ? response : [];
   return [...items].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+}
+
+function normalizeFollowupQuestion(question) {
+  if (!question) return null;
+  const questionId = getQuestionId(question);
+  const questionText = getQuestionText(question);
+  if (!questionId || !questionText) return null;
+
+  return {
+    ...question,
+    question_id: questionId,
+    question_text: questionText,
+    question_type: question.question_type || 'follow_up'
+  };
+}
+
+function insertQuestionAfterIndex(items, index, nextQuestion) {
+  const nextQuestionId = getQuestionId(nextQuestion);
+  if (!nextQuestionId || items.some((item) => getQuestionId(item) === nextQuestionId)) return items;
+
+  const nextItems = [...items];
+  nextItems.splice(index + 1, 0, nextQuestion);
+  return nextItems;
 }
 
 function Topbar({ stageLabel, currentIndex, total, isCompleted, onEnd }) {
@@ -133,6 +157,7 @@ function InterviewQuestionCheckPage() {
   const [processingStep, setProcessingStep] = useState('idle');
   const [failedStep, setFailedStep] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [followupNotice, setFollowupNotice] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [questionLoadError, setQuestionLoadError] = useState('');
@@ -165,6 +190,7 @@ function InterviewQuestionCheckPage() {
     if (processingStep === 'stt') return 'Whisper STT 처리 중입니다.';
     if (processingStep === 'answer') return '답변 텍스트를 저장 중입니다.';
     if (processingStep === 'patch') return 'STT 분석값을 답변에 저장 중입니다.';
+    if (processingStep === 'followup') return '답변 기반 꼬리질문을 확인 중입니다.';
     if (processingStep === 'complete') return '면접 세션을 완료 처리 중입니다.';
     if (processingStep === 'saved') return '답변 저장이 완료되었습니다.';
     return '';
@@ -189,10 +215,12 @@ function InterviewQuestionCheckPage() {
     setProcessingStep('idle');
     setFailedStep('');
     setErrorMessage('');
+    setFollowupNotice('');
   }, []);
 
   useEffect(() => {
     if (!sessionId) return undefined;
+    if (questions.length > 0) return undefined;
 
     let canceled = false;
     const loadQuestions = async () => {
@@ -203,7 +231,7 @@ function InterviewQuestionCheckPage() {
         if (canceled) return;
         const loadedQuestions = normalizeQuestions(response);
         setQuestions(loadedQuestions);
-        setCurrentQuestionIndex(Math.min(currentQuestionIndex, Math.max(loadedQuestions.length - 1, 0)));
+        setCurrentQuestionIndex(0);
       } catch (error) {
         if (!canceled) {
           setQuestionLoadError(getErrorMessage(error, '질문을 불러오지 못했습니다.'));
@@ -218,7 +246,7 @@ function InterviewQuestionCheckPage() {
     return () => {
       canceled = true;
     };
-  }, [currentQuestionIndex, sessionId, setCurrentQuestionIndex, setQuestions]);
+  }, [questions.length, sessionId, setCurrentQuestionIndex, setQuestions]);
 
   useEffect(() => {
     if (!isAnswering) return undefined;
@@ -300,6 +328,23 @@ function InterviewQuestionCheckPage() {
           long_pause_count: nextSttResult?.long_pause_count ?? 0
         });
 
+        setProcessingStep('followup');
+        setFollowupNotice('');
+        try {
+          const followup = await interviewApi.generateFollowup(nextAnswerId);
+          const followupQuestion = normalizeFollowupQuestion(followup?.followup_question);
+
+          if (followup?.next_action === 'GENERATE_FOLLOWUP' && followupQuestion) {
+            const latestState = useInterviewStore.getState();
+            setQuestions(insertQuestionAfterIndex(latestState.questions, latestState.currentQuestionIndex, followupQuestion));
+            setFollowupNotice('현재 답변을 바탕으로 꼬리질문이 생성되었습니다. 다음 질문으로 이동하면 이어서 확인할 수 있습니다.');
+          } else {
+            setFollowupNotice('');
+          }
+        } catch (followupError) {
+          setFollowupNotice('답변 저장은 완료되었지만 꼬리질문 생성은 건너뛰었습니다. 다음 질문으로 진행할 수 있습니다.');
+        }
+
         setFailedStep('');
         setProcessingStep('saved');
       } catch (error) {
@@ -309,7 +354,7 @@ function InterviewQuestionCheckPage() {
         setErrorMessage(getErrorMessage(error, '답변 처리 중 문제가 발생했습니다.'));
       }
     },
-    [answerId, audioBlob, currentQuestionId, recordedDuration, sessionId, sttResult]
+    [answerId, audioBlob, currentQuestionId, recordedDuration, sessionId, setQuestions, sttResult]
   );
 
   const handleStartRecording = async () => {
@@ -457,6 +502,13 @@ function InterviewQuestionCheckPage() {
           <section className="question-check-status is-error" role="alert">
             <strong>처리 중 문제가 발생했습니다.</strong>
             <span>{errorMessage}</span>
+          </section>
+        )}
+
+        {followupNotice && (
+          <section className="question-check-status">
+            <strong>꼬리질문 확인</strong>
+            <span>{followupNotice}</span>
           </section>
         )}
 
