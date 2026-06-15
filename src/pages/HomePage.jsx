@@ -132,7 +132,7 @@ function HomePage() {
       </section>
       <footer className="py-6 text-center">
         <Link to="/admin/login" className="text-xs text-[#CCCCCC] hover:text-[#AAAAAA] transition-colors">
-          ©2025 Career.zip
+          ©2026 Career.zip
         </Link>
       </footer>
     </main>
