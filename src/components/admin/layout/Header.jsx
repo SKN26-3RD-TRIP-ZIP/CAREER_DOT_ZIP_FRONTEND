@@ -11,8 +11,8 @@ export default function Header() {
   const title = PAGE_TITLES[pathname] ?? '관리자'
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
-      <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] px-8">
+      <h1 className="text-lg font-semibold text-[#000000]">{title}</h1>
     </header>
   )
 }

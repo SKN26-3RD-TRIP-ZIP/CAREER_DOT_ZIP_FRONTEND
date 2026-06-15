@@ -63,7 +63,7 @@ function statusTone(status) {
 
 function InfoRow({ label, value }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#000000] py-2 last:border-0">
+    <div className="flex items-start justify-between gap-4 border-b border-[rgba(0,0,0,0.12)] py-2 last:border-0">
       <span className="text-sm font-bold text-[#253900]">{label}</span>
       <span className="text-right text-sm font-black text-[#000000]">{value || '-'}</span>
     </div>
@@ -75,10 +75,10 @@ function GrowthBars({ points }) {
   const max = Math.max(...latest.map((p) => p.overall_score), 100);
 
   return (
-    <div className="flex h-44 items-end gap-3 rounded-lg border border-[#000000] p-4">
+    <div className="flex h-44 items-end gap-3 rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
       {latest.map((point) => (
         <div key={point.session_id || point.label} className="flex flex-1 flex-col items-center gap-2">
-          <div className="flex h-28 w-full items-end border border-[#000000]">
+          <div className="flex h-28 w-full items-end border border-[rgba(0,0,0,0.12)]">
             <div className="w-full bg-[#08CB00]" style={{ height: `${Math.max(8, (point.overall_score / max) * 100)}%` }} />
           </div>
           <strong className="text-xs">{point.overall_score}</strong>
@@ -233,6 +233,7 @@ function MyPage() {
 
   return (
     <PageShell
+      activeNav="마이페이지"
       title={`${profile.name || user?.name || '회원'} 님의 성장 대시보드`}
       description="최근 면접 리포트와 약점 기반 연습 흐름을 한 화면에서 확인하세요."
       actions={
@@ -253,7 +254,7 @@ function MyPage() {
         <div className="space-y-5">
           <Card className="p-5">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#000000] bg-[#08CB00] text-2xl font-black">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(0,0,0,0.12)] bg-[#08CB00] text-2xl font-black">
                 {(profile.name || user?.name || user?.email || '?').slice(0, 1)}
               </div>
               <div>
@@ -355,7 +356,7 @@ function MyPage() {
               {weaknesses.length ? (
                 <div className="mt-4 grid gap-3">
                   {weaknesses.slice(0, 3).map((w, i) => (
-                    <div key={`${w}-${i}`} className="rounded-lg border border-[#000000] p-4">
+                    <div key={`${w}-${i}`} className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
                       <span className="text-xs font-black text-[#253900]">TOP {i + 1}</span>
                       <p className="mt-2 font-black">{typeof w === 'string' ? w : w.label || w.tag || '약점'}</p>
                     </div>
@@ -376,7 +377,7 @@ function MyPage() {
               {recommendedQuestions.length ? (
                 <ul className="mt-4 space-y-3">
                   {recommendedQuestions.map((rq, i) => (
-                    <li key={i} className="rounded-lg border border-[#000000] p-4 text-sm font-semibold leading-6">
+                    <li key={i} className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4 text-sm font-semibold leading-6">
                       Q. {rq.question}
                     </li>
                   ))}
@@ -402,7 +403,7 @@ function MyPage() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                   <thead>
-                    <tr className="border-b border-[#000000] text-[#253900]">
+                    <tr className="border-b border-[rgba(0,0,0,0.12)] text-[#253900]">
                       <th className="py-3 pr-4">날짜</th>
                       <th className="py-3 pr-4">면접 유형</th>
                       <th className="py-3 pr-4">상태</th>
@@ -412,7 +413,7 @@ function MyPage() {
                   </thead>
                   <tbody>
                     {history.slice(0, 5).map((rec) => (
-                      <tr key={rec.session_id} className="border-b border-[#000000]">
+                      <tr key={rec.session_id} className="border-b border-[rgba(0,0,0,0.12)]">
                         <td className="py-3 pr-4">{fmtDateTime(rec.created_at)}</td>
                         <td className="py-3 pr-4 font-black">{rec.interview_type || '면접'}</td>
                         <td className="py-3 pr-4"><StatusBadge tone={statusTone(rec.status)}>{rec.status || '기록됨'}</StatusBadge></td>

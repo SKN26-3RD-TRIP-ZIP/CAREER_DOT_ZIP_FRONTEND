@@ -111,7 +111,7 @@ function SignupPage() {
         </form>
       ) : (
         <div className="space-y-5">
-          <label className="flex items-start gap-3 rounded-lg border border-[#000000] p-4">
+          <label className={`flex items-start gap-3 rounded-xl border p-4 transition ${allRequiredAgreed ? 'border-[#08CB00] bg-[rgba(8,203,0,0.08)]' : 'border-[rgba(0,0,0,0.15)] bg-[#EEEEEE]'}`}>
             <input
               type="checkbox"
               className="mt-1 h-4 w-4 accent-[#08CB00]"
@@ -133,7 +133,7 @@ function SignupPage() {
             ['[필수] 개인정보 수집·이용 동의', agreePrivacy, setAgreePrivacy],
             ['[선택] 마케팅 정보 수신 동의', agreeMarketing, setAgreeMarketing],
           ].map(([label, checked, setter]) => (
-            <label key={label} className="flex items-center justify-between gap-4 rounded-lg border border-[#000000] p-4 text-sm font-black">
+            <label key={label} className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-4 text-sm font-bold">
               <span>{label}</span>
               <input type="checkbox" className="h-4 w-4 accent-[#08CB00]" checked={checked} onChange={(e) => setter(e.target.checked)} />
             </label>

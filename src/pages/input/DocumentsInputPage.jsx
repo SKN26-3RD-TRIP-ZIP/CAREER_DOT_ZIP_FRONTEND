@@ -143,7 +143,7 @@ function DocumentsInputPage() {
     >
       <Card className="mx-auto max-w-5xl p-6">
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <form onSubmit={handleResumeUpload} className="rounded-lg border border-[#000000] p-5">
+          <form onSubmit={handleResumeUpload} className="rounded-lg border border-[rgba(0,0,0,0.12)] p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black text-[#253900]">이력서 파일 업로드</h2>
@@ -175,7 +175,7 @@ function DocumentsInputPage() {
             </div>
           </form>
 
-          <section className="rounded-lg border border-[#000000] p-5">
+          <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-black text-[#253900]">최근 이력서</h2>
               <Button type="button" variant="ghost" onClick={fetchResumes} disabled={resumeLoading}>
@@ -196,7 +196,7 @@ function DocumentsInputPage() {
                     className={`rounded-lg border p-4 text-left transition ${
                       selectedResumeId === item.resume_id
                         ? 'border-[#253900] bg-[#08CB00] text-[#000000]'
-                        : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
+                        : 'border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
                     }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -217,7 +217,7 @@ function DocumentsInputPage() {
         </div>
 
         {resumeDetail && (
-          <div className="mt-6 rounded-lg border border-[#000000] p-5 text-sm">
+          <div className="mt-6 rounded-lg border border-[rgba(0,0,0,0.12)] p-5 text-sm">
             <p className="font-black text-[#253900]">{resumeDetail.name || '이력서'}</p>
             <p className="mt-3 max-h-40 overflow-auto whitespace-pre-line leading-6">
               {resumeDetail.original_text || '추출된 이력서 텍스트가 없습니다.'}

@@ -1,8 +1,8 @@
 const TONES = {
-  green: 'bg-[#08CB00] text-white',
+  green: 'bg-[#08CB00] text-[#EEEEEE]',
   soft: 'bg-[#08CB00]/10 text-[#253900]',
-  gray: 'bg-slate-100 text-slate-600',
-  dark: 'bg-[#253900] text-white',
+  gray: 'bg-[rgba(0,0,0,0.06)] text-[rgba(0,0,0,0.6)]',
+  dark: 'bg-[#253900] text-[#EEEEEE]',
 };
 
 export default function Badge({ children, tone = 'soft', className = '' }) {

@@ -307,7 +307,7 @@ function JdInputPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-2 rounded-lg border border-[#000000] bg-[#EEEEEE] p-1">
+            <div className="grid grid-cols-3 gap-2 rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-1">
               {INPUT_MODES.map((mode) => (
                 <button
                   key={mode.id}
@@ -368,7 +368,7 @@ function JdInputPage() {
                           type="button"
                           onClick={() => handleTechStackToggle(stack)}
                           className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                            checked ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
+                            checked ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
                           }`}
                         >
                           {stack}
@@ -439,7 +439,7 @@ function JdInputPage() {
                           type="button"
                           onClick={() => setSelectedMockJob(job)}
                           className={`rounded-lg border p-4 text-left transition ${
-                            selected ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[#000000] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
+                            selected ? 'border-[#253900] bg-[#08CB00] text-[#000000]' : 'border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] text-[#000000] hover:opacity-80'
                           }`}
                         >
                           <p className="text-sm font-bold">

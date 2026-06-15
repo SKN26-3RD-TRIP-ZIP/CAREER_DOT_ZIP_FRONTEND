@@ -30,12 +30,12 @@ export default function RadarChart({ data = [] }) {
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-72 w-full max-w-[320px]">
         {/* 격자 링 */}
         {rings.map((r) => (
-          <polygon key={r} points={polygon(r)} fill="none" stroke="#e5e7eb" strokeWidth="1" />
+          <polygon key={r} points={polygon(r)} fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="1" />
         ))}
         {/* 축선 */}
         {data.map((_, i) => {
           const p = point(i, 1);
-          return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#e5e7eb" strokeWidth="1" />;
+          return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(0,0,0,0.12)" strokeWidth="1" />;
         })}
         {/* 데이터 영역 */}
         <polygon points={dataPolygon} fill="#08CB00" fillOpacity="0.4" stroke="#08CB00" strokeWidth="2" />
@@ -43,7 +43,7 @@ export default function RadarChart({ data = [] }) {
         {data.map((d, i) => {
           const p = point(i, 1.18);
           return (
-            <text key={d.axis ?? i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="#6b7280">
+            <text key={d.axis ?? i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="rgba(0,0,0,0.55)">
               {d.axis}
             </text>
           );

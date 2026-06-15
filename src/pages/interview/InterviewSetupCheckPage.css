@@ -3,10 +3,10 @@
   --setup-deep: #253900;
   --setup-black: #000000;
   --setup-bg: #eeeeee;
-  --setup-line: #d9ded6;
-  --setup-muted: #687565;
-  --setup-soft: #e9fbe6;
-  --setup-card: #ffffff;
+  --setup-line: rgba(0,0,0,0.12);
+  --setup-muted: rgba(0,0,0,0.55);
+  --setup-soft: rgba(8,203,0,0.1);
+  --setup-card: #EEEEEE;
   --setup-shadow: 0 18px 44px rgba(37, 57, 0, 0.1);
   min-height: 100vh;
   background: var(--setup-bg);
@@ -30,7 +30,7 @@
   min-height: 74px;
   margin: 0 0 36px;
   border-bottom: 1px solid var(--setup-line);
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(238, 238, 238, 0.96);
   padding: 0 max(24px, calc((100vw - 1240px) / 2));
   backdrop-filter: blur(16px);
 }
@@ -83,7 +83,7 @@
 
 .setup-nav-links a.is-active,
 .setup-nav-links a:hover {
-  border-color: #b9e5b3;
+  border-color: rgba(8,203,0,0.4);
   background: var(--setup-soft);
   color: var(--setup-deep);
 }
@@ -121,7 +121,7 @@
 .setup-start-button {
   border: 0;
   background: var(--setup-primary);
-  color: #041000;
+  color: #000000;
   font-weight: 950;
 }
 
@@ -161,8 +161,8 @@
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  background: #006a33;
-  color: #ffffff;
+  background: #253900;
+  color: #EEEEEE;
   font-weight: 950;
 }
 
@@ -172,7 +172,7 @@
   gap: 10px;
   width: min(1240px, calc(100% - 40px));
   margin: 0 auto 18px;
-  border: 1px solid #b9e5b3;
+  border: 1px solid rgba(8,203,0,0.4);
   border-radius: 14px;
   background: var(--setup-soft);
   color: var(--setup-deep);
@@ -253,7 +253,7 @@
   min-height: 152px;
   border: 1px solid var(--setup-line);
   border-radius: 12px;
-  background: #fafafa;
+  background: #EEEEEE;
   color: var(--setup-black);
   padding: 22px;
   text-align: left;
@@ -279,7 +279,7 @@
   height: 22px;
   border-radius: 999px;
   background: var(--setup-primary);
-  color: #ffffff;
+  color: #EEEEEE;
 }
 
 .setup-option-card strong {
@@ -304,8 +304,8 @@
   min-height: 48px;
   border: 1px solid var(--setup-line);
   border-radius: 12px;
-  background: #fafafa;
-  color: #788075;
+  background: #EEEEEE;
+  color: rgba(0,0,0,0.5);
   font-weight: 850;
 }
 
@@ -340,7 +340,7 @@
   min-height: 42px;
   border-bottom: 1px solid var(--setup-line);
   padding: 0 18px;
-  color: #2c3529;
+  color: #000000;
   font-size: 13px;
 }
 
@@ -401,7 +401,7 @@
 
 .setup-status-pill.neutral,
 .setup-input-status.neutral .setup-input-status__icon {
-  background: #edf2ea;
+  background: rgba(0,0,0,0.05);
   color: var(--setup-deep);
 }
 
@@ -413,14 +413,14 @@
 
 .setup-status-pill.warning,
 .setup-input-status.warning .setup-input-status__icon {
-  background: #fff6d8;
-  color: #a26300;
+  background: rgba(37,57,0,0.08);
+  color: #253900;
 }
 
 .setup-status-pill.danger,
 .setup-input-status.danger .setup-input-status__icon {
-  background: #ffe8e8;
-  color: #c52323;
+  background: rgba(0,0,0,0.06);
+  color: #000000;
 }
 
 .setup-mic-layout {
@@ -449,7 +449,7 @@
   min-height: 44px;
   border: 1px solid var(--setup-line);
   border-radius: 10px;
-  background: #ffffff;
+  background: #EEEEEE;
   color: var(--setup-black);
   padding: 0 12px;
 }
@@ -467,13 +467,13 @@
 
 .setup-outline-button {
   border: 1px solid var(--setup-primary);
-  background: #ffffff;
+  background: #EEEEEE;
   color: var(--setup-primary);
 }
 
 .setup-secondary-button {
   border: 1px solid var(--setup-line);
-  background: #f9faf8;
+  background: #EEEEEE;
   color: var(--setup-deep);
 }
 
@@ -500,7 +500,7 @@
   overflow: hidden;
   height: 12px;
   border-radius: 999px;
-  background: #edf3eb;
+  background: rgba(0,0,0,0.08);
 }
 
 .setup-level-bar span {
@@ -519,7 +519,7 @@
   gap: 7px;
   min-height: 88px;
   border-radius: 12px;
-  background: #e8fae5;
+  background: rgba(8,203,0,0.1);
   padding: 14px;
 }
 
@@ -591,7 +591,7 @@
   margin: 18px auto 14px;
   border: 1px solid var(--setup-line);
   border-radius: 18px;
-  background: #ffffff;
+  background: #EEEEEE;
   box-shadow: var(--setup-shadow);
 }
 
@@ -635,18 +635,18 @@
 }
 
 .setup-start-button:disabled {
-  background: #5f5f5f;
-  color: #ffffff;
+  background: rgba(0,0,0,0.3);
+  color: #EEEEEE;
   opacity: 0.72;
 }
 
 .setup-start-error {
   width: min(1240px, calc(100% - 40px));
   margin: 12px auto 0;
-  border: 1px solid #f4b4b4;
+  border: 1px solid rgba(0,0,0,0.2);
   border-radius: 10px;
-  background: #fff0f0;
-  color: #c21d1d;
+  background: rgba(0,0,0,0.05);
+  color: #000000;
   font-size: 14px;
   font-weight: 800;
   padding: 14px 16px;

@@ -7,8 +7,8 @@ export default function ScoreBreakdownBars({ rows = [] }) {
       {rows.map((r) => (
         <div key={r.label}>
           <div className="mb-1.5 flex items-center justify-between text-sm">
-            <span className="font-medium text-slate-700">{r.label}</span>
-            <span className="font-bold text-slate-900">{r.score}%</span>
+            <span className="font-medium text-[rgba(0,0,0,0.7)]">{r.label}</span>
+            <span className="font-bold text-[#000000]">{r.score}%</span>
           </div>
           <ProgressBar value={r.score} />
         </div>

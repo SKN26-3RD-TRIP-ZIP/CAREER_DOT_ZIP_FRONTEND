@@ -90,6 +90,7 @@ function App() {
       <Route path="/input/jd" element={<JdInputPage />} />
       <Route path="/input/documents" element={<DocumentsInputPage />} />
       <Route path="/input/cover-letter-project" element={<CoverLetterProjectPage />} />
+      <Route path="/input/session-setup" element={<SessionSetupPage />} />
 
       {/* 면접 설정 → 세션/질문 생성 진입 (QA P0: JD 저장 후 면접 설정 화면) */}
       <Route path="/session-setup" element={<SessionSetupPage />} />

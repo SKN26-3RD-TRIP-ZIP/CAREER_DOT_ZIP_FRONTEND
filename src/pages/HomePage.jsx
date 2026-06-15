@@ -29,8 +29,8 @@ function HomePage() {
         <Logo />
         <nav className="hidden items-center gap-7 text-sm font-black text-[#253900] md:flex">
           <a href="#features">서비스 소개</a>
-          <a href="#flow">진행 방식</a>
-          <Link to="/report">리포트</Link>
+          <a href="#features">기능</a>
+          <a href="#flow">요금제</a>
         </nav>
         <div className="flex items-center gap-2">
           <Button as={Link} to="/auth/login" variant="ghost">
@@ -70,11 +70,11 @@ function HomePage() {
               <p className="mt-4 text-6xl font-black text-[#000000]">82</p>
               <p className="mt-1 text-sm font-black text-[#253900]">점 / 100</p>
             </div>
-            <span className="rounded-full border border-[#000000] bg-[#08CB00] px-4 py-2 text-xs font-black">+12점</span>
+            <span className="rounded-full border border-[rgba(0,0,0,0.12)] bg-[#08CB00] px-4 py-2 text-xs font-black">+12점</span>
           </div>
           <div className="mt-7 grid gap-3">
             {['맞춤 질문 생성', '실시간 답변 피드백', '성장 리포트 자동 저장'].map((item) => (
-              <div key={item} className="flex items-center gap-3 rounded-lg border border-[#000000] p-4">
+              <div key={item} className="flex items-center gap-3 rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
                 <ShieldCheck size={20} className="text-[#253900]" />
                 <span className="text-sm font-black">{item}</span>
               </div>
@@ -111,7 +111,7 @@ function HomePage() {
         </div>
         <div className="mt-8 grid gap-3 md:grid-cols-5">
           {flow.map((item, index) => (
-            <article key={item} className="rounded-lg border border-[#000000] bg-[#EEEEEE] p-5">
+            <article key={item} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-5">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#08CB00] text-sm font-black">{index + 1}</span>
               <h3 className="mt-5 text-lg font-black text-[#253900]">{item}</h3>
             </article>
