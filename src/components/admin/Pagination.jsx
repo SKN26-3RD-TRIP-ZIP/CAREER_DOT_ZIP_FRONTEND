@@ -18,7 +18,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
   return (
     <div className="flex items-center justify-center gap-1">
       <button
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(0,0,0,0.12)] text-[#253900] hover:bg-[rgba(0,0,0,0.08)] disabled:opacity-40"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
       >
@@ -27,14 +27,14 @@ export default function Pagination({ page, totalPages, onPageChange }) {
 
       {pages.map((p, idx) =>
         p === '...' ? (
-          <span key={`e-${idx}`} className="px-1 text-sm text-slate-400">...</span>
+          <span key={`e-${idx}`} className="px-1 text-sm text-[rgba(0,0,0,0.52)]">...</span>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange(p)}
             className={[
               'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
-              page === p ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100',
+              page === p ? 'bg-[#253900] text-[#EEEEEE]' : 'text-[#253900] hover:bg-[rgba(0,0,0,0.08)]',
             ].join(' ')}
           >
             {p}
@@ -43,7 +43,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       )}
 
       <button
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(0,0,0,0.12)] text-[#253900] hover:bg-[rgba(0,0,0,0.08)] disabled:opacity-40"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
       >

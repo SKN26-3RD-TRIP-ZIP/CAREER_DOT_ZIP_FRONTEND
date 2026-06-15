@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage.jsx'
 import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import InterviewQuestionCheckPage from './pages/interview/InterviewQuestionCheckPage.jsx'
+import InterviewSetupCheckPage from './pages/interview/InterviewSetupCheckPage.jsx'
 import JdInputPage from './pages/input/JdInputPage.jsx'
 import DocumentsInputPage from './pages/input/DocumentsInputPage.jsx'
 import CoverLetterProjectPage from './pages/input/CoverLetterProjectPage.jsx'
@@ -90,7 +91,7 @@ function App() {
       <Route path="/interview" element={<VoiceInterviewPage />} />
       <Route path="/interview/setup" element={<SessionSetupPage />} />
       <Route path="/interview/question" element={<InterviewQuestionCheckPage />} />
-      <Route path="/interview/setup-check" element={<Navigate to="/interview/setup" replace />} />
+      <Route path="/interview/setup-check" element={<InterviewSetupCheckPage />} />
       <Route path="/interview/question-check" element={<Navigate to="/interview/question" replace />} />
 
       {/* 마이페이지 실제 면접 기록/리포트 조회 (prototype /mypage/* 와 분리) */}
