@@ -87,13 +87,13 @@ export default function PromptVersionModal({ template, open, onClose, onChanged 
   const defaultVersionId = template.default_version_id
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-base font-bold text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.40)] px-4">
+      <div className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#EEEEEE] shadow-[0_22px_56px_rgba(0,0,0,0.18)]">
+        <div className="flex items-center justify-between border-b border-[rgba(0,0,0,0.08)] px-5 py-4">
+          <h2 className="text-base font-bold text-[#000000]">
             버전 관리 · {template.title}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
+          <button onClick={onClose} className="text-[rgba(0,0,0,0.52)] hover:text-[#253900]">✕</button>
         </div>
 
         <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto p-5 sm:grid-cols-2">
@@ -101,9 +101,9 @@ export default function PromptVersionModal({ template, open, onClose, onChanged 
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#08CB00]">버전 목록</p>
             {loading ? (
-              <p className="text-sm text-slate-400">불러오는 중...</p>
+              <p className="text-sm text-[rgba(0,0,0,0.52)]">불러오는 중...</p>
             ) : versions.length === 0 ? (
-              <p className="text-sm text-slate-400">등록된 버전이 없습니다.</p>
+              <p className="text-sm text-[rgba(0,0,0,0.52)]">등록된 버전이 없습니다.</p>
             ) : (
               <ul className="space-y-2">
                 {versions.map((v) => {
@@ -114,28 +114,28 @@ export default function PromptVersionModal({ template, open, onClose, onChanged 
                       key={v.prompt_ver_id}
                       className={[
                         'cursor-pointer rounded-lg border px-3 py-2',
-                        isSel ? 'border-[#08CB00] bg-green-50' : 'border-slate-200 hover:bg-slate-50',
+                        isSel ? 'border-[#08CB00] bg-[rgba(8,203,0,0.14)]' : 'border-[rgba(0,0,0,0.12)] hover:bg-[rgba(0,0,0,0.05)]',
                       ].join(' ')}
                       onClick={() => setSelected(v)}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-slate-800">v{v.version_number}</span>
+                        <span className="text-sm font-semibold text-[#000000]">v{v.version_number}</span>
                         {isDefault ? (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">기본</span>
+                          <span className="rounded-full bg-[#08CB00] px-2 py-0.5 text-xs font-semibold text-[#000000]">기본</span>
                         ) : (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleSetDefault(v.prompt_ver_id) }}
                             disabled={saving}
-                            className="rounded border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                            className="rounded border border-[rgba(0,0,0,0.12)] px-2 py-0.5 text-xs text-[#253900] hover:bg-[rgba(0,0,0,0.08)] disabled:opacity-50"
                           >
                             기본으로 지정
                           </button>
                         )}
                       </div>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-[rgba(0,0,0,0.52)]">
                         {v.created_at ? new Date(v.created_at).toLocaleString('ko-KR') : ''}
                       </p>
-                      <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                      <p className="mt-1 line-clamp-2 text-xs text-[rgba(0,0,0,0.68)]">
                         {(v.content || '').slice(0, 80)}
                       </p>
                     </li>
@@ -149,7 +149,7 @@ export default function PromptVersionModal({ template, open, onClose, onChanged 
           <div className="space-y-4">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#08CB00]">선택 버전 내용</p>
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-3 text-xs text-[#253900]">
                 {selected?.content || '버전을 선택하세요.'}
               </pre>
             </div>
@@ -160,12 +160,12 @@ export default function PromptVersionModal({ template, open, onClose, onChanged 
                 onChange={(e) => setNewContent(e.target.value)}
                 rows={5}
                 placeholder="새 버전 content 입력 (기존 버전을 수정하지 않고 새 버전으로 저장됩니다)"
-                className="w-full rounded-lg border border-slate-300 p-2 text-xs"
+                className="w-full rounded-lg border border-[rgba(0,0,0,0.18)] p-2 text-xs"
               />
               <button
                 onClick={handleCreate}
                 disabled={saving}
-                className="mt-2 w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                className="mt-2 w-full rounded-md bg-[#253900] py-2 text-sm font-medium text-[#EEEEEE] hover:bg-[#000000] disabled:opacity-50"
               >
                 {saving ? '저장 중...' : '새 버전 저장'}
               </button>
@@ -174,9 +174,9 @@ export default function PromptVersionModal({ template, open, onClose, onChanged 
         </div>
 
         {(error || notice) && (
-          <div className="border-t border-slate-100 px-5 py-3">
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {notice && !error && <p className="text-sm text-emerald-600">{notice}</p>}
+          <div className="border-t border-[rgba(0,0,0,0.08)] px-5 py-3">
+            {error && <p className="text-sm text-[#000000]">{error}</p>}
+            {notice && !error && <p className="text-sm text-[#253900]">{notice}</p>}
           </div>
         )}
       </div>

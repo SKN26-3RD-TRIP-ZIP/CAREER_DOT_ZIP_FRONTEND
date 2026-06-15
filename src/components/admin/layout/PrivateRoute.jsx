@@ -7,11 +7,11 @@ export default function PrivateRoute() {
   const token = useAuthStore((s) => s.token)
 
   if (!token) {
-    return <Navigate to="/admin/login" replace />
+    return <Navigate to="/admin/live/login" replace />
   }
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-[#EEEEEE]">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />

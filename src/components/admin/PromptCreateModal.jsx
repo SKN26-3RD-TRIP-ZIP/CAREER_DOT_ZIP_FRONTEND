@@ -54,17 +54,17 @@ export default function PromptCreateModal({ open, onClose, personas, activeTab }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
-        <h2 className="mb-5 text-base font-semibold text-slate-900">새 프롬프트 템플릿</h2>
+      <div className="absolute inset-0 bg-[rgba(0,0,0,0.40)]" onClick={handleClose} />
+      <div className="relative z-10 w-full max-w-md rounded-xl border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-6 shadow-[0_22px_56px_rgba(0,0,0,0.18)]">
+        <h2 className="mb-5 text-base font-semibold text-[#000000]">새 프롬프트 템플릿</h2>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">페르소나 유형</label>
+            <label className="text-sm font-medium text-[#253900]">페르소나 유형</label>
             <select
               value={personaType}
               onChange={(e) => setPersonaType(e.target.value)}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className="rounded-md border border-[rgba(0,0,0,0.12)] px-3 py-2 text-sm outline-none focus:border-[#08CB00]"
             >
               {personas.map(({ persona_id, persona_type }) => (
                 <option key={persona_id} value={persona_type}>
@@ -75,11 +75,11 @@ export default function PromptCreateModal({ open, onClose, personas, activeTab }
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">프롬프트 타입</label>
+            <label className="text-sm font-medium text-[#253900]">프롬프트 타입</label>
             <select
               value={promptType}
               onChange={(e) => setPromptType(e.target.value)}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className="rounded-md border border-[rgba(0,0,0,0.12)] px-3 py-2 text-sm outline-none focus:border-[#08CB00]"
             >
               {PROMPT_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -88,12 +88,12 @@ export default function PromptCreateModal({ open, onClose, personas, activeTab }
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">제목</label>
+            <label className="text-sm font-medium text-[#253900]">제목</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="템플릿 제목을 입력하세요"
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className="rounded-md border border-[rgba(0,0,0,0.12)] px-3 py-2 text-sm outline-none focus:border-[#08CB00]"
             />
           </div>
         </div>
@@ -102,14 +102,14 @@ export default function PromptCreateModal({ open, onClose, personas, activeTab }
           <button
             onClick={handleClose}
             disabled={saving}
-            className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-md border border-[rgba(0,0,0,0.12)] px-4 py-2 text-sm font-medium text-[#253900] hover:bg-[rgba(0,0,0,0.05)] disabled:opacity-50"
           >
             취소
           </button>
           <button
             onClick={handleCreate}
             disabled={!canSave || saving}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            className="rounded-md bg-[#253900] px-4 py-2 text-sm font-medium text-[#EEEEEE] hover:bg-[#000000] disabled:opacity-50"
           >
             {saving ? '생성 중...' : '생성'}
           </button>

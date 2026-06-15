@@ -4,9 +4,9 @@ import { getMemberDetail } from '../../api/adminApi';
 
 function Row({ label, value }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 py-2 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{value ?? '-'}</span>
+    <div className="flex justify-between border-b border-[rgba(0,0,0,0.08)] py-2 text-sm">
+      <span className="text-[rgba(0,0,0,0.68)]">{label}</span>
+      <span className="font-medium text-[#000000]">{value ?? '-'}</span>
     </div>
   );
 }
@@ -52,7 +52,7 @@ function MemberDetail() {
         <button
           type="button"
           onClick={() => navigate('/admin/live/members')}
-          className="mb-4 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5"
+          className="mb-4 text-xs text-[rgba(0,0,0,0.68)] hover:text-[#253900] border border-[rgba(0,0,0,0.12)] rounded-lg px-3 py-1.5"
         >
           ← 회원 목록으로 돌아가기
         </button>
@@ -60,12 +60,12 @@ function MemberDetail() {
         <h1 className="text-2xl font-bold text-[#253900] mb-4">회원 상세</h1>
 
         {loading ? (
-          <p className="text-sm text-slate-400">불러오는 중...</p>
+          <p className="text-sm text-[rgba(0,0,0,0.52)]">불러오는 중...</p>
         ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-[#000000]">{error}</p>
         ) : member ? (
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow p-5">
+            <div className="bg-[#EEEEEE] rounded-2xl shadow p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-[#08CB00] mb-3">기본 정보</p>
               <Row label="이름" value={member.name} />
               <Row label="이메일" value={member.email} />
@@ -78,7 +78,7 @@ function MemberDetail() {
               <Row label="최근 로그인" value={member.last_login} />
             </div>
 
-            <div className="bg-white rounded-2xl shadow p-5">
+            <div className="bg-[#EEEEEE] rounded-2xl shadow p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-[#08CB00] mb-3">면접/리포트 요약</p>
               <Row label="완료 면접 수" value={member.practice_count ?? 0} />
               <Row label="면접 세션 수" value={member.interview_count} />
