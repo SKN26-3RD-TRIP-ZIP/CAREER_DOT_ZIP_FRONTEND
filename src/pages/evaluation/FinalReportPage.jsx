@@ -119,7 +119,9 @@ export default function FinalReportPage() {
               categories.map((item) => (
                 <div key={item.key || item.label} className="rounded-lg bg-[rgba(0,0,0,0.04)] p-4">
                   <p className="text-xs font-semibold text-[rgba(0,0,0,0.5)]">{item.label}</p>
-                  <p className="mt-2 text-2xl font-bold text-[#000000]">{item.score ?? 0}</p>
+                  <p className="mt-2 text-2xl font-bold text-[#000000]">
+                    {item.score != null ? `${item.score}점` : '해당 없음'}
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-[rgba(0,0,0,0.5)]">{item.description}</p>
                 </div>
               ))
