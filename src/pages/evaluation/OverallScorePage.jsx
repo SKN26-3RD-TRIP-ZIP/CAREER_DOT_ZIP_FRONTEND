@@ -5,12 +5,11 @@ import StateView from '../../components/report/StateView';
 import RadarChart from '../../components/report/charts/RadarChart';
 import ScoreBreakdownBars from '../../components/report/charts/ScoreBreakdownBars';
 
-// 5축 레이더 ↔ 백엔드 score_summary.metrics 키 매핑
-// (BEI / CBI / Grounding / Speech / Technical(고도화 SBERT))
+// 4축 레이더 ↔ 백엔드 score_summary.metrics 키 매핑
+// grounding 제거: 인성면접 세션에서 항상 0 → 오해 소지
 const RADAR_AXES = [
   { key: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
   { key: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
-  { key: 'grounding_score', axis: 'Grounding', label: '근거 제시' },
   { key: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
   { key: 'technical_score', axis: 'Technical', label: '기술 깊이' },
 ];
@@ -36,7 +35,7 @@ export default function OverallScorePage() {
 
   if (report.isLoading || report.isError || !report.data) {
     return (
-      <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 5축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
+      <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
         <StateView isLoading={report.isLoading} isError={report.isError} error={report.error} onRetry={report.refetch} />
       </ReportLayout>
     );
@@ -44,15 +43,29 @@ export default function OverallScorePage() {
 
   const r = report.data;
   const persona = r.evaluation_metadata;
+  const metrics = r.score_summary.metrics;
   const interp = r.score_interpretation || {};
   const radarData = buildRadar(r);
+
+  // grounding_score가 null이 아닌 경우 = 기술면접 세션 → 조건부 노출
+  const hasGrounding = metrics.grounding_score != null;
+  const criteriaLabels = ['BEI', 'CBI', 'Speech', 'Technical', ...(hasGrounding ? ['Grounding'] : [])];
+
   const breakdownRows = [
     ...r.score_detail.categories.map((c) => ({ label: c.label, score: c.score })),
+    ...(hasGrounding ? [{ label: '근거 제시', score: Math.round(metrics.grounding_score) }] : []),
     { label: '전체 요약', score: r.score_summary.overall_score },
   ];
 
   return (
-    <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 5축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
+    <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
+      {/* 평가 기준 안내 */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[rgba(0,0,0,0.08)] bg-[#EEEEEE] px-4 py-2.5">
+        <span className="mr-1 shrink-0 text-xs text-[rgba(0,0,0,0.45)]">이 세션 평가 기준</span>
+        {criteriaLabels.map((c) => (
+          <span key={c} className="rounded-md bg-[#253900]/10 px-2 py-0.5 text-xs font-semibold text-[#253900]">{c}</span>
+        ))}
+      </div>
       <section className="grid gap-4 lg:grid-cols-3">
         {/* 좌측: OVERALL + 페르소나 (Radar 카드 높이에 맞춰 stretch) */}
         <div className="flex flex-col gap-4">
@@ -77,8 +90,8 @@ export default function OverallScorePage() {
 
         {/* 중앙: 레이더 */}
         <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm">
-          <h3 className="text-base font-bold text-[#000000]">Radar Analysis (5-Axis)</h3>
-          <p className="mb-2 text-xs text-[rgba(0,0,0,0.45)]">현재 면접 점수의 이전 세션 평균을 5축에 비교합니다.</p>
+          <h3 className="text-base font-bold text-[#000000]">Radar Analysis (4-Axis)</h3>
+          <p className="mb-2 text-xs text-[rgba(0,0,0,0.45)]">현재 면접 점수의 이전 세션 평균을 4축에 비교합니다.</p>
           <RadarChart data={radarData} />
         </div>
 
