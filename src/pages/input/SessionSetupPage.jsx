@@ -4,6 +4,7 @@ import { Check, Mic, RotateCcw } from 'lucide-react';
 import { coverLetterApi } from '../../api/coverLetterApi';
 import { interviewApi } from '../../api/interviewApi';
 import { jdApi } from '../../api/jdApi';
+import { projectApi } from '../../api/projectApi';
 import { resumeApi } from '../../api/resumeApi';
 import { useJdStore } from '../../store/jdStore';
 import { useInterviewStore } from '../../store/interviewStore';
@@ -48,6 +49,21 @@ function fmtDateTime(v) {
 function getResults(data) {
   if (Array.isArray(data)) return data;
   return Array.isArray(data?.results) ? data.results : [];
+}
+
+function getStoredProjectIds() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem('careerzip_selected_project_ids') || '[]');
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeProjectIds(ids) {
+  const nextIds = ids.filter(Boolean);
+  if (nextIds.length) window.localStorage.setItem('careerzip_selected_project_ids', JSON.stringify(nextIds));
+  else window.localStorage.removeItem('careerzip_selected_project_ids');
 }
 
 function normalizeQuestions(response) {
@@ -278,11 +294,13 @@ function SessionSetupPage() {
   const [jds, setJds] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [coverLetters, setCoverLetters] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selectedJdId, setSelectedJdId] = useState(
     jdId || window.localStorage.getItem('careerzip_selected_jd_id') || window.localStorage.getItem('careerzip_temp_jd_id') || '',
   );
   const [selectedResumeId, setSelectedResumeId] = useState(window.localStorage.getItem('careerzip_selected_resume_id') || '');
   const [selectedCoverLetterId, setSelectedCoverLetterId] = useState(window.localStorage.getItem('careerzip_selected_cover_letter_id') || '');
+  const [selectedProjectIds, setSelectedProjectIds] = useState(getStoredProjectIds);
   const [interviewType, setInterviewType] = useState('comprehensive');
   const [interviewMode, setInterviewMode] = useState('voice');
   const [persona, setPersona] = useState('practical');
@@ -298,27 +316,36 @@ function SessionSetupPage() {
     () => coverLetters.find((item) => item.cover_letter_id === selectedCoverLetterId) || null,
     [coverLetters, selectedCoverLetterId],
   );
+  const selectedProjects = useMemo(
+    () => projects.filter((item) => selectedProjectIds.includes(item.project_id)),
+    [projects, selectedProjectIds],
+  );
   const requiresMicrophone = interviewMode === 'voice';
 
   const fetchSources = async () => {
     setInitialLoading(true);
     setError('');
     try {
-      const [jdData, resumeData, coverLetterData] = await Promise.all([
+      const [jdData, resumeData, coverLetterData, projectData] = await Promise.all([
         jdApi.getJds(),
         resumeApi.getResumes(),
         coverLetterApi.getCoverLetters(),
+        projectApi.getProjects(),
       ]);
       const nextJds = getResults(jdData);
       const nextResumes = getResults(resumeData);
       const nextCoverLetters = getResults(coverLetterData);
+      const nextProjects = getResults(projectData);
       setJds(nextJds);
       setResumes(nextResumes);
       setCoverLetters(nextCoverLetters);
+      setProjects(nextProjects);
 
       const rememberedJd = nextJds.some((item) => item.jd_id === selectedJdId) ? selectedJdId : nextJds[0]?.jd_id || '';
       const rememberedResume = nextResumes.some((item) => item.resume_id === selectedResumeId) ? selectedResumeId : nextResumes[0]?.resume_id || '';
       const rememberedCoverLetter = nextCoverLetters.some((item) => item.cover_letter_id === selectedCoverLetterId) ? selectedCoverLetterId : '';
+      const nextProjectIdSet = new Set(nextProjects.map((item) => item.project_id));
+      const rememberedProjectIds = selectedProjectIds.filter((projectId) => nextProjectIdSet.has(projectId));
 
       if (rememberedJd) {
         setSelectedJdId(rememberedJd);
@@ -331,6 +358,8 @@ function SessionSetupPage() {
         window.localStorage.setItem('careerzip_selected_resume_id', rememberedResume);
       }
       if (rememberedCoverLetter) setSelectedCoverLetterId(rememberedCoverLetter);
+      setSelectedProjectIds(rememberedProjectIds);
+      storeProjectIds(rememberedProjectIds);
     } catch (err) {
       setError(formatApiError(err, '자료 목록을 불러오지 못했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -365,6 +394,19 @@ function SessionSetupPage() {
     setSelectedCoverLetterId(nextId);
     if (nextId) window.localStorage.setItem('careerzip_selected_cover_letter_id', nextId);
     else window.localStorage.removeItem('careerzip_selected_cover_letter_id');
+  };
+
+  const handleToggleProject = (projectId) => {
+    const nextIds = selectedProjectIds.includes(projectId)
+      ? selectedProjectIds.filter((id) => id !== projectId)
+      : [...selectedProjectIds, projectId];
+    setSelectedProjectIds(nextIds);
+    storeProjectIds(nextIds);
+  };
+
+  const handleClearProjects = () => {
+    setSelectedProjectIds([]);
+    storeProjectIds([]);
   };
 
   const handleSubmit = async (e) => {
@@ -414,7 +456,10 @@ function SessionSetupPage() {
       setSessionId(newSessionId);
 
       setLoadingStep('면접 질문 생성 중...');
-      await interviewApi.generateQuestions(newSessionId, { question_count: questionCount });
+      await interviewApi.generateQuestions(newSessionId, {
+        question_count: questionCount,
+        project_ids: selectedProjectIds,
+      });
 
       setLoadingStep('생성된 질문을 불러오는 중...');
       const questionResponse = await interviewApi.getQuestions(newSessionId);
@@ -466,7 +511,7 @@ function SessionSetupPage() {
                 title="연결 자료 확인"
                 description="면접 질문을 만들 JD와 이력서를 확인합니다. 자기소개서는 선택 사항입니다."
               />
-              <div className="grid gap-4 lg:grid-cols-3">
+              <div className="grid gap-4 lg:grid-cols-4">
                 <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="text-sm font-black text-[#253900]">JD 선택</p>
@@ -552,12 +597,45 @@ function SessionSetupPage() {
                     )}
                   </div>
                 </section>
+
+                <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-sm font-black text-[#253900]">프로젝트 선택</p>
+                    <Button type="button" variant="ghost" onClick={() => navigate('/input/cover-letter-project')} className="h-9 px-3 py-0">
+                      추가
+                    </Button>
+                  </div>
+                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                    <SelectableItem
+                      selected={selectedProjectIds.length === 0}
+                      title="선택 안 함"
+                      meta="프로젝트 없이 JD, 이력서, 자기소개서 기준으로 질문을 생성합니다."
+                      onClick={handleClearProjects}
+                    />
+                    {projects.length === 0 ? (
+                      <EmptyState
+                        title="저장된 프로젝트가 없습니다"
+                        description="프로젝트는 선택 항목입니다. 없어도 면접을 시작할 수 있습니다."
+                      />
+                    ) : (
+                      projects.map((item) => (
+                        <SelectableItem
+                          key={item.project_id}
+                          selected={selectedProjectIds.includes(item.project_id)}
+                          title={item.project_name || '프로젝트'}
+                          meta={item.contribution || item.description || fmtDateTime(item.created_at)}
+                          onClick={() => handleToggleProject(item.project_id)}
+                        />
+                      ))
+                    )}
+                  </div>
+                </section>
               </div>
             </section>
 
             <section className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-4">
               <p className="text-sm font-black text-[#253900]">선택 요약</p>
-              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <dt className="text-xs font-bold text-[#253900]">JD</dt>
                   <dd className="mt-1 font-semibold text-[#000000]">
@@ -572,6 +650,12 @@ function SessionSetupPage() {
                   <dt className="text-xs font-bold text-[#253900]">자기소개서</dt>
                   <dd className="mt-1 font-semibold text-[#000000]">
                     {selectedCoverLetter ? selectedCoverLetter.title || '자기소개서' : '선택 안 함'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold text-[#253900]">프로젝트</dt>
+                  <dd className="mt-1 font-semibold text-[#000000]">
+                    {selectedProjects.length ? selectedProjects.map((item) => item.project_name || '프로젝트').join(', ') : '선택 안 함'}
                   </dd>
                 </div>
               </dl>

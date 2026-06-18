@@ -10,6 +10,11 @@ export const getCoverLetterDetail = async (coverLetterId) => {
   return response.data;
 };
 
+export const createCoverLetter = async (payload) => {
+  const response = await axiosInstance.post('/cover-letters', payload);
+  return response.data;
+};
+
 export const deleteCoverLetter = async (coverLetterId) => {
   await axiosInstance.delete(`/cover-letters/${coverLetterId}`);
 };
@@ -17,6 +22,7 @@ export const deleteCoverLetter = async (coverLetterId) => {
 export const coverLetterApi = {
   getCoverLetters,
   getCoverLetterDetail,
+  createCoverLetter,
   deleteCoverLetter,
 };
 
