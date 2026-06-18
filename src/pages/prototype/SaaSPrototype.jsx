@@ -1271,7 +1271,7 @@ function AdminLogin({ showToast }) {
 
   return (
     <>
-      <SectionHead eyebrow="Admin Login" title="Career.zip Admin" desc="발표용 관리자 데모 로그인입니다. 실제 연동 화면은 /admin/live/login 경로로 보존했습니다." />
+      <SectionHead eyebrow="Admin Login" title="Career.zip Admin" desc="발표용 관리자 데모 로그인입니다. 실제 연동 화면은 /admin/login 경로로 이동합니다." />
       <article className="cz-panel cz-admin-login-card">
         <IntegrationStatus>관리자 화면은 사용자 화면과 분리된 dark 운영 콘솔 스타일입니다.</IntegrationStatus>
         <div className="cz-form-grid">
@@ -1281,7 +1281,7 @@ function AdminLogin({ showToast }) {
         <div className="cz-actions">
           <Button onClick={loginAdmin}>관리자 로그인</Button>
           <Button to="/admin/dashboard" variant="secondary">대시보드 바로 보기</Button>
-          <Button to="/admin/live/login" variant="ghost">실제 연동 admin</Button>
+          <Button to="/admin/login" variant="ghost">실제 연동 admin</Button>
         </div>
         <Info label="현재 상태" value={state.auth.loggedIn ? `${state.auth.email} · ${state.auth.source}` : '관리자 데모 로그인 전'} />
       </article>

@@ -102,6 +102,7 @@ function MyPage() {
   const [summaryError, setSummaryError] = useState('');
   const [reports, setReports] = useState([]);
   const [latestReportDetail, setLatestReportDetail] = useState(null);
+  const [latestReportDetailError, setLatestReportDetailError] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -191,16 +192,20 @@ function MyPage() {
   useEffect(() => {
     if (!latestReportSessionId) {
       setLatestReportDetail(null);
+      setLatestReportDetailError('');
       return;
     }
     let active = true;
+    setLatestReportDetailError('');
     reportApi
       .getFinalReport(latestReportSessionId)
       .then((data) => {
         if (active) setLatestReportDetail(data);
       })
       .catch(() => {
-        if (active) setLatestReportDetail(null);
+        if (!active) return;
+        setLatestReportDetail(null);
+        setLatestReportDetailError('리포트 상세를 불러오지 못했습니다.');
       });
     return () => {
       active = false;
@@ -214,7 +219,7 @@ function MyPage() {
         .sort((a, b) => new Date(a.generated_at || a.created_at || 0) - new Date(b.generated_at || b.created_at || 0))
         .map((r) => ({
           session_id: reportSessionId(r),
-          overall_score: Number(getOverallScore(r, 0)) || 0,
+          overall_score: Number(getOverallScore(r, null)),
           label: fmtDate(r.generated_at || r.created_at),
         })),
     [reports],
@@ -316,6 +321,8 @@ function MyPage() {
               </div>
               {latestReport ? (
                 <div className="mt-5 space-y-4">
+                  {latestReportScore == null && <Alert tone="warning">평가 결과가 없습니다.</Alert>}
+                  {latestReportDetailError && <Alert tone="danger">{latestReportDetailError}</Alert>}
                   <InfoRow label="생성일" value={fmtDateTime(latestReport.generated_at || latestReport.created_at)} />
                   <InfoRow label="강점 요약" value={latestReportDetail?.summary?.strengths?.[0] || latestReportDetail?.score_interpretation?.strength || '리포트 상세에서 확인 가능'} />
                   <InfoRow label="약점 요약" value={weaknesses[0] || '리포트 상세에서 확인 가능'} />
