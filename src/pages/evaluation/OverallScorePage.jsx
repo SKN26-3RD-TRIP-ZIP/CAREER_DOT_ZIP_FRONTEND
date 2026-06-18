@@ -19,13 +19,22 @@ const RADAR_AXES = [
 function buildRadar(r) {
   const metrics = r.score_summary?.metrics;
   if (metrics) {
-    // null/undefined 축 제외: technical_score·grounding_score 는 기술 질문이 없으면 null.
-    // 0으로 치환하면 레이더가 왜곡되므로 해당 축 자체를 제거한다.
+    // null/undefined/빈 문자열 축은 제외하고 숫자 문자열은 정상 변환한다.
     return RADAR_AXES
-      .filter((a) => metrics[a.key] != null)
-      .map((a) => ({ axis: a.axis, label: a.label, score: metrics[a.key] }));
+      .map((a) => {
+        const rawScore = metrics[a.key];
+        if (rawScore === null || rawScore === undefined || rawScore === '') {
+          return null;
+        }
+
+        const score = Number(rawScore);
+        return Number.isFinite(score)
+          ? { axis: a.axis, label: a.label, score }
+          : null;
+      })
+      .filter(Boolean);
   }
-  return r.score_detail?.radar ?? [];
+  return (r.score_detail?.radar ?? []).filter((item) => item?.score != null);
 }
 
 export default function OverallScorePage() {
@@ -52,15 +61,39 @@ export default function OverallScorePage() {
   const metrics = r.score_summary.metrics;
   const interp = r.score_interpretation || {};
   const radarData = buildRadar(r);
+  const categories = Array.isArray(r.score_detail?.categories)
+    ? r.score_detail.categories
+    : [];
 
-  // radarData 에 포함된 축 이름으로 평가 기준 칩 생성 (null 축은 이미 buildRadar에서 제외됨)
+  // 실제 radarData에 포함된 평가 축만 표시한다.
   const criteriaLabels = radarData.map((d) => d.axis);
 
+  const rawGroundingScore = metrics?.grounding_score;
+  const groundingScore =
+    rawGroundingScore === null ||
+    rawGroundingScore === undefined ||
+    rawGroundingScore === ''
+      ? null
+      : Number(rawGroundingScore);
+
   const breakdownRows = [
-    ...r.score_detail.categories.map((c) => ({ label: c.label, score: c.score })),
-    ...(metrics.grounding_score != null ? [{ label: '근거 제시', score: Math.round(metrics.grounding_score) }] : []),
-    { label: '전체 요약', score: r.score_summary.overall_score },
-  ];
+    ...categories.map((c) => ({ label: c.label, score: c.score })),
+    ...(Number.isFinite(groundingScore)
+      ? [{ label: '근거 제시', score: Math.round(groundingScore) }]
+      : []),
+    { label: '전체 요약', score: r.score_summary?.overall_score },
+  ]
+    .filter(
+      (row) =>
+        row.score !== null &&
+        row.score !== undefined &&
+        row.score !== '',
+    )
+    .map((row) => ({
+      ...row,
+      score: Math.round(Number(row.score)),
+    }))
+    .filter((row) => Number.isFinite(row.score));
 
   return (
     <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
@@ -76,8 +109,10 @@ export default function OverallScorePage() {
         <div className="flex flex-col gap-4">
           <div className="flex flex-1 flex-col justify-between rounded-xl bg-[#253900] p-6 text-[#EEEEEE] shadow-sm">
             <div className="text-[11px] font-bold tracking-wide text-[#EEEEEE]/70">OVERALL SCORE</div>
-            <div className="mt-2 text-5xl font-extrabold">{r.score_summary.overall_score} 점</div>
-            <div className="mt-3 text-xs text-[#EEEEEE]/70">답변 구조와 기술 깊이가 종합 점수를 견인했습니다.</div>
+            <div className="mt-2 text-5xl font-extrabold">{r.score_summary?.overall_score ?? '-'} 점</div>
+            <div className="mt-3 text-xs text-[#EEEEEE]/70">
+              {r.score_summary?.overall_score == null ? '평가 결과가 없습니다.' : '답변 구조와 기술 깊이가 종합 점수를 견인했습니다.'}
+            </div>
           </div>
           <button
             type="button"
@@ -95,9 +130,19 @@ export default function OverallScorePage() {
 
         {/* 중앙: 레이더 */}
         <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm">
-          <h3 className="text-base font-bold text-[#000000]">Radar Analysis (4-Axis)</h3>
-          <p className="mb-2 text-xs text-[rgba(0,0,0,0.45)]">현재 면접 점수의 이전 세션 평균을 4축에 비교합니다.</p>
-          <RadarChart data={radarData} />
+          <h3 className="text-base font-bold text-[#000000]">
+            Radar Analysis{radarData.length > 0 ? ` (${radarData.length}-Axis)` : ''}
+          </h3>
+          <p className="mb-2 text-xs text-[rgba(0,0,0,0.45)]">
+            현재 면접 점수를 이전 세션 평균과 평가 축별로 비교합니다.
+          </p>
+          {radarData.length >= 3 ? (
+            <RadarChart data={radarData} />
+          ) : (
+            <p className="mt-8 text-sm text-[rgba(0,0,0,0.55)]">
+              레이더 점수 데이터가 없습니다.
+            </p>
+          )}
         </div>
 
         {/* 우측: Score Breakdown */}

@@ -26,9 +26,14 @@ export function normalizeFinalReport(raw) {
   const detail = summary.score_detail ?? {};
   const triggered = summary.dynamically_triggered_tags ?? {};
 
-  const num = (v) => (typeof v === 'number' ? Math.round(v) : 0);
-  // null/undefined 를 보존하는 버전 — "해당 없음" 표시가 필요한 지표에 사용
-  const numOrNull = (v) => (typeof v === 'number' ? Math.round(v) : null);
+  const parseScore = (v) => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.round(n) : null;
+  };
+  const num = (v) => parseScore(v) ?? 0;
+  // null/undefined를 보존하여 "해당 없음" 표시가 필요한 지표에 사용
+  const numOrNull = (v) => parseScore(v);
   const localizeList = (arr) =>
     Array.isArray(arr) ? arr.map(tagLabel).filter(Boolean).join(', ') : '';
 
@@ -60,7 +65,7 @@ export function normalizeFinalReport(raw) {
     score_summary: {
       overall_score: num(scoreSummary.overall_score ?? raw?.overall_score),
       grade_label: '',
-      comment: meta.summary_text || 'AI 면접 종합 평가 결과입니다.',
+      comment: meta.summary_text || '',
       // 백엔드 원본 metrics 패스스루(페이지 내 buildRadar 등 직접 소비용 — 비파괴)
       metrics,
     },
