@@ -5,19 +5,25 @@ import StateView from '../../components/report/StateView';
 import RadarChart from '../../components/report/charts/RadarChart';
 import ScoreBreakdownBars from '../../components/report/charts/ScoreBreakdownBars';
 
-// 4축 레이더 ↔ 백엔드 score_summary.metrics 키 매핑
-// grounding 제거: 인성면접 세션에서 항상 0 → 오해 소지
+// 레이더 후보 축 — null 값인 축은 buildRadar에서 자동 제외됨
+// BEI / CBI / Speech 는 항상 존재. Technical(SBERT) / Grounding 은
+// 기술 질문이 한 개 이상 있을 때만 백엔드가 값을 채워준다.
 const RADAR_AXES = [
   { key: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
   { key: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
   { key: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
   { key: 'technical_score', axis: 'Technical', label: '기술 깊이' },
+  { key: 'grounding_score', axis: 'Grounding', label: '근거 제시' },
 ];
 
 function buildRadar(r) {
   const metrics = r.score_summary?.metrics;
   if (metrics) {
-    return RADAR_AXES.map((a) => ({ axis: a.axis, label: a.label, score: metrics[a.key] ?? 0 }));
+    // null/undefined 축 제외: technical_score·grounding_score 는 기술 질문이 없으면 null.
+    // 0으로 치환하면 레이더가 왜곡되므로 해당 축 자체를 제거한다.
+    return RADAR_AXES
+      .filter((a) => metrics[a.key] != null)
+      .map((a) => ({ axis: a.axis, label: a.label, score: metrics[a.key] }));
   }
   return r.score_detail?.radar ?? [];
 }
@@ -47,13 +53,12 @@ export default function OverallScorePage() {
   const interp = r.score_interpretation || {};
   const radarData = buildRadar(r);
 
-  // grounding_score가 null이 아닌 경우 = 기술면접 세션 → 조건부 노출
-  const hasGrounding = metrics.grounding_score != null;
-  const criteriaLabels = ['BEI', 'CBI', 'Speech', 'Technical', ...(hasGrounding ? ['Grounding'] : [])];
+  // radarData 에 포함된 축 이름으로 평가 기준 칩 생성 (null 축은 이미 buildRadar에서 제외됨)
+  const criteriaLabels = radarData.map((d) => d.axis);
 
   const breakdownRows = [
     ...r.score_detail.categories.map((c) => ({ label: c.label, score: c.score })),
-    ...(hasGrounding ? [{ label: '근거 제시', score: Math.round(metrics.grounding_score) }] : []),
+    ...(metrics.grounding_score != null ? [{ label: '근거 제시', score: Math.round(metrics.grounding_score) }] : []),
     { label: '전체 요약', score: r.score_summary.overall_score },
   ];
 
