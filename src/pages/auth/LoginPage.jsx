@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { login as loginApi, getMe } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { Alert, AuthShell, Button, Field, inputClass } from '../../components/ui/DemoLayout';
@@ -44,14 +44,18 @@ function FindPasswordView() {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
   const mode = params.get('mode');
   const notice =
-    params.get('session') === 'expired'
+    location.state?.notice ||
+    (params.get('verified') === '1'
+      ? '이메일 인증이 완료되었습니다. 로그인해 주세요.'
+      : params.get('session') === 'expired'
       ? '세션이 만료되어 다시 로그인해 주세요.'
       : params.get('logout') === '1'
         ? '로그아웃되었습니다.'
-        : '';
+        : '');
   const reset = useAuthStore((s) => s.reset);
   const setToken = useAuthStore((s) => s.setToken);
   const setUser = useAuthStore((s) => s.setUser);

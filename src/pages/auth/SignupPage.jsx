@@ -10,6 +10,10 @@ function getSignupError(err) {
   const status = err.response.status;
   // 서버가 내려준 안내 메시지(문자열)를 우선 노출한다. (발송 실패/차단 안내 등)
   const serverMsg = err.response.data?.message || err.response.data?.error;
+  const serverCode = err.response.data?.code;
+  if (serverCode === 'EMAIL_SEND_FAILED' || status === 503) {
+    return '인증 메일 발송에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+  }
   // 인증 완료된 계정만 409 로 막힌다. (미인증 계정은 2xx 로 재발송 처리됨)
   if (status === 409) return '이미 가입된 이메일입니다.';
   if (status === 403) return typeof serverMsg === 'string' ? serverMsg : '이용이 제한된 계정입니다. 관리자에게 문의해주세요.';
@@ -73,7 +77,13 @@ function SignupPage() {
       const res = await signupApi({ email, name, password });
       window.localStorage.setItem('careerzip_pending_signup_email', email);
       const notice = res?.data?.message || '';
-      navigate(`/verify-email?email=${encodeURIComponent(email)}`, { state: { notice } });
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`, {
+        state: {
+          notice,
+          resendAfter: res?.data?.retry_after ?? res?.data?.resend_after,
+          expiresIn: res?.data?.expires_in,
+        },
+      });
     } catch (err) {
       setError(getSignupError(err));
     } finally {
