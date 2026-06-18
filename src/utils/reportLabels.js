@@ -7,21 +7,20 @@
 
 /**
  * 최종 리포트 4개 카테고리 카드 ← metrics 5축 중 4개 매핑.
- * ⚠️ 기술 깊이는 현재 grounding_score 사용. SBERT 고도화로 technical_score가 산출되면
- *    metric 을 'technical_score' 로 교체하세요. (E7.5 고도화)
+ * E7.5 고도화 완료: 기술 깊이는 SBERT 기반 technical_score 사용.
+ * 기술 질문(question_category=technical)이 없는 세션은 technical_score=null → 카드에서 "해당없음" 표시.
  */
 export const CATEGORY_CARDS = [
   { key: 'answer_structure', label: '답변 구조', metric: 'bei_logic_score', description: '논리 흐름과 STAR 구성' },
   { key: 'competency', label: '역량 측정', metric: 'cbi_competency_score', description: '행동 기반 역량 측정' },
-  { key: 'tech_depth', label: '기술 깊이', metric: 'grounding_score', description: '실무 구체성 기반 기술 평가' }, // TODO: 고도화 시 'technical_score'
+  { key: 'tech_depth', label: '기술 깊이', metric: 'technical_score', description: 'SBERT 기반 하드스킬 깊이 평가' },
   { key: 'communication', label: '커뮤니케이션', metric: 'speech_delivery_score', description: '명확성, 속도, 태도' },
 ];
 
-/** Overall 상세 레이더 5축 ← metrics 전체 */
+/** Overall 상세 레이더 4축 ← metrics (grounding 제거: 인성면접 세션에서 항상 0이라 오해 소지) */
 export const RADAR_AXES = [
   { metric: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
   { metric: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
-  { metric: 'grounding_score', axis: 'Grounding', label: '실무 구체성' },
   { metric: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
   { metric: 'technical_score', axis: 'Technical', label: '기술 깊이' },
 ];

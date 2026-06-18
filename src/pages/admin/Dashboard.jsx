@@ -92,7 +92,7 @@ export default function Dashboard() {
     },
     {
       label: 'AI 호출',
-      value: stats?.ai_calls ? stats.ai_calls.toLocaleString() : '—',
+      value: stats?.ai_calls != null ? stats.ai_calls.toLocaleString() : '—',
       icon: '↓',
     },
     {
@@ -102,7 +102,7 @@ export default function Dashboard() {
     },
     {
       label: '이번 달 비용',
-      value: stats?.monthly_cost ? `$${stats.monthly_cost.toLocaleString()}` : '—',
+      value: stats?.monthly_cost != null ? `$${stats.monthly_cost.toFixed(4)}` : '—',
       icon: '□',
     },
   ]
@@ -110,12 +110,12 @@ export default function Dashboard() {
   const SYSTEM_ROWS = [
     {
       label: 'API 응답시간',
-      value: '182ms',
+      value: health.stt_response_time ?? '—',
       status: 'normal',
     },
     {
       label: 'STT 처리',
-      value: '정상',
+      value: health.stt_status === 'normal' ? '정상' : health.stt_status === 'error' ? '오류' : '—',
       status: health.stt_status ?? 'normal',
     },
     {

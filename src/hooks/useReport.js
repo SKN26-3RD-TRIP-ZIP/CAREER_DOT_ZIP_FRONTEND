@@ -33,12 +33,11 @@ export function useRoadmap(sessionId) {
   });
 }
 
-// 고도화 보류: /sessions/{id}/feedback 엔드포인트 미구현 → enabled: false로 요청 차단
-// 엔드포인트 구현 완료 시 enabled: !!sessionId 로 전환
+// GET /sessions/{id}/feedback — E7.9+ 면접관 피드백 (페르소나 + 추천 질문)
 export function useInterviewerFeedback(sessionId) {
   return useQuery({
     queryKey: ['report', 'feedback', sessionId],
     queryFn: () => reportApi.getInterviewerFeedback(sessionId),
-    enabled: false,
+    enabled: !!sessionId,
   });
 }

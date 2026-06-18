@@ -27,6 +27,8 @@ export function normalizeFinalReport(raw) {
   const triggered = summary.dynamically_triggered_tags ?? {};
 
   const num = (v) => (typeof v === 'number' ? Math.round(v) : 0);
+  // null/undefined 를 보존하는 버전 — "해당 없음" 표시가 필요한 지표에 사용
+  const numOrNull = (v) => (typeof v === 'number' ? Math.round(v) : null);
   const localizeList = (arr) =>
     Array.isArray(arr) ? arr.map(tagLabel).filter(Boolean).join(', ') : '';
 
@@ -64,14 +66,15 @@ export function normalizeFinalReport(raw) {
     },
 
     score_detail: {
-      // 디자인 4개 카드 ← metrics 4개 (기술깊이=grounding, 고도화 시 technical 로 교체)
+      // 디자인 4개 카드 ← metrics 4개 (기술 깊이 = SBERT technical_score, E7.5)
       categories: CATEGORY_CARDS.map((c) => ({
         key: c.key,
         label: c.label,
-        score: num(metrics[c.metric]),
+        // null 보존: 백엔드가 해당 지표를 산출하지 않은 경우 "해당 없음" 표시
+        score: numOrNull(metrics[c.metric]),
         description: c.description,
       })),
-      // 레이더 5축 ← metrics 전체
+      // 레이더 4축 ← metrics (grounding 제거, A안)
       radar: RADAR_AXES.map((a) => ({
         axis: a.axis,
         label: a.label,
