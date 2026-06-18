@@ -6,11 +6,20 @@ import { Alert, AuthShell, Button, Field, StepIndicator, inputClass } from '../.
 const SIGNUP_STEPS = ['계정 정보', '약관 동의', '이메일 인증', '완료'];
 
 function getSignupError(err) {
-  const status = err.response?.status;
   if (!err.response) return '서버에 연결할 수 없습니다. 백엔드 실행 상태와 네트워크를 확인해주세요.';
+  const status = err.response.status;
+  // 서버가 내려준 안내 메시지(문자열)를 우선 노출한다. (발송 실패/차단 안내 등)
+  const serverMsg = err.response.data?.message || err.response.data?.error;
+  // 인증 완료된 계정만 409 로 막힌다. (미인증 계정은 2xx 로 재발송 처리됨)
   if (status === 409) return '이미 가입된 이메일입니다.';
-  if (status === 400) return '입력값을 확인해주세요. 비밀번호는 8자 이상이어야 합니다.';
-  return '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  if (status === 403) return typeof serverMsg === 'string' ? serverMsg : '이용이 제한된 계정입니다. 관리자에게 문의해주세요.';
+  if (status === 400) {
+    // 서버 비밀번호 정책 위반 메시지를 우선 노출한다.
+    const pwErr = err.response.data?.error?.password || err.response.data?.password;
+    if (Array.isArray(pwErr) && pwErr.length) return pwErr.join(' ');
+    return '입력값을 확인해주세요. 비밀번호는 8자 이상이며 영문·숫자·특수문자를 포함해야 합니다.';
+  }
+  return (typeof serverMsg === 'string' && serverMsg) || '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
 }
 
 function SignupPage() {
@@ -28,11 +37,21 @@ function SignupPage() {
 
   const allRequiredAgreed = agreeRequired && agreePrivacy;
 
+  // 백엔드 PasswordComplexityValidator 와 동일 규칙 (영문/숫자/특수문자 + 동일문자 3연속 금지)
+  const passwordChecks = {
+    length: password.length >= 8,
+    letter: /[A-Za-z]/.test(password),
+    digit: /\d/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+    noRepeat: !/(.)\1\1/.test(password),
+  };
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
+
   const handleAccountNext = (e) => {
     e.preventDefault();
     setError('');
-    if (password.length < 8) {
-      setError('비밀번호는 8자 이상 입력해주세요.');
+    if (!isPasswordValid) {
+      setError('비밀번호는 8자 이상이며 영문·숫자·특수문자를 모두 포함해야 합니다. (같은 문자 3연속 불가)');
       return;
     }
     if (password !== passwordConfirm) {
@@ -50,9 +69,11 @@ function SignupPage() {
     }
     setLoading(true);
     try {
-      await signupApi({ email, name, password });
+      // 신규(201) / 미인증 기존 계정 재시도(200) 모두 2xx 로 내려오므로 인증 화면으로 이동한다.
+      const res = await signupApi({ email, name, password });
       window.localStorage.setItem('careerzip_pending_signup_email', email);
-      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+      const notice = res?.data?.message || '';
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`, { state: { notice } });
     } catch (err) {
       setError(getSignupError(err));
     } finally {
@@ -82,16 +103,31 @@ function SignupPage() {
           <Field label="이메일" required>
             <input type="email" className={inputClass} placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </Field>
-          <Field label="비밀번호" hint="영문과 숫자를 포함해 8자 이상 입력해주세요." required>
+          <Field label="비밀번호" hint="8자 이상 · 영문/숫자/특수문자 포함" required>
             <input
               type="password"
               minLength={8}
               className={inputClass}
-              placeholder="영문·숫자 포함 8자 이상"
+              placeholder="영문·숫자·특수문자 포함 8자 이상"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            {password.length > 0 && (
+              <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs font-bold">
+                {[
+                  ['8자 이상', passwordChecks.length],
+                  ['영문 포함', passwordChecks.letter],
+                  ['숫자 포함', passwordChecks.digit],
+                  ['특수문자 포함', passwordChecks.special],
+                  ['같은 문자 3연속 없음', passwordChecks.noRepeat],
+                ].map(([label, ok]) => (
+                  <li key={label} className={ok ? 'text-[#08CB00]' : 'text-[rgba(0,0,0,0.4)]'}>
+                    {ok ? '✓' : '•'} {label}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Field>
           <Field label="비밀번호 확인" required>
             <input
