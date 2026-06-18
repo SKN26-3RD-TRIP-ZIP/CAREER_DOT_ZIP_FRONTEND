@@ -11,7 +11,7 @@ export const login = ({ email, password }) =>
 export const verifyCode = ({ email, code }) =>
   axiosInstance.post('/auth/verify-email', { email, code });
 
-// 이메일 인증번호 재발송 (미인증/미가입 무관하게 동일 200 응답, 쿨다운 시 429)
+// 이메일 인증번호 재발송 (성공: expires_in/resend_after, 쿨다운: retry_after, 발송 실패: EMAIL_SEND_FAILED)
 export const resendVerification = (email) =>
   axiosInstance.post('/auth/resend-verification', { email });
 
