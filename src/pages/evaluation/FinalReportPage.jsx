@@ -108,6 +108,11 @@ export default function FinalReportPage() {
             <span className="text-6xl font-bold text-[#08CB00]">{overallScore ?? '-'}</span>
             <span className="pb-2 text-lg font-semibold text-[#253900]">점</span>
           </div>
+          {overallScore == null && (
+            <p className="mt-3 rounded-lg bg-[#EEEEEE] px-4 py-3 text-sm font-bold text-[#253900]">
+              평가 결과가 없습니다. 리포트가 생성되었지만 점수 데이터가 제공되지 않았습니다.
+            </p>
+          )}
           <p className="mt-4 text-sm leading-6 text-[#253900]">
             {report.score_summary?.comment || '면접 요약이 아직 제공되지 않았습니다.'}
           </p>

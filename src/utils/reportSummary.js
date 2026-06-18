@@ -27,7 +27,7 @@ export function getReportTriggeredTags(report) {
   return summary?.dynamically_triggered_tags ?? report?.dynamically_triggered_tags ?? {};
 }
 
-export function getOverallScore(report, fallback = 0) {
+export function getOverallScore(report, fallback = null) {
   return (
     report?.summary?.score_summary?.overall_score ??
     report?.score_summary?.overall_score ??

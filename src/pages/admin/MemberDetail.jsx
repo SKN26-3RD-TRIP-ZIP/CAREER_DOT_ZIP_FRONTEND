@@ -30,7 +30,7 @@ function MemberDetail() {
         if (!active) return;
         const s = err.response?.status;
         if (s === 401) {
-          navigate('/admin/live/login');
+          navigate('/admin/login');
           return;
         }
         if (s === 403) setError('관리자 권한이 필요합니다.');
@@ -50,7 +50,7 @@ function MemberDetail() {
       <div className="mx-auto max-w-xl">
         <button
           type="button"
-          onClick={() => navigate('/admin/live/members')}
+          onClick={() => navigate('/admin/members')}
           className="mb-4 text-xs text-[#666666] hover:text-[#08CB00] border border-[#253900] rounded-lg px-3 py-1.5 transition-colors"
         >
           ← 회원 목록으로 돌아가기

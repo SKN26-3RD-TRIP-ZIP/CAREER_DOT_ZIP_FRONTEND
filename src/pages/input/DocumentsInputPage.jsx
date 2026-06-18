@@ -127,8 +127,6 @@ function DocumentsInputPage() {
       setError('면접에 사용할 이력서를 업로드하거나 목록에서 선택해주세요.');
       return;
     }
-    const prev = JSON.parse(localStorage.getItem('userDocuments') || '{}');
-    localStorage.setItem('userDocuments', JSON.stringify({ ...prev, resumeMemo: focusMemo, resume_id: selectedResumeId }));
     window.localStorage.setItem('careerzip_selected_resume_id', selectedResumeId);
     navigate('/input/cover-letter-project');
   };

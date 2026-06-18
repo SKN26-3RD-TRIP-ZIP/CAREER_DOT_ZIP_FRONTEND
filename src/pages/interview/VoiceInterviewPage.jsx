@@ -51,6 +51,7 @@ function ReportPanel({ reportData, reportLoading, sessionId }) {
   const scoreDetail = getReportScoreDetail(reportData);
   const meta = getReportMetadata(reportData);
   const tags = getReportTriggeredTags(reportData);
+  const hasScoreSummary = ['overall_score', 'bei_avg', 'cbi_avg', 'tech_avg'].some((key) => scoreSummary?.[key] != null);
 
   return (
     <div className="mt-6 rounded-xl border border-[rgba(8,203,0,0.4)] bg-[rgba(8,203,0,0.1)] p-6">
@@ -61,10 +62,16 @@ function ReportPanel({ reportData, reportLoading, sessionId }) {
 
       <div className="mt-4 rounded-lg bg-[#EEEEEE] p-4">
         <p className="text-sm font-semibold text-[rgba(0,0,0,0.7)]">점수 요약</p>
-        <ScoreRow label="종합 점수" value={scoreSummary.overall_score} />
-        <ScoreRow label="BEI 평균" value={scoreSummary.bei_avg} />
-        <ScoreRow label="CBI 평균" value={scoreSummary.cbi_avg} />
-        <ScoreRow label="기술 역량" value={scoreSummary.tech_avg} />
+        {hasScoreSummary ? (
+          <>
+            <ScoreRow label="종합 점수" value={scoreSummary.overall_score} />
+            <ScoreRow label="BEI 평균" value={scoreSummary.bei_avg} />
+            <ScoreRow label="CBI 평균" value={scoreSummary.cbi_avg} />
+            <ScoreRow label="기술 역량" value={scoreSummary.tech_avg} />
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-[rgba(0,0,0,0.55)]">평가 결과가 없습니다.</p>
+        )}
       </div>
 
       {(scoreDetail.strength || scoreDetail.weakness) && (
