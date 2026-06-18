@@ -8,7 +8,7 @@
 /**
  * 최종 리포트 4개 카테고리 카드 ← metrics 5축 중 4개 매핑.
  * E7.5 고도화 완료: 기술 깊이는 SBERT 기반 technical_score 사용.
- * 인성면접 전용 세션은 technical_score=0 표시 (정상 동작).
+ * 기술 질문(question_category=technical)이 없는 세션은 technical_score=null → 카드에서 "해당없음" 표시.
  */
 export const CATEGORY_CARDS = [
   { key: 'answer_structure', label: '답변 구조', metric: 'bei_logic_score', description: '논리 흐름과 STAR 구성' },
