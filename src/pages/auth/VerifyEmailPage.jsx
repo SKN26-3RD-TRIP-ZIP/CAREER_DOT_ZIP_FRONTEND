@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { verifyCode, resendVerification, getMe } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { Alert, AuthShell, Button, Field, StepIndicator, inputClass } from '../../components/ui/DemoLayout';
@@ -8,6 +8,7 @@ const SIGNUP_STEPS = ['계정 정보', '약관 동의', '이메일 인증', '완
 
 function VerifyEmailPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setToken = useAuthStore((s) => s.setToken);
   const setUser = useAuthStore((s) => s.setUser);
   const [params] = useSearchParams();
@@ -16,7 +17,8 @@ function VerifyEmailPage() {
   const [state, setState] = useState('idle');
   const [error, setError] = useState('');
   const [resendState, setResendState] = useState('idle');
-  const [resendMessage, setResendMessage] = useState('');
+  // signup 화면에서 전달한 안내(예: "이미 가입 시도한 이메일입니다. 인증번호를 다시 보냈습니다.")를 노출한다.
+  const [resendMessage, setResendMessage] = useState(location.state?.notice || '');
   const [cooldown, setCooldown] = useState(60);
 
   useEffect(() => {
@@ -72,7 +74,7 @@ function VerifyEmailPage() {
   return (
     <AuthShell
       title="이메일을 인증해 주세요"
-      description="가입한 이메일로 보낸 6자리 인증번호를 입력하세요. 메일이 오지 않으면 스팸함을 확인해 주세요."
+      description="가입한 이메일로 보낸 6자리 인증번호를 입력하세요. 인증번호는 10분간 유효합니다. 메일이 늦게 올 수 있어요(특히 Gmail). 도착이 늦으면 스팸함도 확인하고, 만료되면 아래에서 재전송해 주세요."
       footer={
         <Link to="/auth/signup" className="font-black text-[#253900]">
           계정 정보 다시 입력하기
@@ -104,7 +106,11 @@ function VerifyEmailPage() {
           />
         </Field>
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
-          <span>남은 시간 {String(Math.floor(cooldown / 60)).padStart(2, '0')}:{String(cooldown % 60).padStart(2, '0')}</span>
+          <span className="text-[rgba(0,0,0,0.6)]">
+            {cooldown > 0
+              ? `재발송까지 ${String(Math.floor(cooldown / 60)).padStart(2, '0')}:${String(cooldown % 60).padStart(2, '0')}`
+              : '지금 재전송할 수 있어요'}
+          </span>
           <button
             type="button"
             onClick={handleResend}
