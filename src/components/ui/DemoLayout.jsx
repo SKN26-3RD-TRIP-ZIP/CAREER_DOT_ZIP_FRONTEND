@@ -250,7 +250,7 @@ export function EmptyState({ title, description, actionLabel, actionTo, onAction
   return (
     <div className="rounded-xl border border-dashed border-[rgba(0,0,0,0.2)] bg-[#EEEEEE] px-5 py-8 text-center">
       <p className="text-sm font-black text-[#253900]">{title}</p>
-      {description && <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[rgba(0,0,0,0.6)]">{description}</p>}
+      {description && <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[rgba(0,0,0,0.6)] whitespace-pre-line">{description}</p>}
       {action}
     </div>
   );
