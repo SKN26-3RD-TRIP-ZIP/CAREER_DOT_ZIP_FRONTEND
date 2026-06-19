@@ -17,12 +17,13 @@ export const CATEGORY_CARDS = [
   { key: 'communication', label: '커뮤니케이션', metric: 'speech_delivery_score', description: '명확성, 속도, 태도' },
 ];
 
-/** Overall 상세 레이더 4축 ← metrics (grounding 제거: 인성면접 세션에서 항상 0이라 오해 소지) */
+/** Overall 상세 레이더 5축 ← metrics (grounding은 applicable 답변이 없으면 null → 축 자동 제거) */
 export const RADAR_AXES = [
-  { metric: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
-  { metric: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
-  { metric: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
-  { metric: 'technical_score', axis: 'Technical', label: '기술 깊이' },
+  { metric: 'bei_logic_score',       axis: 'BEI',        label: '행동 기반' },
+  { metric: 'cbi_competency_score',  axis: 'CBI',        label: '역량 기반' },
+  { metric: 'speech_delivery_score', axis: 'Speech',     label: '전달력' },
+  { metric: 'technical_score',       axis: 'Technical',  label: '기술 깊이' },
+  { metric: 'grounding_score',       axis: 'Grounding',  label: '근거 제시' },
 ];
 
 /** 면접관 페르소나 라벨 */

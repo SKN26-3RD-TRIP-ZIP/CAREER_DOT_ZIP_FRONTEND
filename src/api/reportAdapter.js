@@ -79,12 +79,10 @@ export function normalizeFinalReport(raw) {
         score: numOrNull(metrics[c.metric]),
         description: c.description,
       })),
-      // 레이더 4축 ← metrics (grounding 제거, A안)
-      radar: RADAR_AXES.map((a) => ({
-        axis: a.axis,
-        label: a.label,
-        score: num(metrics[a.metric]),
-      })),
+      // 레이더 5축 ← metrics, null 축은 제외 (grounding은 기술 질문 없으면 null)
+      radar: RADAR_AXES
+        .filter((a) => metrics[a.metric] != null)
+        .map((a) => ({ axis: a.axis, label: a.label, score: Math.round(metrics[a.metric]) })),
       // 질문별 평가 (B안: 백엔드 summary.score_detail.questions)
       questions,
       // 백엔드 원본 score_detail 패스스루(향후 직접 소비/디버깅용 — 비파괴)

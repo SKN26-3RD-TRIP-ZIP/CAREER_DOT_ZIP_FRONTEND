@@ -4,33 +4,16 @@ import ReportLayout from '../../components/report/ReportLayout';
 import StateView from '../../components/report/StateView';
 import RadarChart from '../../components/report/charts/RadarChart';
 import ScoreBreakdownBars from '../../components/report/charts/ScoreBreakdownBars';
-
-// 레이더 후보 축 — null 값인 축은 buildRadar에서 자동 제외됨
-// BEI / CBI / Speech 는 항상 존재. Technical(SBERT) / Grounding 은
-// 기술 질문이 한 개 이상 있을 때만 백엔드가 값을 채워준다.
-const RADAR_AXES = [
-  { key: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
-  { key: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
-  { key: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
-  { key: 'technical_score', axis: 'Technical', label: '기술 깊이' },
-  { key: 'grounding_score', axis: 'Grounding', label: '근거 제시' },
-];
+import { RADAR_AXES } from '../../utils/reportLabels';
 
 function buildRadar(r) {
   const metrics = r.score_summary?.metrics;
   if (metrics) {
-    // null/undefined/빈 문자열 축은 제외하고 숫자 문자열은 정상 변환한다.
     return RADAR_AXES
+      .filter((a) => metrics[a.metric] != null && metrics[a.metric] !== '')
       .map((a) => {
-        const rawScore = metrics[a.key];
-        if (rawScore === null || rawScore === undefined || rawScore === '') {
-          return null;
-        }
-
-        const score = Number(rawScore);
-        return Number.isFinite(score)
-          ? { axis: a.axis, label: a.label, score }
-          : null;
+        const score = Number(metrics[a.metric]);
+        return Number.isFinite(score) ? { axis: a.axis, label: a.label, score } : null;
       })
       .filter(Boolean);
   }
