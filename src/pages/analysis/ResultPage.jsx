@@ -155,6 +155,8 @@ function ResultPage() {
       const res = isRegenerate
         ? await regenerateQuestions(sessionId)
         : await generateQuestions(sessionId)
+      console.log("=============");
+      console.log(res);
       setQuestions(res.data.questions ?? [])
       setGenCount(res.data.generation_count ?? genCount)
       setMaxGen(res.data.max_generations ?? maxGen)
@@ -422,7 +424,7 @@ function QuestionsList({ questions }) {
       {questions.map((q, index) => (
         <AccordionSection key={q.id ?? index} title={q.question_text ?? q}>
           {q.answer ? (
-            <StarAnswer answer={q.answer} />
+            <StarAnswer answer={q.answer} questionType={q.question_type} />
           ) : (
             <p className="text-xs text-[rgba(0,0,0,0.45)] py-1">아직 준비된 답변이 없습니다.</p>
           )}
@@ -474,16 +476,18 @@ function BulletList({ items, tone }) {
 const STAR_LABELS = { summary: '요약', situation: '상황', task: '과제', action: '행동', result: '결과' }
 const STAR_ORDER = ['summary', 'situation', 'task', 'action', 'result']
 
-function StarAnswer({ answer }) {
-  // STAR 본문 필드만 렌더 (basis_source·groundedness 같은 메타는 제외)
+const TECH_LABELS = { summary: '요약', concept: '개념', experience: '적용 경험', tradeoff: '트레이드오프' }
+const TECH_ORDER = ['summary', 'concept', 'experience', 'tradeoff']
+
+function AnswerBlock({ fields, order, labels, answer }) {
   const unsupported =
     answer.groundedness?.grounded === false ? answer.groundedness.unsupported : null
   return (
     <div className="grid gap-2 p-3 rounded-lg border border-[#08CB00] bg-[rgba(8,203,0,0.06)]">
-      {STAR_ORDER.map((key) =>
+      {order.map((key) =>
         answer[key] ? (
-          <div key={key} className="grid gap-2" style={{ gridTemplateColumns: '60px 1fr' }}>
-            <span className="text-xs font-black text-[#253900]">▶ {STAR_LABELS[key]}</span>
+          <div key={key} className="grid gap-2" style={{ gridTemplateColumns: '80px 1fr' }}>
+            <span className="text-xs font-black text-[#253900]">▶ {labels[key]}</span>
             <p className="m-0 text-xs text-[#000000] leading-[1.6]">{answer[key]}</p>
           </div>
         ) : null
@@ -498,6 +502,13 @@ function StarAnswer({ answer }) {
       )}
     </div>
   )
+}
+
+function StarAnswer({ answer, questionType }) {
+  if (questionType === 'technical') {
+    return <AnswerBlock fields={TECH_LABELS} order={TECH_ORDER} labels={TECH_LABELS} answer={answer} />
+  }
+  return <AnswerBlock fields={STAR_LABELS} order={STAR_ORDER} labels={STAR_LABELS} answer={answer} />
 }
 
 export default ResultPage
