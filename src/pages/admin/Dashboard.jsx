@@ -29,21 +29,6 @@ function WeeklyBarChart({ data = [] }) {
   )
 }
 
-/* ── Status badge ──────────────────────────────────────────────────────── */
-function StatusBadge({ status }) {
-  const cfg = {
-    normal: { label: '정상', cls: 'bg-[#0A2200] text-[#3DDD37]' },
-    warning: { label: '주의', cls: 'bg-[#2A2000] text-[#DDAA00]' },
-    error: { label: '오류', cls: 'bg-[#2A0000] text-[#FF5555]' },
-  }
-  const { label, cls } = cfg[status] ?? cfg.normal
-  return (
-    <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${cls}`}>
-      {label}
-    </span>
-  )
-}
-
 /* ── Stat card ─────────────────────────────────────────────────────────── */
 function StatCard({ label, value, icon }) {
   return (
@@ -69,10 +54,6 @@ export default function Dashboard() {
     queryFn: getDashboardStats,
     refetchInterval: 30_000,
   })
-
-  const health = stats?.system_health ?? {}
-  const errorRate = health.error_rate_24h ?? 0
-  const auditCount = health.audit_count_24h ?? 0
 
   const STAT_CARDS = [
     {
@@ -107,29 +88,6 @@ export default function Dashboard() {
     },
   ]
 
-  const SYSTEM_ROWS = [
-    {
-      label: 'API 응답시간',
-      value: health.stt_response_time ?? '—',
-      status: 'normal',
-    },
-    {
-      label: 'STT 처리',
-      value: health.stt_status === 'normal' ? '정상' : health.stt_status === 'error' ? '오류' : '—',
-      status: health.stt_status ?? 'normal',
-    },
-    {
-      label: 'LLM 큐 적체',
-      value: `${auditCount}건`,
-      status: auditCount > 50 ? 'warning' : 'normal',
-    },
-    {
-      label: '에러율 (24h)',
-      value: `${errorRate}%`,
-      status: errorRate > 1 ? 'warning' : 'normal',
-    },
-  ]
-
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
@@ -147,34 +105,12 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Chart + System status */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        {/* Weekly bar chart */}
-        <div className="col-span-2 rounded-xl bg-[#1A2200] p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
-          <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
-          <div className="mt-6">
-            <WeeklyBarChart data={stats?.weekly_sessions ?? []} />
-          </div>
-        </div>
-
-        {/* System status */}
-        <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#EEEEEE]">시스템 상태</h2>
-          <div className="mt-4 flex flex-col gap-0">
-            {SYSTEM_ROWS.map((row, i) => (
-              <div
-                key={row.label}
-                className={`flex items-center justify-between py-4 ${i < SYSTEM_ROWS.length - 1 ? 'border-b border-[#253900]' : ''}`}
-              >
-                <span className="text-sm text-[#CCCCCC]">{row.label}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-[#EEEEEE]">{row.value}</span>
-                  <StatusBadge status={row.status} />
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Weekly bar chart */}
+      <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
+        <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
+        <div className="mt-6">
+          <WeeklyBarChart data={stats?.weekly_sessions ?? []} />
         </div>
       </div>
     </div>
