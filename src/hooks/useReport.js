@@ -13,23 +13,21 @@ export function useFinalReport(sessionId) {
   });
 }
 
-// 고도화 보류: /mypage/growth 엔드포인트 미구현 → enabled: false로 요청 차단
-// 엔드포인트 구현 완료 시 enabled: true로 전환
+// GET /mypage/growth — 최근 성장 추이 (GrowthView, 라우팅 완료)
 export function useGrowthTrend() {
   return useQuery({
     queryKey: ['report', 'growth'],
     queryFn: () => reportApi.getGrowthTrend(),
-    enabled: false,
+    enabled: true,
   });
 }
 
-// 고도화 보류: /sessions/{id}/roadmap 엔드포인트 미구현 → enabled: false로 요청 차단
-// 엔드포인트 구현 완료 시 enabled: !!sessionId 로 전환
+// GET /sessions/{id}/roadmap — 개인화 학습 로드맵 (SessionRoadmapView, 라우팅 완료)
 export function useRoadmap(sessionId) {
   return useQuery({
     queryKey: ['report', 'roadmap', sessionId],
     queryFn: () => reportApi.getRoadmap(sessionId),
-    enabled: false,
+    enabled: !!sessionId,
   });
 }
 

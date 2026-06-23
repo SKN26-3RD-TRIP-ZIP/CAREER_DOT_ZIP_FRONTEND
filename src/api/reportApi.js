@@ -1,3 +1,4 @@
+import axios from 'axios';
 import axiosInstance from './axiosInstance';
 import { normalizeFinalReport } from './reportAdapter';
 import {
@@ -6,6 +7,11 @@ import {
   mockRoadmap,
   mockFeedback,
 } from './reportMock';
+
+// 공유 리포트 조회용 — 인증 헤더 없는 별도 인스턴스
+const publicAxios = axios.create({
+  baseURL: axiosInstance.defaults.baseURL,
+});
 
 /**
  * Evaluation / Report API.
@@ -35,6 +41,26 @@ export const reportApi = {
     if (USE_MOCK) return normalizeFinalReport(await delay(mockFinalReportResponse));
     const res = await axiosInstance.post(`/reports/sessions/${sessionId}/generate`);
     return normalizeFinalReport(res.data);
+  },
+
+  // ── 공유 링크 ─────────────────────────────────────────────
+  // POST /reports/sessions/{id}/share-link → { share_url, expires_at, created }
+  createShareLink: async (sessionId) => {
+    const res = await axiosInstance.post(`/reports/sessions/${sessionId}/share-link`);
+    return res.data;
+  },
+
+  // GET /reports/share/{token}/ → summary raw (normalizeFinalReport로 정규화)
+  // 인증 불필요이므로 publicAxios 사용
+  getSharedReport: async (token) => {
+    if (USE_MOCK) {
+      const raw = { ...mockFinalReportResponse, session_id: 'shared' };
+      return normalizeFinalReport(await delay(raw));
+    }
+    const res = await publicAxios.get(`/reports/share/${token}/`);
+    // 백엔드 응답: { report_id, session_id, generated_at, summary, expires_at }
+    // normalizeFinalReport는 raw.summary를 기대하므로 그대로 전달
+    return { normalized: normalizeFinalReport(res.data), expires_at: res.data.expires_at };
   },
 
   // ── 고도화(보류) ───────────────────────────────────────────

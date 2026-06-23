@@ -4,7 +4,7 @@ import ReportLayout from '../../components/report/ReportLayout';
 import StateView from '../../components/report/StateView';
 import RadarChart from '../../components/report/charts/RadarChart';
 import ScoreBreakdownBars from '../../components/report/charts/ScoreBreakdownBars';
-import { RADAR_AXES } from '../../utils/reportLabels';
+import { RADAR_AXES, metricDescription } from '../../utils/reportLabels';
 
 function buildRadar(r) {
   const metrics = r.score_summary?.metrics;
@@ -60,9 +60,9 @@ export default function OverallScorePage() {
       : Number(rawGroundingScore);
 
   const breakdownRows = [
-    ...categories.map((c) => ({ label: c.label, score: c.score })),
+    ...categories.map((c) => ({ label: c.label, score: c.score, description: metricDescription(c.label) })),
     ...(Number.isFinite(groundingScore)
-      ? [{ label: '근거 제시', score: Math.round(groundingScore) }]
+      ? [{ label: '근거 제시', score: Math.round(groundingScore), description: metricDescription('근거 제시') }]
       : []),
     { label: '전체 요약', score: r.score_summary?.overall_score },
   ]
