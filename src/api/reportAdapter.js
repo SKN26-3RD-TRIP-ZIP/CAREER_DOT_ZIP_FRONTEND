@@ -94,10 +94,24 @@ export function normalizeFinalReport(raw) {
       ...tagsFrom(triggered.weakness_tags, 'weakness'),
     ],
 
-    evaluation_metadata: {
-      persona_key: meta.persona_type || '',
-      ...personaMeta(meta.persona_type),
-    },
+    evaluation_metadata: (() => {
+      const answerCount = Number(meta.answer_count) || 0;
+      const evaluatedCount = Number(meta.evaluated_answer_count) || 0;
+      // unscored_answer_count는 신규 필드(부분 리포트, #5). 구버전 캐시 리포트에는 없으므로
+      // answer_count - evaluated_answer_count로 폴백.
+      const unscored =
+        meta.unscored_answer_count != null
+          ? Number(meta.unscored_answer_count) || 0
+          : Math.max(answerCount - evaluatedCount, 0);
+      return {
+        persona_key: meta.persona_type || '',
+        ...personaMeta(meta.persona_type),
+        answer_count: answerCount,
+        evaluated_answer_count: evaluatedCount,
+        unscored_answer_count: unscored,
+        format_failed_answer_count: Number(meta.format_failed_answer_count) || 0,
+      };
+    })(),
 
     score_interpretation: {
       strength: localizeList(detail.strength) || '두드러진 강점 태그가 아직 집계되지 않았습니다.',

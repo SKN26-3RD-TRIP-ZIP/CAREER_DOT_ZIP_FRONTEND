@@ -2,10 +2,6 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 
 function messageFor(error) {
   const status = error?.response?.status;
-  const code = error?.response?.data?.code;
-  if (code === 'AI_EVALUATION_FORMAT_ERROR') {
-    return 'AI 평가 응답 형식 오류로 채점을 완료하지 못했습니다. 다시 시도해주세요.';
-  }
   if (status === 503) return 'AI 평가 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
   if (status === 500) return '리포트를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
   if (status === 404) return '아직 리포트가 생성되지 않았습니다. 면접을 완료하면 리포트가 표시됩니다.';

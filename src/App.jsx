@@ -23,6 +23,7 @@ import AuditLogs from './pages/admin/AuditLogs.jsx'
 import Versions from './pages/admin/Versions.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
+import SharedReportPage from './pages/evaluation/SharedReportPage.jsx'
 import SourceSelectionPage from './pages/analysis/SourceSelectionPage.jsx'
 import ResultPage from './pages/analysis/ResultPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
@@ -75,6 +76,8 @@ function App() {
 
       {/* 실제 구현된 리포트(평가) 페이지 — 세션별 */}
       <Route path="/report/*" element={<EvaluationRoutes />} />
+      {/* 공유 리포트 — 인증 불필요 공개 라우트 */}
+      <Route path="/shared/:token" element={<SharedReportPage />} />
 
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
