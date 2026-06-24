@@ -4,7 +4,7 @@ import { getMemberDetail } from '../../api/adminApi';
 
 function Row({ label, value }) {
   return (
-    <div className="flex justify-between border-b border-[#253900] py-2 text-sm">
+    <div className="flex justify-between border-b border-[#334155] py-2 text-sm">
       <span className="text-[#AAAAAA]">{label}</span>
       <span className="font-medium text-[#EEEEEE]">{value ?? '-'}</span>
     </div>
@@ -46,12 +46,12 @@ function MemberDetail() {
   }, [userId, navigate]);
 
   return (
-    <main className="min-h-screen bg-[#000000] px-4 py-8">
+    <main className="min-h-screen bg-[#0B1120] px-4 py-8">
       <div className="mx-auto max-w-xl">
         <button
           type="button"
           onClick={() => navigate('/admin/members')}
-          className="mb-4 text-xs text-[#666666] hover:text-[#08CB00] border border-[#253900] rounded-lg px-3 py-1.5 transition-colors"
+          className="mb-4 text-xs text-[#666666] hover:text-[#08CB00] border border-[#334155] rounded-lg px-3 py-1.5 transition-colors"
         >
           ← 회원 목록으로 돌아가기
         </button>
@@ -64,7 +64,7 @@ function MemberDetail() {
           <p className="text-sm text-[#FF5555]">{error}</p>
         ) : member ? (
           <div className="space-y-4">
-            <div className="bg-[#1A2200] rounded-2xl shadow p-5">
+            <div className="bg-[#1E293B] rounded-2xl shadow p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-[#08CB00] mb-3">기본 정보</p>
               <Row label="이름" value={member.name} />
               <Row label="이메일" value={member.email} />
@@ -76,7 +76,7 @@ function MemberDetail() {
               <Row label="최근 로그인" value={member.last_login} />
             </div>
 
-            <div className="bg-[#1A2200] rounded-2xl shadow p-5">
+            <div className="bg-[#1E293B] rounded-2xl shadow p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-[#08CB00] mb-3">면접/리포트 요약</p>
               <Row label="완료 면접 수" value={member.practice_count ?? 0} />
               <Row label="면접 세션 수" value={member.interview_count} />
