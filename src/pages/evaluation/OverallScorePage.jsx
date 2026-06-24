@@ -31,10 +31,20 @@ export default function OverallScorePage() {
     </button>
   );
 
-  if (report.isLoading || report.isError || !report.data) {
+  const reportStatus = report.data?.status;
+  const isGenerating = reportStatus === 'processing';
+  const isFailed = reportStatus === 'failed';
+
+  if (report.isLoading || isGenerating || report.isError || isFailed || !report.data) {
     return (
       <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
-        <StateView isLoading={report.isLoading} isError={report.isError} error={report.error} onRetry={report.refetch} />
+        <StateView
+          isLoading={report.isLoading}
+          isGenerating={isGenerating}
+          isError={report.isError || isFailed}
+          error={isFailed ? { response: { status: 503 } } : report.error}
+          onRetry={report.refetch}
+        />
       </ReportLayout>
     );
   }

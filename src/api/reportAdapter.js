@@ -62,6 +62,11 @@ export function normalizeFinalReport(raw) {
     session_id: raw?.session_id ?? meta.session_id ?? '',
     created_at: raw?.generated_at ?? meta.calculated_at ?? '',
 
+    // 비동기 생성 상태(폴링용): 'completed' | 'processing' | 'failed'.
+    // 구버전 응답엔 없으므로 completed로 폴백(기존 동작 보존).
+    status: raw?.status ?? 'completed',
+    error_code: raw?.error_code ?? null,
+
     score_summary: {
       overall_score: num(scoreSummary.overall_score ?? raw?.overall_score),
       grade_label: '',
