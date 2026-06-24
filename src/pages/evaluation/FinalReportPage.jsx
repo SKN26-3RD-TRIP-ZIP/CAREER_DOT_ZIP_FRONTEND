@@ -49,10 +49,21 @@ export default function FinalReportPage() {
   const navigate = useNavigate();
   const reportQuery = useFinalReport(sessionId);
 
-  if (reportQuery.isLoading || reportQuery.isError || !reportQuery.data) {
+  const reportStatus = reportQuery.data?.status;
+  const isGenerating = reportStatus === 'processing';
+  const isFailed = reportStatus === 'failed';
+
+  if (reportQuery.isLoading || isGenerating || reportQuery.isError || isFailed || !reportQuery.data) {
     return (
       <ReportLayout title="최종 리포트" subtitle="면접 결과를 불러와 종합 점수와 개선 포인트를 확인합니다.">
-        <StateView isLoading={reportQuery.isLoading} isError={reportQuery.isError} error={reportQuery.error} onRetry={reportQuery.refetch} />
+        <StateView
+          isLoading={reportQuery.isLoading}
+          isGenerating={isGenerating}
+          isError={reportQuery.isError || isFailed}
+          // 생성 실패(status='failed')는 throw가 아니므로 503 메시지를 위해 합성 에러를 전달.
+          error={isFailed ? { response: { status: 503 } } : reportQuery.error}
+          onRetry={reportQuery.refetch}
+        />
       </ReportLayout>
     );
   }

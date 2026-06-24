@@ -9,7 +9,17 @@ function messageFor(error) {
   return error?.message || '데이터를 불러오지 못했습니다.';
 }
 
-export default function StateView({ isLoading, isError, error, onRetry }) {
+export default function StateView({ isLoading, isGenerating, isError, error, onRetry }) {
+  if (isGenerating) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] py-20 text-center text-sm text-[rgba(0,0,0,0.5)]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#08CB00]" />
+        <p className="font-semibold text-[#253900]">AI가 리포트를 생성하고 있습니다.</p>
+        <p className="max-w-md leading-6">답변 평가와 종합 분석을 진행 중이에요. 최대 1~2분 정도 걸릴 수 있습니다. 이 화면은 자동으로 갱신됩니다.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center gap-3 rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] py-20 text-sm text-[rgba(0,0,0,0.5)]">
