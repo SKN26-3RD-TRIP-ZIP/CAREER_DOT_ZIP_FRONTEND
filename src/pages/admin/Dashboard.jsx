@@ -32,9 +32,9 @@ function WeeklyBarChart({ data = [] }) {
 /* ── Stat card ─────────────────────────────────────────────────────────── */
 function StatCard({ label, value, icon }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-[#1A2200] p-5 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl bg-[#1E293B] p-5 shadow-sm">
       {/* Icon top-left */}
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0A1A00]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0F172A]">
         <span className="text-base text-[#08CB00]">{icon}</span>
       </div>
       {/* Value */}
@@ -106,7 +106,7 @@ export default function Dashboard() {
       </div>
 
       {/* Weekly bar chart */}
-      <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
+      <div className="rounded-xl bg-[#1E293B] p-6 shadow-sm">
         <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
         <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
         <div className="mt-6">

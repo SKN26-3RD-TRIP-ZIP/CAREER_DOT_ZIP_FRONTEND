@@ -57,7 +57,7 @@ export default function AuditLogs() {
           value={actionType}
           onChange={(e) => setActionType(e.target.value)}
           placeholder="action_type 필터 (예: member_status_change)"
-          className="w-72 rounded-lg border border-[#253900] bg-[#111400] px-3 py-1.5 text-sm text-[#EEEEEE] placeholder:text-[#444444] outline-none focus:border-[#08CB00]"
+          className="w-72 rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-1.5 text-sm text-[#EEEEEE] placeholder:text-[#444444] outline-none focus:border-[#08CB00]"
         />
         <button
           onClick={() => { setPage(1); setAppliedType(actionType.trim()) }}
@@ -82,9 +82,9 @@ export default function AuditLogs() {
       ) : logs.length === 0 ? (
         <p className="py-12 text-center text-sm text-[#AAAAAA]">감사 로그가 없습니다.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-[#253900] bg-[#1A2200]">
+        <div className="overflow-x-auto rounded-xl border border-[#334155] bg-[#1E293B]">
           <table className="w-full text-left text-sm">
-            <thead className="bg-[#111400] text-xs text-[#666666]">
+            <thead className="bg-[#0F172A] text-xs text-[#666666]">
               <tr>
                 <th className="px-3 py-2">ID</th>
                 <th className="px-3 py-2">actor_id</th>
@@ -98,7 +98,7 @@ export default function AuditLogs() {
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.audit_log_id} className="border-t border-[#253900] text-[#CCCCCC]">
+                <tr key={log.audit_log_id} className="border-t border-[#334155] text-[#CCCCCC]">
                   <td className="px-3 py-2">{log.audit_log_id}</td>
                   <td className="px-3 py-2">
                     {log.actor_id != null
@@ -129,7 +129,7 @@ export default function AuditLogs() {
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded border border-[#253900] px-3 py-1 text-[#AAAAAA] disabled:opacity-40 hover:bg-[#253900]"
+            className="rounded border border-[#334155] px-3 py-1 text-[#AAAAAA] disabled:opacity-40 hover:bg-[#334155]"
           >
             이전
           </button>
@@ -137,7 +137,7 @@ export default function AuditLogs() {
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className="rounded border border-[#253900] px-3 py-1 text-[#AAAAAA] disabled:opacity-40 hover:bg-[#253900]"
+            className="rounded border border-[#334155] px-3 py-1 text-[#AAAAAA] disabled:opacity-40 hover:bg-[#334155]"
           >
             다음
           </button>

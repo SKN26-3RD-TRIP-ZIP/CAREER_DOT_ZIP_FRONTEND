@@ -49,10 +49,10 @@ function ProfileMenu() {
       </div>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-lg border border-[#253900] bg-[#1A2200] shadow-lg z-50">
+        <div className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-lg border border-[#334155] bg-[#1E293B] shadow-lg z-50">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-[#AAAAAA] hover:bg-[#253900] hover:text-[#EEEEEE] transition-colors"
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-[#AAAAAA] hover:bg-[#334155] hover:text-[#EEEEEE] transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             로그아웃
@@ -76,9 +76,9 @@ export default function PrivateRoute() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#000000]">
+    <div className="flex min-h-screen flex-col bg-[#0B1120]">
       {/* Top navigation */}
-      <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-[#253900] bg-[#111400] px-6">
+      <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-[#334155] bg-[#0F172A] px-6">
         {/* Logo */}
         <div className="flex items-center gap-6">
           <div className="rounded-md bg-[#08CB00] px-3 py-1.5">
