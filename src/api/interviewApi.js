@@ -36,6 +36,27 @@ export const interviewApi = {
     return response.data;
   },
 
+  transcribeAudio: async (formData) => {
+    const response = await axiosInstance.post('/stt/transcribe', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
+  synthesizeSpeech: async (payload) => {
+    const response = await axiosInstance.post('/tts/speech', payload, {
+      responseType: 'blob'
+    });
+    return {
+      audioBlob: response.data,
+      model: response.headers?.['x-tts-model'],
+      voice: response.headers?.['x-tts-voice'],
+      persona: response.headers?.['x-tts-persona']
+    };
+  },
+
   generateFollowup: async (answerId) => {
     const response = await axiosInstance.post(`/answers/${answerId}/followup`);
     return response.data;
