@@ -92,41 +92,41 @@ function ResultPage() {
   useEffect(() => {
     if (!sessionId) return
 
+    const MAX_POLL_MS = 10 * 60 * 1000 // 10분 초과 시 강제 종료
     const startTime = Date.now()
-    let pollCount = 0
-    console.log('[Analysis] 폴링 시작 session_id:', sessionId, new Date().toISOString())
+
+    const stopPolling = () => clearInterval(intervalRef.current)
 
     const poll = async () => {
-      pollCount += 1
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
+      if (Date.now() - startTime > MAX_POLL_MS) {
+        stopPolling()
+        setStatus('failed')
+        return
+      }
       try {
         const res = await getAnalysisStatus(sessionId)
-        console.log(`[Analysis] 폴링 #${pollCount} (${elapsed}s):`, res.data.status)
         if (res.data.status === 'ready') {
-          clearInterval(intervalRef.current)
+          stopPolling()
           try {
             const matchRes = await getAnalysisResult(sessionId)
-            console.log('[Analysis] 결과 데이터:', matchRes.data)
             setResult(mapResult(matchRes.data))
             setStatus('ready')
-          } catch (resultErr) {
-            console.error('[Analysis] 결과 조회 에러:', resultErr)
+          } catch {
             setStatus('failed')
           }
         } else if (res.data.status === 'failed') {
-          clearInterval(intervalRef.current)
+          stopPolling()
           setStatus('failed')
         }
-      } catch (err) {
-        clearInterval(intervalRef.current)
-        console.error('[Analysis] 폴링 에러:', err)
+      } catch {
+        stopPolling()
         setStatus('failed')
       }
     }
 
     poll()
     intervalRef.current = setInterval(poll, 3000)
-    return () => clearInterval(intervalRef.current)
+    return () => stopPolling()
   }, [sessionId])
 
   // 분석 완료 시 이미 생성된 질문이 있으면 가져온다 (생성은 하지 않음 → 버튼 노출)
@@ -155,8 +155,6 @@ function ResultPage() {
       const res = isRegenerate
         ? await regenerateQuestions(sessionId)
         : await generateQuestions(sessionId)
-      console.log("=============");
-      console.log(res);
       setQuestions(res.data.questions ?? [])
       setGenCount(res.data.generation_count ?? genCount)
       setMaxGen(res.data.max_generations ?? maxGen)
