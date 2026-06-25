@@ -156,6 +156,7 @@ function normalizeJdList(response) {
   return [];
 }
 
+// 이전 음성 면접 준비 화면으로, 면접 유형/페르소나/질문 수와 마이크 상태를 확인한 뒤 세션을 시작한다.
 function InterviewSetupCheckPage({ embedded = false }) {
   const navigate = useNavigate();
   const [selectedInterviewType, setSelectedInterviewType] = useState('technical');

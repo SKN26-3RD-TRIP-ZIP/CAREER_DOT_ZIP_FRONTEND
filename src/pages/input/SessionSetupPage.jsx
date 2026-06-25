@@ -160,6 +160,7 @@ function SelectableItem({ selected, title, meta, onClick }) {
   );
 }
 
+// 음성 면접 시작 전 마이크 권한, 장치 선택, 실제 입력 레벨을 확인하는 패널.
 function MicrophoneCheckPanel({ micCheck, required }) {
   const {
     isSupported,
@@ -286,6 +287,7 @@ function MicrophoneCheckPanel({ micCheck, required }) {
   );
 }
 
+// JD/이력서/프로젝트를 선택하고 면접 세션과 질문을 생성한 뒤 실제 질문 화면으로 넘기는 설정 페이지.
 function SessionSetupPage() {
   const navigate = useNavigate();
   const { jdId, setJd } = useJdStore();
@@ -320,9 +322,11 @@ function SessionSetupPage() {
     () => projects.filter((item) => selectedProjectIds.includes(item.project_id)),
     [projects, selectedProjectIds],
   );
+  // 음성 면접일 때만 마이크 확인 완료 여부를 세션 생성 조건으로 사용한다.
   const requiresMicrophone = interviewMode === 'voice';
 
   const fetchSources = async () => {
+    // 세션 생성 화면에 필요한 JD/이력서/자소서/프로젝트 목록을 한 번에 불러온다.
     setInitialLoading(true);
     setError('');
     try {
@@ -413,6 +417,7 @@ function SessionSetupPage() {
     e.preventDefault();
     setError('');
 
+    // 질문 생성에 필요한 핵심 자료가 없으면 세션 생성을 시작하지 않는다.
     if (!selectedJdId) {
       setError('면접에 사용할 JD를 선택해주세요. JD가 없다면 먼저 등록해야 합니다.');
       return;
@@ -433,6 +438,7 @@ function SessionSetupPage() {
 
     const count = parseInt(totalQuestionCount, 10);
     const questionCount = !Number.isNaN(count) && count > 0 ? count : DEFAULT_QUESTION_COUNT;
+    // 백엔드 세션 생성 API가 사용하는 필드명과 기존 프론트 필드명을 함께 맞춰 보낸다.
     const sessionPayload = {
       jd_id: selectedJdId,
       resume_id: selectedResumeId,
@@ -449,6 +455,7 @@ function SessionSetupPage() {
 
     try {
       setLoadingStep('세션 생성 중...');
+      // 이전 면접 상태를 비우고 새 세션부터 질문 목록까지 한 흐름으로 준비한다.
       resetInterview();
       const sessionData = await interviewApi.createSession(sessionPayload);
       newSessionId = sessionData?.session_id ?? sessionData?.id;
@@ -456,12 +463,14 @@ function SessionSetupPage() {
       setSessionId(newSessionId);
 
       setLoadingStep('면접 질문 생성 중...');
+      // 세션에 연결된 JD/이력서/프로젝트를 바탕으로 실제 면접 질문을 생성한다.
       await interviewApi.generateQuestions(newSessionId, {
         question_count: questionCount,
         project_ids: selectedProjectIds,
       });
 
       setLoadingStep('생성된 질문을 불러오는 중...');
+      // 생성 직후 다시 조회해 store에 정렬된 질문 목록을 넣고 실제 면접 화면으로 이동한다.
       const questionResponse = await interviewApi.getQuestions(newSessionId);
       const orderedQuestions = normalizeQuestions(questionResponse);
       setQuestions(orderedQuestions);

@@ -14,6 +14,7 @@ const SMOOTHING_FACTOR = 0.78;
 const FFT_SIZE = 1024;
 
 function getPermissionErrorState(error) {
+  // 브라우저 getUserMedia 오류명을 화면에서 다룰 수 있는 상태값과 안내 문구로 변환한다.
   if (!error) {
     return {
       permissionStatus: 'error',
@@ -67,6 +68,7 @@ function getDeviceLabel(device, index) {
 }
 
 export function useMicrophoneSetupCheck() {
+  // 세션 생성 전에 마이크 권한, 장치 선택, 실제 음성 입력 상태를 한 훅에서 관리한다.
   const [isSupported, setIsSupported] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState('idle');
   const [inputStatus, setInputStatus] = useState('idle');
@@ -89,6 +91,7 @@ export function useMicrophoneSetupCheck() {
   const mountedRef = useRef(false);
 
   const cleanupAudio = useCallback(() => {
+    // 테스트가 끝나거나 장치를 바꿀 때 이전 스트림/오디오 노드를 모두 정리한다.
     if (frameRef.current) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
@@ -129,6 +132,7 @@ export function useMicrophoneSetupCheck() {
   }, []);
 
   const refreshDevices = useCallback(async () => {
+    // 권한 허용 전에는 label이 비어 있을 수 있지만, 장치 존재 여부는 미리 확인할 수 있다.
     if (!navigator.mediaDevices?.enumerateDevices) return [];
 
     const deviceList = await navigator.mediaDevices.enumerateDevices();
@@ -158,6 +162,7 @@ export function useMicrophoneSetupCheck() {
   }, []);
 
   const analyzeStream = useCallback(() => {
+    // Web Audio API의 time domain 데이터를 RMS로 바꿔 실제 말소리 입력 여부를 판단한다.
     const analyser = analyserRef.current;
     if (!analyser) return;
 
@@ -194,6 +199,7 @@ export function useMicrophoneSetupCheck() {
         setInputStatus('too_low');
         normalStartedAtRef.current = null;
       } else {
+        // 순간적인 소음이 아니라 일정 시간 정상 입력이 유지될 때만 마이크 확인 완료로 본다.
         setInputStatus('normal');
         if (!normalStartedAtRef.current) {
           normalStartedAtRef.current = now;
@@ -210,6 +216,7 @@ export function useMicrophoneSetupCheck() {
   }, []);
 
   const requestMicrophone = useCallback(async () => {
+    // 중복 클릭/장치 변경으로 이전 요청이 늦게 끝나도 최신 요청만 반영되도록 requestId를 사용한다.
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
 
@@ -229,6 +236,7 @@ export function useMicrophoneSetupCheck() {
     setLevel(0);
 
     try {
+      // 사용자가 특정 마이크를 선택했다면 해당 deviceId로 권한을 요청한다.
       const constraints = {
         audio: {
           ...AUDIO_CONSTRAINTS,
@@ -238,6 +246,7 @@ export function useMicrophoneSetupCheck() {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (!mountedRef.current || requestId !== requestIdRef.current) {
+        // 컴포넌트가 사라졌거나 더 최신 요청이 있으면 방금 얻은 스트림은 즉시 닫는다.
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -276,6 +285,7 @@ export function useMicrophoneSetupCheck() {
 
   const handleDeviceChange = useCallback(
     async (deviceId) => {
+      // 장치를 바꾸면 이전 검증 결과는 무효이므로 다시 권한/입력 테스트를 진행하게 한다.
       setSelectedDeviceId(deviceId);
       setIsVerified(false);
       setInputStatus('idle');
@@ -288,6 +298,7 @@ export function useMicrophoneSetupCheck() {
   );
 
   useEffect(() => {
+    // 최초 진입 시 브라우저 지원 여부와 현재 연결된 입력 장치를 확인한다.
     mountedRef.current = true;
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -299,6 +310,7 @@ export function useMicrophoneSetupCheck() {
     }
 
     const onDeviceChange = () => {
+      // 마이크가 꽂히거나 빠지면 검증 상태를 초기화하고 목록을 갱신한다.
       setIsVerified(false);
       refreshDevices().catch(() => {});
     };

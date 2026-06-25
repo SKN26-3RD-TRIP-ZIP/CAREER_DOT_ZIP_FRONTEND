@@ -139,6 +139,7 @@ function Waveform({ isActive }) {
   );
 }
 
+// 질문 TTS 재생, 답변 녹음, Whisper STT 변환, 답변 저장, 꼬리질문 생성을 이어주는 음성 면접 진행 화면.
 function InterviewQuestionCheckPage() {
   const navigate = useNavigate();
   const sessionId = useInterviewStore((state) => state.sessionId);
@@ -251,6 +252,7 @@ function InterviewQuestionCheckPage() {
   useEffect(() => {
     if (!isAnswering) return undefined;
 
+    // 녹음 중에는 시작 시각 기준으로 경과 시간을 계속 갱신해 UI에 보여준다.
     const timerId = window.setInterval(() => {
       const elapsed = Math.max(0, Math.floor((Date.now() - recordingStartedAtRef.current) / 1000));
       setRecordingSeconds(elapsed);
@@ -263,10 +265,12 @@ function InterviewQuestionCheckPage() {
     if (!hasQuestion || isCompleted) return undefined;
     resetAnswerState();
     if (isTtsSupported) {
+      // 질문이 바뀔 때마다 세션 persona가 반영된 백엔드 TTS를 우선 재생한다.
       speak(currentQuestionText, { sessionId });
     }
 
     return () => {
+      // 질문 이동/페이지 이탈 시 이전 TTS와 녹음 스트림이 남지 않게 정리한다.
       stop();
       cleanupRecording();
     };
@@ -274,6 +278,7 @@ function InterviewQuestionCheckPage() {
 
   const processAndSave = useCallback(
     async ({ blob = audioBlob, duration = recordedDuration, reuseStt = false } = {}) => {
+      // 녹음 파일을 STT로 변환하고, 답변 생성과 STT 지표 patch까지 한 번에 이어주는 핵심 파이프라인.
       if (!sessionId || !currentQuestionId) {
         setErrorMessage('세션 또는 질문 정보가 없습니다. 면접 설정부터 다시 진행해 주세요.');
         return;
@@ -290,6 +295,7 @@ function InterviewQuestionCheckPage() {
 
       try {
         if (!nextSttResult) {
+          // 첫 시도 또는 STT 재시도에서는 webm blob을 multipart로 Whisper API에 업로드한다.
           setProcessingStep('stt');
           setFailedStep('');
           const formData = new FormData();
@@ -305,6 +311,7 @@ function InterviewQuestionCheckPage() {
         }
 
         if (!nextAnswerId) {
+          // 기존 평가/리포트 흐름과 호환되도록 STT 텍스트를 answer_text로 먼저 저장한다.
           setProcessingStep('answer');
           const answer = await interviewApi.submitAnswer({
             session_id: sessionId,
@@ -320,6 +327,7 @@ function InterviewQuestionCheckPage() {
         }
 
         setProcessingStep('patch');
+        // STT 원문과 음성 분석 지표를 같은 답변 레코드에 보강 저장한다.
         await interviewApi.patchSttResult(nextAnswerId, {
           stt_text: sttText,
           audio_url: null,
@@ -331,6 +339,7 @@ function InterviewQuestionCheckPage() {
         setProcessingStep('followup');
         setFollowupNotice('');
         try {
+          // 답변 충분성 판단 결과에 따라 현재 질문 바로 뒤에 꼬리질문을 삽입할 수 있다.
           const followup = await interviewApi.generateFollowup(nextAnswerId);
           const followupQuestion = normalizeFollowupQuestion(followup?.followup_question);
 
@@ -348,6 +357,7 @@ function InterviewQuestionCheckPage() {
         setFailedStep('');
         setProcessingStep('saved');
       } catch (error) {
+        // 실패 단계에 따라 재시도 시 STT를 다시 할지, 기존 STT 결과로 저장만 재시도할지 나눈다.
         const step = nextSttResult ? (nextAnswerId ? 'patch' : 'answer') : 'stt';
         setFailedStep(step);
         setProcessingStep('idle');
@@ -359,6 +369,7 @@ function InterviewQuestionCheckPage() {
 
   const handleStartRecording = async () => {
     if (!hasQuestion || isProcessing) return;
+    // 사용자가 답변을 시작하면 질문 TTS를 멈추고 이전 답변 상태를 초기화한다.
     stop();
     setErrorMessage('');
     setFailedStep('');
@@ -370,6 +381,7 @@ function InterviewQuestionCheckPage() {
     setRecordingSeconds(0);
 
     try {
+      // 브라우저 MediaRecorder로 Whisper가 받을 수 있는 webm/opus 녹음 파일을 만든다.
       const stream = await navigator.mediaDevices.getUserMedia(RECORDING_OPTIONS);
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
@@ -382,10 +394,12 @@ function InterviewQuestionCheckPage() {
       recordingStartedAtRef.current = Date.now();
 
       recorder.ondataavailable = (event) => {
+        // MediaRecorder가 나눠서 주는 오디오 chunk를 모아 onstop에서 하나의 Blob으로 합친다.
         if (event.data?.size > 0) chunksRef.current.push(event.data);
       };
 
       recorder.onstop = () => {
+        // 녹음 종료 즉시 STT 변환과 답변 저장 파이프라인을 자동 실행한다.
         const duration = Math.max(0.1, (Date.now() - recordingStartedAtRef.current) / 1000);
         const blob = new Blob(chunksRef.current, { type: mimeType });
         stream.getTracks().forEach((track) => track.stop());
@@ -411,9 +425,11 @@ function InterviewQuestionCheckPage() {
 
   const handleRetry = () => {
     if (failedStep === 'stt') {
+      // STT 단계에서 실패했다면 원본 blob으로 처음부터 다시 처리한다.
       processAndSave({ blob: audioBlob, duration: recordedDuration });
       return;
     }
+    // 답변 저장 이후 단계 실패는 기존 STT 결과를 재사용해 중복 STT 호출을 줄인다.
     processAndSave({ blob: audioBlob, duration: recordedDuration, reuseStt: true });
   };
 
@@ -422,6 +438,7 @@ function InterviewQuestionCheckPage() {
 
     if (safeCurrentIndex >= totalQuestions - 1) {
       try {
+        // 마지막 질문 저장 후에는 세션을 completed로 바꿔 리포트 생성 흐름으로 넘긴다.
         setProcessingStep('complete');
         await interviewApi.updateSessionStatus(sessionId, 'completed');
         setProcessingStep('idle');
