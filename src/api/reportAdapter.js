@@ -31,9 +31,9 @@ export function normalizeFinalReport(raw) {
     const n = Number(v);
     return Number.isFinite(n) ? Math.round(n) : null;
   };
-  const num = (v) => parseScore(v) ?? 0;
   // null/undefined를 보존하여 "해당 없음" 표시가 필요한 지표에 사용
   const numOrNull = (v) => parseScore(v);
+  const overallScore = numOrNull(scoreSummary.overall_score ?? raw?.overall_score);
   const localizeList = (arr) =>
     Array.isArray(arr) ? arr.map(tagLabel).filter(Boolean).join(', ') : '';
 
@@ -55,15 +55,18 @@ export function normalizeFinalReport(raw) {
     question_kind: questionTypeLabel(q?.question_type), // 참고: 기본/꼬리질문 (raw main/follow_up)
     question_text: q?.question_text ?? '',
     improvement_action: q?.improvement_action ?? '',
-    score: num(q?.score),
+    score: numOrNull(q?.score),
   }));
 
   return {
     session_id: raw?.session_id ?? meta.session_id ?? '',
     created_at: raw?.generated_at ?? meta.calculated_at ?? '',
+    score_status: raw?.score_status ?? (overallScore == null ? 'NOT_EVALUATED' : 'SCORED'),
+    evaluation_status: raw?.evaluation_status ?? (overallScore == null ? 'PENDING' : 'COMPLETED'),
+    is_mock: Boolean(raw?.is_mock ?? meta?.is_mock),
 
     score_summary: {
-      overall_score: num(scoreSummary.overall_score ?? raw?.overall_score),
+      overall_score: overallScore,
       grade_label: '',
       comment: meta.summary_text || '',
       // 백엔드 원본 metrics 패스스루(페이지 내 buildRadar 등 직접 소비용 — 비파괴)
@@ -83,7 +86,7 @@ export function normalizeFinalReport(raw) {
       radar: RADAR_AXES.map((a) => ({
         axis: a.axis,
         label: a.label,
-        score: num(metrics[a.metric]),
+        score: numOrNull(metrics[a.metric]),
       })),
       // 질문별 평가 (B안: 백엔드 summary.score_detail.questions)
       questions,

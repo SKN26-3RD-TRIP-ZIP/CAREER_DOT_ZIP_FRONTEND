@@ -84,7 +84,7 @@ export default function FinalReportPage() {
   const questions = Array.isArray(report.score_detail?.questions) ? report.score_detail.questions : [];
   const radarData = categories
     .filter((c) => c && c.score != null && !Number.isNaN(Number(c.score)))
-    .map((c) => ({ axis: c.label, score: Number(c.score) || 0 }));
+    .map((c) => ({ axis: c.label, score: Number(c.score) }));
 
   return (
     <ReportLayout

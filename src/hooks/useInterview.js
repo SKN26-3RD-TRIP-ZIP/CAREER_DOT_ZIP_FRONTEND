@@ -45,7 +45,6 @@ export function useInterview() {
 
     try {
       const data = await interviewApi.getQuestions(targetSessionId);
-      console.log('[loadQuestions] response:', data);
 
       const results = Array.isArray(data?.results) ? data.results : [];
       const sortedQuestions = [...results].sort(

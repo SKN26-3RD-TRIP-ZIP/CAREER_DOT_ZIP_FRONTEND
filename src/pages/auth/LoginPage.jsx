@@ -83,7 +83,7 @@ function LoginPage() {
       setToken(token);
       const me = await getMe();
       setUser(me.data);
-      navigate('/mypage');
+      navigate(me.data?.next_path || '/profile');
     } catch (err) {
       setError(getLoginError(err));
       reset();

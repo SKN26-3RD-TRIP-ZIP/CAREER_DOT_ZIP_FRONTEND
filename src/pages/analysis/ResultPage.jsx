@@ -86,19 +86,16 @@ function ResultPage() {
 
     const startTime = Date.now()
     let pollCount = 0
-    console.log('[Analysis] 폴링 시작 session_id:', sessionId, new Date().toISOString())
 
     const poll = async () => {
       pollCount += 1
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
       try {
         const res = await getAnalysisStatus(sessionId)
-        console.log(`[Analysis] 폴링 #${pollCount} (${elapsed}s):`, res.data.status)
         if (res.data.status === 'ready') {
           clearInterval(intervalRef.current)
           try {
             const matchRes = await getAnalysisResult(sessionId)
-            console.log('[Analysis] 결과 데이터:', matchRes.data)
             setResult(mapResult(matchRes.data))
             setStatus('ready')
           } catch (resultErr) {

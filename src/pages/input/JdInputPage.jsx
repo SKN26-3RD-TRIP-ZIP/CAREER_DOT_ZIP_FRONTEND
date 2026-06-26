@@ -19,7 +19,7 @@ const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트',
 
 const INPUT_MODES = [
   { id: 'manual', label: '직접 입력' },
-  { id: 'mock', label: 'Mock 공고' },
+  { id: 'mock', label: '합성 공고 검색' },
   { id: 'upload', label: 'PDF 업로드' },
 ];
 
@@ -71,6 +71,11 @@ function parseCommaSeparated(value) {
     .map((s) => s.trim())
     .filter(Boolean)
     .filter((v, i, arr) => arr.indexOf(v) === i);
+}
+
+function listText(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).join(', ');
+  return value || '';
 }
 
 function formatApiError(err, fallback) {
@@ -191,12 +196,12 @@ function JdInputPage() {
     setMockLoading(true);
     setError('');
     try {
-      const data = await jobsApi.searchJobs({ q: mockSearch, size: 8 });
+      const data = await jobsApi.searchJobs({ keyword: mockSearch, size: 8 });
       const results = Array.isArray(data?.results) ? data.results : [];
       setMockJobs(results);
       setSelectedMockJob((prev) => prev ?? results[0] ?? null);
     } catch (err) {
-      setError(formatApiError(err, 'Mock 공고 목록을 불러오지 못했습니다.'));
+      setError(formatApiError(err, '합성 공고 목록을 불러오지 못했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
     } finally {
       setMockLoading(false);
@@ -212,7 +217,7 @@ function JdInputPage() {
     setError('');
     setSuccessData(null);
     if (!selectedMockJob) {
-      setError('저장할 Mock 채용공고를 선택해주세요.');
+      setError('저장할 합성 채용공고를 선택해주세요.');
       return;
     }
 
@@ -223,7 +228,7 @@ function JdInputPage() {
       setSuccessData(data);
       navigate('/input/documents');
     } catch (err) {
-      setError(formatApiError(err, 'Mock 공고 저장에 실패했습니다.'));
+      setError(formatApiError(err, '합성 공고 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
     } finally {
       setLoading(false);
@@ -278,7 +283,7 @@ function JdInputPage() {
     <PageShell
       eyebrow="Step 2"
       title="JD 입력"
-      description="직접 입력, Mock 채용공고 저장, PDF 업로드 중 하나를 선택해 면접 질문의 기준이 될 JD를 저장합니다."
+      description="직접 입력, 개발·연습용 합성 공고 검색, PDF 업로드 중 하나를 선택해 면접 질문의 기준이 될 JD를 저장합니다."
       steps={STEPS}
       currentStep={2}
     >
@@ -409,6 +414,9 @@ function JdInputPage() {
 
             {activeMode === 'mock' && (
               <div className="mt-6 space-y-4">
+                <Alert tone="info">
+                  이 목록은 Career.zip 개발·연습용 합성 공고입니다. 실제 사람인 또는 실제 기업 공고가 아닙니다.
+                </Alert>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     type="search"
@@ -425,9 +433,9 @@ function JdInputPage() {
                   </Button>
                 </div>
                 {mockLoading ? (
-                  <LoadingState title="Mock 공고를 불러오는 중입니다" description="" />
+                  <LoadingState title="합성 공고를 불러오는 중입니다" description="" />
                 ) : mockJobs.length === 0 ? (
-                  <EmptyState title="표시할 Mock 공고가 없습니다" description="검색어를 바꾸거나 목록을 새로고침해주세요." actionLabel="다시 검색" onAction={fetchMockJobs} />
+                  <EmptyState title="표시할 합성 공고가 없습니다" description="검색어를 바꾸거나 목록을 새로고침해주세요." actionLabel="다시 검색" onAction={fetchMockJobs} />
                 ) : (
                   <div className="grid gap-2">
                     {mockJobs.map((job) => {
@@ -444,9 +452,10 @@ function JdInputPage() {
                         >
                           <p className="text-sm font-bold">
                             {job.company_name || '회사명 없음'} · {job.position || '직무명 없음'}
+                            {job.is_mock && <span className="ml-2 rounded-full bg-[#253900] px-2 py-0.5 text-[11px] text-[#EEEEEE]">합성</span>}
                           </p>
                           <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#000000]">
-                            {job.job_description || job.requirements || '공고 요약이 없습니다.'}
+                            {job.job_description || listText(job.requirements) || '공고 요약이 없습니다.'}
                           </p>
                         </button>
                       );
@@ -459,7 +468,7 @@ function JdInputPage() {
                     이전
                   </Button>
                   <Button type="button" disabled={loading || !selectedMockJob} onClick={handleMockSave}>
-                    {loading ? '저장 중...' : '선택 공고를 저장하고 다음'}
+                    {loading ? '저장 중...' : '선택한 합성 공고를 저장하고 다음'}
                   </Button>
                 </div>
               </div>
