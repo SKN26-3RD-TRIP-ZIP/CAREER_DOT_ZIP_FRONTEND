@@ -13,20 +13,20 @@ function Stat({ label, value }) {
   );
 }
 
-export default function GrowthTrendPage() {
+export default function GrowthTrendPage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
   const growth = useGrowthTrend();
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
+    <button onClick={() => navigate(`${adminMode ? '/report-admin' : '/report'}/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
       리포트로 돌아가기
     </button>
   );
 
   if (growth.isLoading || growth.isError || !growth.data) {
     return (
-      <ReportLayout title="최근 성장 추이" subtitle="여러 면접 세션의 점수 변화와 보완 항목 개선 흐름을 확인합니다." action={back}>
+      <ReportLayout title="최근 성장 추이" subtitle="여러 면접 세션의 점수 변화와 보완 항목 개선 흐름을 확인합니다." action={back} adminMode={adminMode}>
         <StateView isLoading={growth.isLoading} isError={growth.isError} error={growth.error} onRetry={growth.refetch} />
       </ReportLayout>
     );
@@ -35,7 +35,7 @@ export default function GrowthTrendPage() {
   const g = growth.data;
 
   return (
-    <ReportLayout title="최근 성장 추이" subtitle="여러 면접 세션의 점수 변화와 보완 항목 개선 흐름을 확인합니다." action={back}>
+    <ReportLayout title="최근 성장 추이" subtitle="여러 면접 세션의 점수 변화와 보완 항목 개선 흐름을 확인합니다." action={back} adminMode={adminMode}>
       <section className="grid grid-cols-2 gap-6 rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm md:grid-cols-4">
         <Stat label="첫 세션" value={`${g.first_score}점`} />
         <Stat label="최근 세션" value={`${g.latest_score}점`} />

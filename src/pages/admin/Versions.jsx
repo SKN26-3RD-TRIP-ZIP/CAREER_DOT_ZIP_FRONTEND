@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getPersonas, getAllTemplates, getVersions, createVersion, setDefaultVersion } from '../../api/adminApi'
 
@@ -79,7 +80,7 @@ function DeployForm({ template, versions, onClose, onDeployed }) {
 }
 
 /* ── 버전 히스토리 ───────────────────────────────────────────────────────── */
-function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) {
+function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh, onTest }) {
   const [activating, setActivating] = useState(null)
   const [rollingBack, setRollingBack] = useState(null)
 
@@ -167,6 +168,12 @@ function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) 
                           year: 'numeric', month: '2-digit', day: '2-digit',
                         }).replace(/\. /g, '.').slice(0, -1)}
                       </span>
+                      <button
+                        onClick={() => onTest(ver)}
+                        className="rounded-lg border border-[#08CB00] px-3 py-1 text-xs font-medium text-[#3DDD37] hover:bg-[#0F172A]"
+                      >
+                        테스트
+                      </button>
                       {!isActive && (
                         <>
                           <button
@@ -199,6 +206,7 @@ function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) 
 
 /* ── 메인 페이지 ─────────────────────────────────────────────────────────── */
 export default function Versions() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedPersonaId, setSelectedPersonaId] = useState(null)
   const [showDeploy, setShowDeploy] = useState(false)
@@ -233,6 +241,16 @@ export default function Versions() {
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['versions', activeTemplate?.template_id] })
     queryClient.invalidateQueries({ queryKey: ['all-templates'] })
+  }
+
+  const handleTestVersion = (version) => {
+    if (!activeTemplate || !version) return
+    const params = new URLSearchParams({
+      versionId: String(version.prompt_ver_id),
+      templateId: String(activeTemplate.template_id),
+      persona: activeTemplate.persona_type,
+    })
+    navigate(`/interview/setup-admin?${params.toString()}`)
   }
 
   return (
@@ -294,6 +312,7 @@ export default function Versions() {
               isLoading={versionsLoading}
               onDeploy={() => setShowDeploy(true)}
               onRefresh={handleRefresh}
+              onTest={handleTestVersion}
             />
           )}
         </div>

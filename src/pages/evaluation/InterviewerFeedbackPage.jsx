@@ -5,20 +5,21 @@ import StateView from '../../components/report/StateView';
 import Badge from '../../components/report/Badge';
 import Tag from '../../components/report/Tag';
 
-export default function InterviewerFeedbackPage() {
+export default function InterviewerFeedbackPage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
   const feedback = useInterviewerFeedback(sessionId);
+  const reportBasePath = adminMode ? '/report-admin' : '/report';
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}/overall`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
+    <button onClick={() => navigate(`${reportBasePath}/${sessionId}/overall`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
       Overall로 돌아가기
     </button>
   );
 
   if (feedback.isLoading || feedback.isError || !feedback.data) {
     return (
-      <ReportLayout title="면접관 피드백" subtitle="면접 시 사용한 면접관 페르소나 기준으로 피드백을 제공합니다." action={back}>
+      <ReportLayout title="면접관 피드백" subtitle="면접 시 사용한 면접관 페르소나 기준으로 피드백을 제공합니다." action={back} adminMode={adminMode}>
         <StateView isLoading={feedback.isLoading} isError={feedback.isError} error={feedback.error} onRetry={feedback.refetch} />
       </ReportLayout>
     );
@@ -27,7 +28,7 @@ export default function InterviewerFeedbackPage() {
   const f = feedback.data;
 
   return (
-    <ReportLayout title="면접관 피드백" subtitle="면접 시 사용한 면접관 페르소나 기준으로 피드백을 제공합니다." action={back}>
+    <ReportLayout title="면접관 피드백" subtitle="면접 시 사용한 면접관 페르소나 기준으로 피드백을 제공합니다." action={back} adminMode={adminMode}>
       {/* 페르소나 카드 */}
       <section className="flex flex-col justify-between gap-4 rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm md:flex-row md:items-center">
         <div className="flex items-center gap-4">
@@ -109,7 +110,7 @@ export default function InterviewerFeedbackPage() {
             <h3 className="mb-2 text-base font-bold text-[#000000]">다음 연습으로 연결</h3>
             <p className="text-sm text-[rgba(0,0,0,0.5)]">이전과 동일한 세팅으로 연습을 바로 시작합니다.</p>
           </div>
-          <button onClick={() => navigate(`/report/${sessionId}/roadmap`)} className="mt-4 w-full rounded-xl bg-[#08CB00] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
+          <button onClick={() => navigate(`${reportBasePath}/${sessionId}/roadmap`)} className="mt-4 w-full rounded-xl bg-[#08CB00] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
             {f.persona.short_name} 피드백으로 답변 연습
           </button>
         </div>

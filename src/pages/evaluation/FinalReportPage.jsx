@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFinalReport } from '../../hooks/useReport';
 import { reportApi } from '../../api/reportApi';
+import { cleanupPromptTestRun } from '../../api/adminApi';
 import ReportLayout from '../../components/report/ReportLayout';
 import StateView from '../../components/report/StateView';
 import FinalReportView from './FinalReportView';
@@ -44,18 +45,30 @@ function ShareButton({ sessionId }) {
   );
 }
 
-export default function FinalReportPage() {
+export default function FinalReportPage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
   const reportQuery = useFinalReport(sessionId);
+  const reportBasePath = adminMode ? '/report-admin' : '/report';
 
   const reportStatus = reportQuery.data?.status;
   const isGenerating = reportStatus === 'processing';
   const isFailed = reportStatus === 'failed';
 
+  const handleAdminReturn = async () => {
+    try {
+      await cleanupPromptTestRun(sessionId);
+    } catch (err) {
+      console.warn('Failed to cleanup admin prompt test run', err);
+    } finally {
+      window.localStorage.removeItem('careerzip_admin_interview_test');
+      navigate('/admin/versions');
+    }
+  };
+
   if (reportQuery.isLoading || isGenerating || reportQuery.isError || isFailed || !reportQuery.data) {
     return (
-      <ReportLayout title="최종 리포트" subtitle="면접 결과를 불러와 종합 점수와 개선 포인트를 확인합니다.">
+      <ReportLayout title="최종 리포트" subtitle="면접 결과를 불러와 종합 점수와 개선 포인트를 확인합니다." adminMode={adminMode}>
         <StateView
           isLoading={reportQuery.isLoading}
           isGenerating={isGenerating}
@@ -72,19 +85,20 @@ export default function FinalReportPage() {
     <ReportLayout
       title="최종 리포트"
       subtitle="면접 결과를 바탕으로 종합 점수, 강점, 약점, 추천 개선사항을 확인합니다."
+      adminMode={adminMode}
       action={
         <div className="no-print flex gap-2">
           <ShareButton sessionId={sessionId} />
           <button type="button" onClick={() => window.print()} className="rounded-lg border border-[rgba(0,0,0,0.18)] px-4 py-2 text-sm font-semibold text-[rgba(0,0,0,0.7)] transition hover:bg-[rgba(0,0,0,0.04)]">
             PDF로 저장
           </button>
-          <button type="button" onClick={() => navigate('/mypage')} className="rounded-lg bg-[#000000] px-4 py-2 text-sm font-bold text-[#EEEEEE] transition hover:opacity-90">
-            마이페이지로 이동
+          <button type="button" onClick={adminMode ? handleAdminReturn : () => navigate('/mypage')} className="rounded-lg bg-[#000000] px-4 py-2 text-sm font-bold text-[#EEEEEE] transition hover:opacity-90">
+            {adminMode ? '관리자 버전 관리로 돌아가기' : '마이페이지로 이동'}
           </button>
         </div>
       }
     >
-      <FinalReportView report={reportQuery.data} />
+      <FinalReportView report={reportQuery.data} reportBasePath={reportBasePath} adminMode={adminMode} />
     </ReportLayout>
   );
 }

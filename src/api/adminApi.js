@@ -107,6 +107,15 @@ export async function setDefaultVersion(templateId, versionId) {
   })
 }
 
+export async function getPromptVersionTestSetup(versionId) {
+  const res = await axiosInstance.get(`/admin/prompt-versions/${versionId}/test-setup`)
+  return res.data
+}
+
+export async function cleanupPromptTestRun(sessionId) {
+  await axiosInstance.delete(`/admin/prompt-test-runs/${sessionId}`)
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export async function getDashboardStats() {

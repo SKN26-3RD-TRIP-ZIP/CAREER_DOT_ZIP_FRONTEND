@@ -118,6 +118,9 @@ function App() {
         <Route path="/admin/prompts" element={<Prompts />} />
         <Route path="/admin/audit-logs" element={<AuditLogs />} />
         <Route path="/admin/versions" element={<Versions />} />
+        <Route path="/interview/setup-admin" element={<SessionSetupPage adminMode />} />
+        <Route path="/interview/question-admin" element={<InterviewQuestionCheckPage adminMode />} />
+        <Route path="/report-admin/*" element={<EvaluationRoutes adminMode />} />
       </Route>
 
       {/* fallback */}

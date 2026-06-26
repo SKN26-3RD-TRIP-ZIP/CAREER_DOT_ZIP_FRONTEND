@@ -12,7 +12,7 @@ function PriorityPill({ p }) {
   return <span className={`rounded-full px-4 py-1.5 text-xs font-bold ${cls}`}>{priorityLabel(p)}</span>;
 }
 
-export default function RoadmapPage() {
+export default function RoadmapPage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
   const roadmap = useRoadmap(sessionId);
@@ -26,14 +26,14 @@ export default function RoadmapPage() {
   }, [roadmap.data, selectedRoadmapId, setSelectedRoadmapId]);
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
+    <button onClick={() => navigate(`${adminMode ? '/report-admin' : '/report'}/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
       리포트로 돌아가기
     </button>
   );
 
   if (roadmap.isLoading || roadmap.isError || !roadmap.data) {
     return (
-      <ReportLayout title="Next Learning Roadmap" subtitle="보완 답변 연습을 위한 학습 항목과 마감일, 예상 효과를 확인합니다." action={back}>
+      <ReportLayout title="Next Learning Roadmap" subtitle="보완 답변 연습을 위한 학습 항목과 마감일, 예상 효과를 확인합니다." action={back} adminMode={adminMode}>
         <StateView isLoading={roadmap.isLoading} isError={roadmap.isError} error={roadmap.error} onRetry={roadmap.refetch} />
       </ReportLayout>
     );
@@ -43,7 +43,7 @@ export default function RoadmapPage() {
   const selected = rm.items.find((i) => i.id === selectedRoadmapId) ?? rm.items[0];
 
   return (
-    <ReportLayout title="Next Learning Roadmap" subtitle="보완 답변 연습을 위한 학습 항목과 마감일, 예상 효과를 확인합니다." action={back}>
+    <ReportLayout title="Next Learning Roadmap" subtitle="보완 답변 연습을 위한 학습 항목과 마감일, 예상 효과를 확인합니다." action={back} adminMode={adminMode}>
       {/* 이번 주 우선순위 */}
       <section className="flex items-start justify-between gap-4 rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#EEEEEE] p-6 shadow-sm">
         <div>

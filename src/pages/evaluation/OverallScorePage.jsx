@@ -20,13 +20,14 @@ function buildRadar(r) {
   return (r.score_detail?.radar ?? []).filter((item) => item?.score != null);
 }
 
-export default function OverallScorePage() {
+export default function OverallScorePage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
   const report = useFinalReport(sessionId);
+  const reportBasePath = adminMode ? '/report-admin' : '/report';
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
+    <button onClick={() => navigate(`${reportBasePath}/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
       리포트로 돌아가기
     </button>
   );
@@ -37,7 +38,7 @@ export default function OverallScorePage() {
 
   if (report.isLoading || isGenerating || report.isError || isFailed || !report.data) {
     return (
-      <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
+      <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back} adminMode={adminMode}>
         <StateView
           isLoading={report.isLoading}
           isGenerating={isGenerating}
@@ -89,7 +90,7 @@ export default function OverallScorePage() {
     .filter((row) => Number.isFinite(row.score));
 
   return (
-    <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
+    <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back} adminMode={adminMode}>
       {/* 평가 기준 안내 */}
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[rgba(0,0,0,0.08)] bg-[#EEEEEE] px-4 py-2.5">
         <span className="mr-1 shrink-0 text-xs text-[rgba(0,0,0,0.45)]">이 세션 평가 기준</span>
@@ -109,7 +110,7 @@ export default function OverallScorePage() {
           </div>
           <button
             type="button"
-            onClick={() => navigate(`/report/${sessionId}/feedback`)}
+            onClick={() => navigate(`${reportBasePath}/${sessionId}/feedback`)}
             className="flex flex-1 w-full items-center gap-4 rounded-xl bg-[#08CB00] p-6 text-left text-[#EEEEEE] shadow-sm transition-colors hover:opacity-90"
           >
             <div className="text-6xl leading-none">{persona.avatar_emoji}</div>

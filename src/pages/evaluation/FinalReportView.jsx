@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cleanupPromptTestRun } from '../../api/adminApi';
 import { getOverallScore } from '../../utils/reportSummary';
 import RadarChart from '../../components/report/charts/RadarChart';
 import { getRecommendedQuestions } from '../../utils/recommendedQuestions';
@@ -55,9 +56,23 @@ function ListBlock({ items, emptyText, tone = 'default' }) {
  *   isShared — true 이면 공유 모드: 공유 버튼·다음 액션 섹션 숨김
  *   actionSlot — 헤더 우측 버튼 영역 (FinalReportPage에서 주입)
  */
-export default function FinalReportView({ report, isShared = false, actionSlot = null }) {
+export default function FinalReportView({ report, isShared = false, actionSlot = null, adminMode = false }) {
   const navigate = useNavigate();
   const overallScore = getOverallScore(report, null);
+  const handleAdminReturn = async () => {
+    if (!report?.session_id) {
+      navigate('/admin/versions');
+      return;
+    }
+    try {
+      await cleanupPromptTestRun(report?.session_id);
+    } catch (err) {
+      console.warn('Failed to cleanup admin prompt test run', err);
+    } finally {
+      window.localStorage.removeItem('careerzip_admin_interview_test');
+      navigate('/admin/versions');
+    }
+  };
 
   const strengths = useMemo(() => {
     const tagItems = collectTags(report, 'strength');
@@ -217,13 +232,13 @@ export default function FinalReportView({ report, isShared = false, actionSlot =
             <p className="mt-1 text-sm text-[rgba(0,0,0,0.5)]">리포트를 확인한 뒤 다시 면접하거나 다른 JD로 준비를 이어갈 수 있습니다.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => navigate('/mypage')} className="rounded-lg border border-[rgba(0,0,0,0.18)] px-4 py-2 text-sm font-semibold text-[rgba(0,0,0,0.7)] transition hover:bg-[rgba(0,0,0,0.04)]">
+            <button type="button" onClick={adminMode ? handleAdminReturn : () => navigate('/mypage')} className="rounded-lg border border-[rgba(0,0,0,0.18)] px-4 py-2 text-sm font-semibold text-[rgba(0,0,0,0.7)] transition hover:bg-[rgba(0,0,0,0.04)]">
               마이페이지
             </button>
-            <button type="button" onClick={() => navigate('/interview/setup')} className="rounded-lg bg-[#08CB00] px-4 py-2 text-sm font-semibold text-[#EEEEEE] transition hover:opacity-90">
+            <button type="button" onClick={adminMode ? handleAdminReturn : () => navigate('/interview/setup')} className="rounded-lg bg-[#08CB00] px-4 py-2 text-sm font-semibold text-[#EEEEEE] transition hover:opacity-90">
               다시 면접하기
             </button>
-            <button type="button" onClick={() => navigate('/jd')} className="rounded-lg border border-[rgba(0,0,0,0.18)] px-4 py-2 text-sm font-semibold text-[rgba(0,0,0,0.7)] transition hover:bg-[rgba(0,0,0,0.04)]">
+            <button type="button" onClick={adminMode ? handleAdminReturn : () => navigate('/jd')} className="rounded-lg border border-[rgba(0,0,0,0.18)] px-4 py-2 text-sm font-semibold text-[rgba(0,0,0,0.7)] transition hover:bg-[rgba(0,0,0,0.04)]">
               JD 다시 선택하기
             </button>
           </div>

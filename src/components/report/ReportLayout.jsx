@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 
 const NAV = ['대시보드', '자료 입력', 'AI 분석', '면접 진행', '리포트', '마이페이지'];
 
-export default function ReportLayout({ title, subtitle, action, children }) {
+export default function ReportLayout({ title, subtitle, action, children, adminMode = false }) {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-[#EEEEEE] text-[#000000]">
@@ -12,7 +12,10 @@ export default function ReportLayout({ title, subtitle, action, children }) {
             <button
               type="button"
               aria-label="메인 화면으로 이동"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                if (!adminMode) navigate('/');
+              }}
+              disabled={adminMode}
               className="inline-flex items-center rounded-full border border-[#08CB00] px-3.5 py-1.5 text-sm font-black text-[#08CB00]"
             >
               Career.zip
@@ -27,7 +30,8 @@ export default function ReportLayout({ title, subtitle, action, children }) {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/interview/setup')}
+            onClick={() => navigate(adminMode ? '/admin/versions' : '/interview/setup')}
+            disabled={adminMode}
             className="rounded-lg bg-[#08CB00] px-4 py-2 text-sm font-black text-[#EEEEEE] transition hover:opacity-90"
           >
             면접 시작하기

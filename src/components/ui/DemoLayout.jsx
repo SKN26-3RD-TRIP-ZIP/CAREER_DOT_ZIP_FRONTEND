@@ -25,29 +25,43 @@ const NAV_ITEMS = [
   { label: '마이페이지', to: '/mypage' },
 ];
 
-export function TopNav({ active = '' }) {
+export function TopNav({ active = '', disabled = false }) {
   return (
     <header className="sticky top-0 z-30 border-b border-[rgba(0,0,0,0.08)] bg-[#EEEEEE]/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5">
         <div className="flex items-center gap-8">
-          <Logo />
+          <Logo disabled={disabled} />
           <nav className="hidden items-center gap-6 text-sm lg:flex">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                className={
-                  active === item.label
-                    ? 'font-black text-[#08CB00]'
-                    : 'font-bold text-[#000000] transition hover:text-[#253900]'
-                }
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV_ITEMS.map((item) =>
+              disabled ? (
+                <span
+                  key={item.label}
+                  aria-disabled="true"
+                  className={
+                    active === item.label
+                      ? 'cursor-not-allowed font-black text-[#08CB00]'
+                      : 'cursor-not-allowed font-bold text-[rgba(0,0,0,0.40)]'
+                  }
+                >
+                  {item.label}
+                </span>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className={
+                    active === item.label
+                      ? 'font-black text-[#08CB00]'
+                      : 'font-bold text-[#000000] transition hover:text-[#253900]'
+                  }
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
           </nav>
         </div>
-        <Button as={Link} to="/interview/setup" className="h-10 px-4 py-0 text-sm">
+        <Button as={disabled ? 'button' : Link} to={disabled ? undefined : '/interview/setup'} disabled={disabled} className="h-10 px-4 py-0 text-sm">
           면접 시작하기
         </Button>
       </div>
@@ -64,12 +78,13 @@ export function PageShell({
   currentStep,
   children,
   nav = true,
+  navDisabled = false,
   activeNav = '자료 입력',
   maxWidth = 'max-w-6xl',
 }) {
   return (
     <div className="min-h-screen bg-[#EEEEEE] text-[#000000]">
-      {nav ? <TopNav active={activeNav} /> : null}
+      {nav ? <TopNav active={activeNav} disabled={navDisabled} /> : null}
       <main className="px-5 py-8">
         <div className={`mx-auto w-full ${maxWidth}`}>
           <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -151,20 +166,36 @@ export function AuthShell({ title, description, children, footer, aside }) {
   );
 }
 
-export function Logo({ center = false, tone = 'brand' }) {
+export function Logo({ center = false, tone = 'brand', disabled = false }) {
   if (tone === 'light') {
+    const lightClassName = `text-xl font-black tracking-tight text-[#EEEEEE] ${center ? 'inline-block' : ''}`;
+    if (disabled) {
+      return (
+        <span aria-disabled="true" className={`${lightClassName} cursor-default`}>
+          Career.zip
+        </span>
+      );
+    }
     return (
-      <Link to="/" className={`text-xl font-black tracking-tight text-[#EEEEEE] ${center ? 'inline-block' : ''}`}>
+      <Link to="/" className={lightClassName}>
         Career.zip
       </Link>
+    );
+  }
+  const brandClassName = `inline-flex items-center rounded-full border border-[#08CB00] px-3.5 py-1.5 text-base font-black tracking-tight text-[#08CB00] ${
+    center ? 'mx-auto' : ''
+  }`;
+  if (disabled) {
+    return (
+      <span aria-disabled="true" className={`${brandClassName} cursor-default`}>
+        Career.zip
+      </span>
     );
   }
   return (
     <Link
       to="/"
-      className={`inline-flex items-center rounded-full border border-[#08CB00] px-3.5 py-1.5 text-base font-black tracking-tight text-[#08CB00] ${
-        center ? 'mx-auto' : ''
-      }`}
+      className={brandClassName}
     >
       Career.zip
     </Link>

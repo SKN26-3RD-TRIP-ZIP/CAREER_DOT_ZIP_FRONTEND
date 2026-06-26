@@ -140,7 +140,7 @@ function Waveform({ isActive }) {
 }
 
 // 질문 TTS 재생, 답변 녹음, Whisper STT 변환, 답변 저장, 꼬리질문 생성을 이어주는 음성 면접 진행 화면.
-function InterviewQuestionCheckPage() {
+function InterviewQuestionCheckPage({ adminMode = false }) {
   const navigate = useNavigate();
   const sessionId = useInterviewStore((state) => state.sessionId);
   const questions = useInterviewStore((state) => state.questions);
@@ -454,7 +454,7 @@ function InterviewQuestionCheckPage() {
   };
 
   const handleEndInterview = () => {
-    if (isCompleted && sessionId) navigate(`/report/${sessionId}`);
+    if (isCompleted && sessionId) navigate(adminMode ? `/report-admin/${sessionId}` : `/report/${sessionId}`);
   };
 
   const helperText = useMemo(() => {

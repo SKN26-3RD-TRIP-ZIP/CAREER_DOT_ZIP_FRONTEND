@@ -21,14 +21,14 @@ import InterviewerFeedbackPage from '../pages/evaluation/InterviewerFeedbackPage
  *   /report/:sessionId/roadmap   Next Learning Roadmap
  *   /report/:sessionId/feedback  면접관 피드백
  */
-export default function EvaluationRoutes() {
+export default function EvaluationRoutes({ adminMode = false }) {
   return (
     <Routes>
-      <Route path=":sessionId" element={<FinalReportPage />} />
-      <Route path=":sessionId/growth" element={<GrowthTrendPage />} />
-      <Route path=":sessionId/overall" element={<OverallScorePage />} />
-      <Route path=":sessionId/roadmap" element={<RoadmapPage />} />
-      <Route path=":sessionId/feedback" element={<InterviewerFeedbackPage />} />
+      <Route path=":sessionId" element={<FinalReportPage adminMode={adminMode} />} />
+      <Route path=":sessionId/growth" element={<GrowthTrendPage adminMode={adminMode} />} />
+      <Route path=":sessionId/overall" element={<OverallScorePage adminMode={adminMode} />} />
+      <Route path=":sessionId/roadmap" element={<RoadmapPage adminMode={adminMode} />} />
+      <Route path=":sessionId/feedback" element={<InterviewerFeedbackPage adminMode={adminMode} />} />
       <Route index element={<Navigate to="latest" replace />} />
     </Routes>
   );
