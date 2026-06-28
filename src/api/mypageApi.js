@@ -19,6 +19,14 @@ export const mypageApi = {
   // 마이페이지 요약 집계 (BE: GET /api/v1/users/me/summary)
   getSummary: getMySummary,
   getMySummary,
+  getPointBalance: async () => {
+    const response = await axiosInstance.get('/users/me/points');
+    return response.data;
+  },
+  getPointHistory: async (params = {}) => {
+    const response = await axiosInstance.get('/users/me/points/history', { params });
+    return response.data;
+  },
 };
 
 export default mypageApi;

@@ -1,11 +1,15 @@
 import axiosInstance from './axiosInstance';
 
-// 사람인 미승인 대응 Mock 채용공고 API 클라이언트.
-// BE: GET /api/v1/external/jobs (목록/검색/필터/페이징/정렬), GET /api/v1/external/jobs/:job_id (상세)
-// 응답에는 source="MOCK" 가 포함됨 → UI 에서 "샘플(MOCK) 데이터" 배지 표기 권장.
+// 사람인 미승인 대응 Career.zip 합성 Mock 채용공고 API 클라이언트.
+// 실제 사람인 공고가 아니며, 응답에는 source="CAREER_ZIP_MOCK" 와 is_mock=true 가 포함된다.
+
+function asTextList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).join('\n');
+  return value || '';
+}
 
 export const jobsApi = {
-  // params: { q, company, position, tech, region, career_type, employment_type, sort, page, size }
+  // params: { keyword, position, career_type, employment_type, location, tech_stack, ordering, page, size }
   searchJobs: async (params = {}) => {
     const response = await axiosInstance.get('/external/jobs', { params });
     return response.data; // { source, total, page, size, results: [...] }
@@ -16,13 +20,17 @@ export const jobsApi = {
     return response.data; // 단일 job
   },
 
-  // 선택한 Mock 공고를 JD 원문으로 저장 → 면접 세션 생성에 사용.
-  // 기존 BE: POST /api/v1/jds { company_name, position, original_text, input_method }
+  // 선택한 합성 Mock 공고를 사용자 JD로 저장한다.
   saveJobAsJd: async (job) => {
+    if (job?.job_id) {
+      const response = await axiosInstance.post(`/external/jobs/${job.job_id}/save-jd`);
+      return response.data;
+    }
+
     const originalText = [
       job.job_description,
-      job.requirements ? `\n[자격요건]\n${job.requirements}` : '',
-      job.preferred ? `\n[우대사항]\n${job.preferred}` : '',
+      job.requirements ? `\n[자격요건]\n${asTextList(job.requirements)}` : '',
+      job.preferred ? `\n[우대사항]\n${asTextList(job.preferred)}` : '',
       job.tech_stack?.length ? `\n[기술스택]\n${job.tech_stack.join(', ')}` : '',
     ].join('');
 

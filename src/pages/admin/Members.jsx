@@ -436,7 +436,7 @@ export default function Members() {
           value={stats?.withdrawn}
           badge={stats?.withdrawn ? `${stats.withdrawn}명` : undefined}
           badgeColor="bg-[#1E293B] text-[#AAAAAA]"
-        />        
+        />
       </div>
 
       {/* 검색 + 필터 바 */}
