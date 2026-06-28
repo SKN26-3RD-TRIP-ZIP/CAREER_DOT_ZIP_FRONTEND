@@ -44,20 +44,29 @@ export const getMe = () => axiosInstance.get('/auth/me');
 export const logout = () => axiosInstance.post('/auth/logout');
 
 // ── 소셜 로그인(OAuth) ─────────────────────────────────────────────
-// GET /auth/oauth/{provider}/start?next=<path>
+// GET /auth/oauth/{provider}/start?next=<path>&flow=<login|signup>
 //   200 → { provider, auth_url, state, nonce, next_path }
 //   503 → { code: OAUTH_PROVIDER_NOT_CONFIGURED, status: 'ENV_REQUIRED', required_env: [...] }
-export const oauthStart = (provider, next) =>
+export const oauthStart = (provider, next, flow) =>
   axiosInstance.get(`/auth/oauth/${provider}/start`, {
-    params: next ? { next } : undefined,
+    params: { ...(next ? { next } : {}), ...(flow ? { flow } : {}) },
   });
 
-// POST /auth/oauth/{provider}/callback { code, state }
-//   200 → { access_token, token_type, provider, created, next_path } (+ refresh 쿠키)
-//   400 OAUTH_STATE_INVALID / OAUTH_PROVIDER_ERROR / OAUTH_CALLBACK_INVALID
-//   409 OAUTH_EMAIL_REQUIRED · 403 OAUTH_ACCOUNT_BLOCKED · 503 ENV_REQUIRED
-export const oauthCallback = (provider, { code, state }) =>
-  axiosInstance.post(`/auth/oauth/${provider}/callback`, { code, state });
+// POST /auth/oauth/exchange { code }  — 일회용 코드 → Career.zip 토큰(기존 로그인과 동일 응답)
+//   200 → { access_token, token_type, provider, created, needs_terms, next_path } (+ refresh 쿠키)
+//   400 OAUTH_EXCHANGE_CODE_INVALID / OAUTH_EXCHANGE_CODE_EXPIRED
+//   409 OAUTH_EXCHANGE_CODE_USED · 403 OAUTH_ACCOUNT_BLOCKED
+export const oauthExchange = (code) =>
+  axiosInstance.post('/auth/oauth/exchange', { code });
+
+// POST /auth/oauth/social/terms { terms_agreed, privacy_agreed, marketing_agreed }  (인증 필요)
+//   200 → { detail, next_path } · 400 TERMS_REQUIRED
+export const submitSocialTerms = ({ termsAgreed, privacyAgreed, marketingAgreed = false }) =>
+  axiosInstance.post('/auth/oauth/social/terms', {
+    terms_agreed: Boolean(termsAgreed),
+    privacy_agreed: Boolean(privacyAgreed),
+    marketing_agreed: Boolean(marketingAgreed),
+  });
 
 // ── 약관 동의 ──────────────────────────────────────────────────────
 // GET /auth/users/me/terms-agreements?page=&size=
@@ -80,7 +89,8 @@ export default {
   getMe,
   logout,
   oauthStart,
-  oauthCallback,
+  oauthExchange,
+  submitSocialTerms,
   getMyTermsAgreements,
   updateMarketingConsent,
 };
