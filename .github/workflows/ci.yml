@@ -1,0 +1,30 @@
+# 배치: (Frontend repo) .github/workflows/ci.yml
+# 도메인 불필요. develop/main PR 에서 프론트 검증.
+name: frontend-ci
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Vitest
+        run: npm run test
+      - name: Production build (빌드 타임 API base 는 더미)
+        env:
+          VITE_API_BASE_URL: https://example.invalid/api/v1   # DOMAIN_REQUIRED: 실제 배포는 CD 에서 주입
+        run: npm run build

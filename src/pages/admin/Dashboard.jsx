@@ -1,141 +1,123 @@
 import { useQuery } from '@tanstack/react-query'
-import { Users, UserCheck, UserX, MessageSquare } from 'lucide-react'
-import { getMemberStats, getMembers, getPersonas, getTemplates } from '../../api/adminApi'
+import { getDashboardStats } from '../../api/adminApi'
+import { statNum, statMoney } from '../../utils/adminStats'
 
-const PERSONA_LABEL = {
-  coach: '코치형',
-  practical: '실무형',
-  verify: '검증형',
-}
+const DAY_LABEL = ['일', '월', '화', '수', '목', '금', '토']
 
-const PERSONA_COLOR = {
-  coach: 'bg-blue-100 text-blue-700',
-  practical: 'bg-purple-100 text-purple-700',
-  verify: 'bg-amber-100 text-amber-700',
-}
-
-export default function Dashboard() {
-  const { data: stats } = useQuery({
-    queryKey: ['member-stats'],
-    queryFn: getMemberStats,
-  })
-
-  const { data: recentMembersData } = useQuery({
-    queryKey: ['members-recent'],
-    queryFn: () => getMembers({ page: 1, size: 5 }),
-  })
-
-  const { data: personas = [] } = useQuery({
-    queryKey: ['personas'],
-    queryFn: getPersonas,
-  })
-
-  const { data: practicalTemplates = [] } = useQuery({
-    queryKey: ['templates', 'practical'],
-    queryFn: () => getTemplates('practical'),
-    enabled: personas.length > 0,
-  })
-  const { data: verifyTemplates = [] } = useQuery({
-    queryKey: ['templates', 'verify'],
-    queryFn: () => getTemplates('verify'),
-    enabled: personas.length > 0,
-  })
-  const { data: coachTemplates = [] } = useQuery({
-    queryKey: ['templates', 'coach'],
-    queryFn: () => getTemplates('coach'),
-    enabled: personas.length > 0,
-  })
-
-  const allTemplates = [
-    ...practicalTemplates.map((t) => ({ ...t, persona_type: 'practical' })),
-    ...verifyTemplates.map((t) => ({ ...t, persona_type: 'verify' })),
-    ...coachTemplates.map((t) => ({ ...t, persona_type: 'coach' })),
-  ]
-
-  const recentTemplates = [...allTemplates]
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 3)
-
-  const recentMembers = recentMembersData?.users ?? []
-
-  const STAT_CARDS = [
-    { label: '전체 회원', desc: '가입된 전체 사용자 수', value: stats?.total ?? 0, icon: Users, iconClass: 'text-blue-600', bgClass: 'bg-blue-100' },
-    { label: '활성 회원', desc: '현재 서비스 이용 가능 회원', value: stats?.active ?? 0, icon: UserCheck, iconClass: 'text-emerald-600', bgClass: 'bg-emerald-100' },
-    { label: '정지 회원', desc: '접근이 제한된 회원', value: stats?.suspended ?? 0, icon: UserX, iconClass: 'text-red-500', bgClass: 'bg-red-100' },
-    { label: '등록 프롬프트', desc: '등록된 AI 면접 프롬프트', value: allTemplates.length, icon: MessageSquare, iconClass: 'text-purple-600', bgClass: 'bg-purple-100' },
-  ]
-
+function WeeklyBarChart({ data = [] }) {
+  const max = Math.max(...data.map((d) => d.count), 1)
   return (
-    <div className="flex flex-col gap-8">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {STAT_CARDS.map(({ label, desc, value, icon: Icon, iconClass, bgClass }) => (
-          <div key={label} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium text-slate-500">{label}</p>
-                <p className="text-4xl font-bold tracking-tight text-slate-900">{value}</p>
-                <p className="text-xs text-slate-400">{desc}</p>
-              </div>
-              <div className={`rounded-full p-3 ${bgClass}`}>
-                <Icon className={`h-5 w-5 ${iconClass}`} />
-              </div>
-            </div>
+    <div className="flex h-[180px] items-end gap-3">
+      {data.map((d) => {
+        const date = new Date(d.date + 'T00:00:00')
+        const label = DAY_LABEL[date.getDay()]
+        const barH = Math.max(Math.round((d.count / max) * 140), 4)
+        return (
+          <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+            <span className="text-[11px] text-[#666666]">{d.count || ''}</span>
+            <div className="w-full rounded-t-[3px] bg-[#08CB00]" style={{ height: barH }} />
+            <span className="text-[11px] text-[#AAAAAA]">{label}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function StatCard({ label, value }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl bg-[#1A2200] p-5 shadow-sm">
+      <p className="text-[26px] font-bold leading-none tracking-tight text-[#EEEEEE]">{value}</p>
+      <p className="text-sm text-[#AAAAAA]">{label}</p>
+    </div>
+  )
+}
+
+function StatGroup({ title, items }) {
+  return (
+    <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
+      <h2 className="text-base font-semibold text-[#EEEEEE]">{title}</h2>
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {items.map((it) => (
+          <div key={it.label}>
+            <p className="text-xl font-bold text-[#EEEEEE]">{it.value}</p>
+            <p className="text-xs text-[#AAAAAA]">{it.label}</p>
           </div>
         ))}
       </div>
+    </div>
+  )
+}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-base font-semibold text-slate-900">최근 가입 회원</h2>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">이름</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">이메일</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">가입일</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentMembers.map((user, idx) => (
-                <tr
-                  key={user.id}
-                  className={idx % 2 === 0 ? 'hover:bg-slate-50' : 'bg-slate-50/50 hover:bg-slate-100/60'}
-                >
-                  <td className="px-6 py-3.5 font-medium text-slate-900">{user.name}</td>
-                  <td className="px-6 py-3.5 text-slate-500">{user.email}</td>
-                  <td className="px-6 py-3.5 text-slate-400">
-                    {user.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+export default function Dashboard() {
+  const { data: stats, isLoading, isError, refetch } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: getDashboardStats,
+    refetchInterval: 30_000,
+  })
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h2 className="text-base font-semibold text-slate-900">최근 프롬프트</h2>
-          </div>
-          <div className="flex flex-col divide-y divide-slate-100">
-            {recentTemplates.map((tpl) => (
-              <div key={tpl.template_id} className="flex flex-col gap-1.5 px-6 py-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-slate-900">{tpl.title}</p>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${PERSONA_COLOR[tpl.persona_type]}`}>
-                    {PERSONA_LABEL[tpl.persona_type]}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">
-                  {new Date(tpl.created_at).toLocaleDateString('ko-KR')} 생성
-                </p>
-              </div>
-            ))}
-            {recentTemplates.length === 0 && (
-              <p className="px-6 py-8 text-center text-sm text-slate-400">등록된 프롬프트가 없습니다.</p>
-            )}
-          </div>
+  if (isLoading) {
+    return <p className="py-16 text-center text-sm text-[#AAAAAA]">대시보드를 불러오는 중...</p>
+  }
+  if (isError || !stats) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm text-[#FF5555]">대시보드 통계를 불러오지 못했습니다.</p>
+        <button onClick={() => refetch()} className="mt-3 rounded-md bg-[#08CB00] px-4 py-1.5 text-sm font-medium text-[#000000] hover:bg-[#05A000]">다시 시도</button>
+      </div>
+    )
+  }
+
+  const reports = stats.reports ?? {}
+  const evals = stats.evaluations ?? {}
+  const points = stats.points ?? {}
+  const guardrails = stats.guardrails ?? {}
+
+  const MEMBER_CARDS = [
+    { label: '전체 회원', value: statNum(stats.total_members) },
+    { label: '활성 회원', value: statNum(stats.active_members) },
+    { label: '휴면 회원', value: statNum(stats.suspended_members) },
+    { label: '탈퇴 회원', value: statNum(stats.withdrawn_members) },
+    { label: '신규 회원', value: statNum(stats.new_members) },
+    { label: '완료 면접', value: statNum(stats.completed_sessions) },
+  ]
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold text-[#EEEEEE]">대시보드</h1>
+        <p className="mt-1 text-sm text-[#AAAAAA]">실제 집계 통계입니다. 미집계 항목은 0으로 위장하지 않고 "미집계"로 표시합니다.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+        {MEMBER_CARDS.map((c) => <StatCard key={c.label} {...c} />)}
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <StatGroup title="리포트 · 평가" items={[
+          { label: '전체 리포트', value: statNum(stats.total_reports) },
+          { label: '리포트 성공', value: statNum(reports.success) },
+          { label: '리포트 실패', value: statNum(reports.failed) },
+          { label: '평가 완료', value: statNum(evals.completed) },
+          { label: '평가 실패', value: statNum(evals.failed) },
+          { label: '면접 세션', value: statNum(stats.total_sessions) },
+        ]} />
+        <StatGroup title="LLM · 가드레일" items={[
+          { label: 'AI 호출', value: statNum(stats.ai_calls) },
+          { label: 'API 오류', value: statNum(stats.error_count) },
+          { label: '이번 달 비용', value: statMoney(stats.monthly_cost) },
+          { label: '가드레일 이벤트', value: statNum(guardrails.event_count) },
+        ]} />
+        <StatGroup title="포인트" items={[
+          { label: '적립', value: statNum(points.earned) },
+          { label: '차감', value: statNum(points.used) },
+          { label: '환불', value: statNum(points.refunded) },
+          { label: '거래 수', value: statNum(points.transaction_count) },
+        ]} />
+        <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
+          <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
+          <div className="mt-6"><WeeklyBarChart data={stats.weekly_sessions ?? []} /></div>
         </div>
       </div>
     </div>
