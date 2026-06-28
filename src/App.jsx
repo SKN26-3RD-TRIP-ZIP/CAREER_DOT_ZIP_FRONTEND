@@ -15,6 +15,7 @@ import SignupPage from './pages/auth/SignupPage.jsx'
 import SignupCompletePage from './pages/auth/SignupCompletePage.jsx'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage.jsx'
+import SocialTermsPage from './pages/auth/SocialTermsPage.jsx'
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx'
 import QuestionPacksPage from './pages/interview/QuestionPacksPage.jsx'
 import GrowthDashboardPage from './pages/mypage/GrowthDashboardPage.jsx'
@@ -136,8 +137,15 @@ function App() {
       <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-      {/* 소셜 로그인 콜백 (Google/Kakao). redirect_uri 는 이 경로로 설정한다. */}
+      {/* 소셜 로그인 콜백: Backend 가 302 로 일회용 code 를 전달하는 Frontend 경로 */}
+      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+      {/* 하위호환: 기존 provider 별 콜백 경로도 동일 페이지로 처리 */}
       <Route path="/auth/oauth/:provider/callback" element={<OAuthCallbackPage />} />
+
+      {/* 소셜 간편가입 필수 약관 동의 화면 (토큰 필요) */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/signup/social/terms" element={<SocialTermsPage />} />
+      </Route>
 
       {/* 어드민 라우트 */}
       <Route path="/admin/login" element={<Login />} />

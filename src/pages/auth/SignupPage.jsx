@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signup as signupApi } from '../../api/authApi';
+import SocialLoginButtons from '../../components/auth/SocialLoginButtons';
 import { Alert, AuthShell, Button, Field, StepIndicator, inputClass } from '../../components/ui/DemoLayout';
 
 const SIGNUP_STEPS = ['계정 정보', '약관 동의', '이메일 인증', '완료'];
@@ -162,6 +163,7 @@ function SignupPage() {
           <Button type="submit" className="w-full">
             다음
           </Button>
+          <SocialLoginButtons mode="signup" next="/mypage" />
         </form>
       ) : (
         <div className="space-y-5">

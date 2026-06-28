@@ -1,22 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { getMe, oauthCallback } from '../../api/authApi';
-import { getErrorCode, toUserMessage } from '../../api/errors';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { getMe, oauthExchange } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { resolveAuthedRedirect } from '../../utils/authNavigation';
+import { OAUTH_PROVIDER_KEY, providerLabel, runOAuthExchange } from '../../utils/oauthFlow';
 import { Alert, AuthShell, Button } from '../../components/ui/DemoLayout';
-import { OAUTH_NEXT_KEY, OAUTH_STATE_KEY } from '../../components/auth/SocialLoginButtons';
-
-const PROVIDER_LABEL = { google: 'Google', kakao: '카카오' };
 
 function clearOAuthSession() {
-  sessionStorage.removeItem(OAUTH_STATE_KEY);
-  sessionStorage.removeItem(OAUTH_NEXT_KEY);
-  sessionStorage.removeItem('careerzip_oauth_provider');
+  sessionStorage.removeItem('careerzip_oauth_state');
+  sessionStorage.removeItem('careerzip_oauth_next');
+  sessionStorage.removeItem(OAUTH_PROVIDER_KEY);
 }
 
+/**
+ * Frontend OAuth callback. Backend 가 302 로 전달한 일회용 code 를 받아 토큰으로 교환한다.
+ *  - URL 에는 code 또는 error 만 존재(토큰/state 없음)
+ *  - exchange 성공: 기존 이메일 로그인과 동일하게 access token 저장 → next_path 이동
+ *  - React StrictMode 에서도 exchange 가 두 번 호출되지 않도록 보호(processedRef + claimExchange)
+ */
 export default function OAuthCallbackPage() {
-  const { provider } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const reset = useAuthStore((s) => s.reset);
@@ -26,78 +28,37 @@ export default function OAuthCallbackPage() {
   const [error, setError] = useState('');
   const processedRef = useRef(false);
 
-  const label = PROVIDER_LABEL[provider] || '소셜';
+  const provider = (typeof window !== 'undefined' && sessionStorage.getItem(OAUTH_PROVIDER_KEY)) || '';
+  const label = providerLabel(provider);
 
   useEffect(() => {
     if (processedRef.current) return;
     processedRef.current = true;
 
-    const providerError = params.get('error');
-    const errorDescription = params.get('error_description');
-    const code = params.get('code');
-    const state = params.get('state');
-
-    // 1) 사용자가 제공자 화면에서 취소했거나 제공자 오류
-    if (providerError) {
-      clearOAuthSession();
-      if (providerError === 'access_denied') {
-        setError('소셜 로그인을 취소했습니다. 다시 시도하시려면 아래 버튼을 눌러 주세요.');
-      } else {
-        setError(errorDescription || `${label} 로그인 중 오류가 발생했습니다. 다시 시도해 주세요.`);
-      }
-      return;
-    }
-
-    // 2) code/state 누락
-    if (!code || !state) {
-      clearOAuthSession();
-      setError('소셜 로그인 응답이 올바르지 않습니다. 다시 시도해 주세요.');
-      return;
-    }
-
-    // 3) 클라이언트측 state 일치 검증(최종 검증은 백엔드 서명 검증)
-    const savedState = sessionStorage.getItem(OAUTH_STATE_KEY);
-    if (savedState && savedState !== state) {
-      clearOAuthSession();
-      setError('로그인 요청이 변조되었거나 만료되었습니다. 다시 시도해 주세요.');
-      return;
-    }
-
-    const savedNext = sessionStorage.getItem(OAUTH_NEXT_KEY) || '';
-    let active = true;
-
     (async () => {
-      try {
-        // 직전 계정 잔존 상태 제거 후 새 토큰 저장
-        reset();
-        const { data } = await oauthCallback(provider, { code, state });
-        if (!data?.access_token) throw new Error('no access token');
-        setToken(data.access_token);
-
-        const me = await getMe();
-        if (!active) return;
-        setUser(me.data);
-        clearOAuthSession();
-        navigate(resolveAuthedRedirect(me.data, savedNext || data.next_path), { replace: true });
-      } catch (err) {
-        if (!active) return;
-        reset();
-        clearOAuthSession();
-        const code2 = getErrorCode(err);
-        if (code2 === 'OAUTH_EMAIL_REQUIRED') {
-          setError('이메일 제공에 동의해야 가입할 수 있습니다. 카카오 계정의 이메일 제공 동의 후 다시 시도해 주세요.');
-        } else if (code2 === 'OAUTH_ACCOUNT_BLOCKED') {
-          setError('이 계정으로는 소셜 로그인을 할 수 없습니다. (탈퇴 또는 정지된 계정)');
-        } else {
-          setError(toUserMessage(err, `${label} 로그인에 실패했습니다. 다시 시도해 주세요.`));
-        }
+      const result = await runOAuthExchange({
+        params,
+        provider,
+        deps: {
+          exchange: oauthExchange,
+          getMe,
+          reset,
+          setToken,
+          setUser,
+          resolveAuthed: resolveAuthedRedirect,
+        },
+      });
+      if (result.skipped) return;
+      clearOAuthSession();
+      if (result.ok) {
+        navigate(result.redirect, { replace: true });
+      } else {
+        setError(result.error);
       }
     })();
-
-    return () => {
-      active = false;
-    };
-  }, [params, provider, navigate, reset, setToken, setUser, label]);
+    // 마운트 시 1회만 실행(파라미터는 진입 시점 값 사용). StrictMode 는 processedRef 로 보호.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (error) {
     return (

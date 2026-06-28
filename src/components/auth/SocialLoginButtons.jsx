@@ -1,39 +1,39 @@
 import { useState } from 'react';
 import { oauthStart } from '../../api/authApi';
 import { isEnvRequired, toUserMessage } from '../../api/errors';
+import { isProviderEnabled, mapOAuthError, OAUTH_PROVIDER_KEY, DEFAULT_OAUTH_NEXT } from '../../utils/oauthFlow';
 import { Alert } from '../ui/DemoLayout';
 
 const OAUTH_STATE_KEY = 'careerzip_oauth_state';
-const OAUTH_PROVIDER_KEY = 'careerzip_oauth_provider';
 const OAUTH_NEXT_KEY = 'careerzip_oauth_next';
-
-// VITE_*_OAUTH_ENABLED 가 명시적으로 'false' 면 버튼 비활성(준비 중) 처리.
-function isProviderEnabled(flag) {
-  return String(flag ?? 'true').toLowerCase() !== 'false';
-}
 
 const PROVIDERS = [
   {
     key: 'google',
-    label: 'Google로 계속하기',
+    loginLabel: 'Google로 계속하기',
+    signupLabel: 'Google로 간편회원가입',
     enabled: isProviderEnabled(import.meta.env.VITE_GOOGLE_OAUTH_ENABLED),
     className: 'border-[rgba(0,0,0,0.18)] bg-white text-[#000000] hover:bg-[#F5F5F5]',
   },
   {
     key: 'kakao',
-    label: '카카오로 계속하기',
+    loginLabel: '카카오로 계속하기',
+    signupLabel: '카카오로 간편회원가입',
     enabled: isProviderEnabled(import.meta.env.VITE_KAKAO_OAUTH_ENABLED),
     className: 'border-[#FDDC3F] bg-[#FEE500] text-[#191600] hover:brightness-95',
   },
 ];
 
 /**
- * 소셜 로그인 시작 버튼 (Google / Kakao).
- *  - 클릭 → GET /auth/oauth/{provider}/start → state 보관 → provider 인가 URL 로 이동
- *  - 503 ENV_REQUIRED → "준비 중" 안내(Mock 성공으로 처리하지 않음)
- *  - 기타 오류 → 메시지 + 재시도 가능
+ * 소셜 로그인/간편가입 버튼 (Google / Kakao). 로그인·회원가입이 같은 OAuth 시작 흐름을 공유한다.
+ *  - 클릭 → GET /auth/oauth/{provider}/start → provider 인가 URL 로 이동
+ *  - mode='signup' 이면 버튼 문구만 '간편회원가입' 으로 바뀐다(중복 함수 없음)
+ *  - 503 ENV_REQUIRED → "준비 중" 안내(Mock 성공으로 처리하지 않음). Kakao 미설정은 전용 안내.
+ *
+ * @param {string} [next]  인증 완료 후 이동 경로(기본 /mypage)
+ * @param {'login'|'signup'} [mode]
  */
-export default function SocialLoginButtons({ next }) {
+export default function SocialLoginButtons({ next, mode = 'login' }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -42,21 +42,20 @@ export default function SocialLoginButtons({ next }) {
     setError('');
     setNotice('');
     setBusy(provider);
+    const dest = next || DEFAULT_OAUTH_NEXT;
     try {
-      const { data } = await oauthStart(provider, next);
-      // 콜백에서 클라이언트측 state 일치 검증/원래 경로 복원을 위해 보관
+      const { data } = await oauthStart(provider, dest, mode);
       sessionStorage.setItem(OAUTH_STATE_KEY, data?.state || '');
       sessionStorage.setItem(OAUTH_PROVIDER_KEY, provider);
-      sessionStorage.setItem(OAUTH_NEXT_KEY, next || data?.next_path || '');
+      sessionStorage.setItem(OAUTH_NEXT_KEY, dest);
       if (!data?.auth_url) {
         throw new Error('authorization url missing');
       }
       window.location.assign(data.auth_url);
     } catch (err) {
       if (isEnvRequired(err)) {
-        setNotice(
-          `${provider === 'google' ? 'Google' : '카카오'} 로그인은 현재 설정 준비 중입니다. 이메일 로그인을 이용해 주세요.`
-        );
+        // Provider 미설정(503). Kakao 는 전용 안내, Google 은 일반 준비 중 안내.
+        setNotice(mapOAuthError('OAUTH_PROVIDER_NOT_CONFIGURED', provider));
       } else {
         setError(toUserMessage(err, '소셜 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.'));
       }
@@ -75,11 +74,18 @@ export default function SocialLoginButtons({ next }) {
         <button
           key={p.key}
           type="button"
+          data-provider={p.key}
           disabled={!p.enabled || busy !== null}
           onClick={() => handleStart(p.key)}
           className={`inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${p.className}`}
         >
-          {busy === p.key ? '연결 중…' : p.enabled ? p.label : `${p.label} (준비 중)`}
+          {busy === p.key
+            ? '연결 중…'
+            : p.enabled
+            ? mode === 'signup'
+              ? p.signupLabel
+              : p.loginLabel
+            : `${mode === 'signup' ? p.signupLabel : p.loginLabel} (준비 중)`}
         </button>
       ))}
       {notice && <Alert tone="info">{notice}</Alert>}
@@ -88,4 +94,4 @@ export default function SocialLoginButtons({ next }) {
   );
 }
 
-export { OAUTH_STATE_KEY, OAUTH_PROVIDER_KEY, OAUTH_NEXT_KEY };
+export { OAUTH_STATE_KEY, OAUTH_NEXT_KEY, OAUTH_PROVIDER_KEY };
