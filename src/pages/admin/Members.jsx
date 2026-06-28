@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getMembers, getMemberStats, setUserStatus, deleteMember, inviteMember } from '../../api/adminApi'
+import { getMembers, getMemberStats, setUserStatus, withdrawMember, inviteMember } from '../../api/adminApi'
 
 /* ── 상태 배지 ─────────────────────────────────────────────────────────── */
 const STATUS_CFG = {
-  active:  { label: '활성', cls: 'bg-[#0A2200] text-[#3DDD37]' },
+  active:  { label: '활성', cls: 'bg-[#0F172A] text-[#3DDD37]' },
   dormant: { label: '휴면', cls: 'bg-[#2A2000] text-[#DDAA00]' },
   banned:  { label: '차단', cls: 'bg-[#2A0000] text-[#FF5555]' },
+  withdrawn: { label: '탈퇴', cls: 'bg-[#1E293B] text-[#AAAAAA]' },
 }
 
 function StatusBadge({ status }) {
-  const cfg = STATUS_CFG[status] ?? { label: status, cls: 'bg-[#1A2200] text-[#AAAAAA]' }
+  const cfg = STATUS_CFG[status] ?? { label: status, cls: 'bg-[#1E293B] text-[#AAAAAA]' }
   return (
     <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${cfg.cls}`}>
       {cfg.label}
@@ -23,7 +24,7 @@ function Avatar({ name, size = 'sm' }) {
   const first = name?.[0] ?? '?'
   const sz = size === 'lg' ? 'h-14 w-14 text-xl' : 'h-8 w-8 text-sm'
   return (
-    <div className={`flex shrink-0 items-center justify-center rounded-full bg-[#0A2200] font-bold text-[#3DDD37] ${sz}`}>
+    <div className={`flex shrink-0 items-center justify-center rounded-full bg-[#0F172A] font-bold text-[#3DDD37] ${sz}`}>
       {first}
     </div>
   )
@@ -33,17 +34,17 @@ function Avatar({ name, size = 'sm' }) {
 function MemberDetailPanel({ user, onStatusChange }) {
   if (!user) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl bg-[#1A2200] p-6 shadow-sm">
+      <div className="flex h-full items-center justify-center rounded-xl bg-[#1E293B] p-6 shadow-sm">
         <p className="text-sm text-[#666666]">회원을 선택하면 상세 정보를 확인할 수 있습니다.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
+    <div className="rounded-xl bg-[#1E293B] p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-base font-semibold text-[#EEEEEE]">선택 회원 상세</h3>
-        <span className="rounded-full bg-[#0A2200] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">
+        <span className="rounded-full bg-[#0F172A] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">
           {user.is_staff ? 'Admin' : 'User'}
         </span>
       </div>
@@ -86,15 +87,15 @@ function MemberDetailPanel({ user, onStatusChange }) {
 }
 
 /* ── 회원 액션 모달 ─────────────────────────────────────────────────────── */
-function MemberModal({ user, onClose, onSetStatus, onDelete }) {
+function MemberModal({ user, onClose, onSetStatus, onWithdraw }) {
   const [loading, setLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
 
   const handleAction = async (action) => {
     setLoading(true)
     try {
-      if (action === 'delete') {
-        await onDelete(user.id)
+      if (action === 'withdraw') {
+        await onWithdraw(user.id)
       } else {
         await onSetStatus(user.id, action)
       }
@@ -108,30 +109,30 @@ function MemberModal({ user, onClose, onSetStatus, onDelete }) {
     dormant: '휴면 전환',
     banned:  '차단',
     active:  '활성화',
-    delete:  '탈퇴 처리',
+    withdraw: '탈퇴 처리',
   }
 
   const ACTION_DESC = {
     dormant: '해당 회원을 휴면 상태로 전환합니다. 로그인이 제한되며 언제든 활성화할 수 있습니다.',
     banned:  '해당 회원을 영구 차단합니다. 차단된 이메일로는 재가입이 불가능합니다. (관리자 초대를 통해서만 재가입 가능)',
     active:  '해당 회원을 다시 활성화합니다.',
-    delete:  '계정과 모든 데이터를 삭제합니다. 이 작업은 되돌릴 수 없습니다.',
+    withdraw: '계정을 탈퇴 처리합니다. 보관 기간 후 개인정보가 익명화되며, 이 작업은 되돌릴 수 없습니다.',
   }
 
   const ACTION_COLOR = {
     dormant: 'bg-yellow-500 hover:bg-yellow-600',
     banned:  'bg-red-600 hover:bg-red-700',
     active:  'bg-[#08CB00] hover:bg-[#05A000]',
-    delete:  'bg-red-500 hover:bg-red-600',
+    withdraw: 'bg-red-500 hover:bg-red-600',
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[#1A2200] p-7 shadow-2xl">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[#1E293B] p-7 shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-[#666666] hover:bg-[#253900]"
+          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-[#666666] hover:bg-[#334155]"
         >
           ✕
         </button>
@@ -150,7 +151,7 @@ function MemberModal({ user, onClose, onSetStatus, onDelete }) {
         </div>
 
         {confirmAction ? (
-          <div className={`rounded-lg border p-4 ${confirmAction === 'active' ? 'border-[#0A3300] bg-[#0A1E00]' : 'border-[#3A0000] bg-[#1A0000]'}`}>
+          <div className={`rounded-lg border p-4 ${confirmAction === 'active' ? 'border-[#334155] bg-[#0F172A]' : 'border-[#3A0000] bg-[#1A0000]'}`}>
             <p className={`mb-2 text-sm font-semibold ${confirmAction === 'active' ? 'text-[#3DDD37]' : 'text-[#FF5555]'}`}>
               {ACTION_LABELS[confirmAction]}하시겠습니까?
             </p>
@@ -161,7 +162,7 @@ function MemberModal({ user, onClose, onSetStatus, onDelete }) {
               <button
                 onClick={() => setConfirmAction(null)}
                 disabled={loading}
-                className="flex-1 rounded-lg border border-[#253900] py-2 text-sm font-medium text-[#AAAAAA] hover:bg-[#253900] disabled:opacity-50"
+                className="flex-1 rounded-lg border border-[#334155] py-2 text-sm font-medium text-[#AAAAAA] hover:bg-[#334155] disabled:opacity-50"
               >
                 취소
               </button>
@@ -174,6 +175,10 @@ function MemberModal({ user, onClose, onSetStatus, onDelete }) {
               </button>
             </div>
           </div>
+        ) : user.status === 'withdrawn' ? (
+          <p className="rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-xs text-[#AAAAAA] text-center">
+            이미 <span className="font-semibold text-[#EEEEEE]">탈퇴 처리</span>된 회원입니다.
+          </p>
         ) : (
           <div className="flex flex-col gap-2">
             {user.status === 'dormant' && (
@@ -206,7 +211,7 @@ function MemberModal({ user, onClose, onSetStatus, onDelete }) {
               </button>
             )}
             <button
-              onClick={() => setConfirmAction('delete')}
+              onClick={() => setConfirmAction('withdraw')}
               className="w-full rounded-lg border border-red-900 py-3 text-sm font-semibold text-red-500 hover:bg-red-900/30"
             >
               탈퇴 처리
@@ -242,10 +247,10 @@ function InviteModal({ onClose, onInvite }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[#1A2200] p-7 shadow-2xl">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[#1E293B] p-7 shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-[#666666] hover:bg-[#253900]"
+          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-[#666666] hover:bg-[#334155]"
         >
           ✕
         </button>
@@ -256,7 +261,7 @@ function InviteModal({ onClose, onInvite }) {
         </p>
 
         {result ? (
-          <div className={`rounded-lg p-4 ${result.success ? 'bg-[#0A1E00] text-[#3DDD37]' : 'bg-[#1A0000] text-[#FF5555]'}`}>
+          <div className={`rounded-lg p-4 ${result.success ? 'bg-[#0F172A] text-[#3DDD37]' : 'bg-[#1A0000] text-[#FF5555]'}`}>
             <p className="text-sm font-medium">{result.message}</p>
             <button
               onClick={onClose}
@@ -273,7 +278,7 @@ function InviteModal({ onClose, onInvite }) {
               placeholder="초대할 이메일 주소"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-[#253900] bg-[#111400] px-3 py-2.5 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
+              className="w-full rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-2.5 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
             />
             <button
               type="submit"
@@ -292,7 +297,7 @@ function InviteModal({ onClose, onInvite }) {
 /* ── 상단 스탯 카드 ──────────────────────────────────────────────────────── */
 function StatCard({ label, value, badge, badgeColor }) {
   return (
-    <div className="rounded-xl bg-[#1A2200] p-5 shadow-sm">
+    <div className="rounded-xl bg-[#1E293B] p-5 shadow-sm">
       <p className="mb-2 text-sm text-[#AAAAAA]">{label}</p>
       <p className="mb-3 text-[28px] font-bold leading-none text-[#EEEEEE]">
         {value?.toLocaleString() ?? '—'}
@@ -312,6 +317,7 @@ const TABS = [
   { key: 'active',  label: '활성', status: 'active' },
   { key: 'dormant', label: '휴면', status: 'dormant' },
   { key: 'banned',  label: '차단', status: 'banned' },
+  { key: 'withdrawn', label: '탈퇴', status: 'withdrawn' },
 ]
 
 export default function Members() {
@@ -367,8 +373,8 @@ export default function Members() {
     }
   }
 
-  const handleDelete = async (userId) => {
-    await deleteMember(userId)
+  const handleWithdraw = async (userId) => {
+    await withdrawMember(userId)
     queryClient.invalidateQueries({ queryKey: ['members'] })
     queryClient.invalidateQueries({ queryKey: ['member-stats'] })
     if (selectedUser?.id === userId) setSelectedUser(null)
@@ -400,18 +406,18 @@ export default function Members() {
       </div>
 
       {/* 스탯 카드 */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-5 xl:grid-cols-5">
         <StatCard
           label="전체 회원"
           value={stats?.total}
           badge={stats?.total_growth_rate != null ? `${stats.total_growth_rate > 0 ? '+' : ''}${stats.total_growth_rate}%` : undefined}
-          badgeColor="bg-[#0A2200] text-[#3DDD37]"
+          badgeColor="bg-[#0F172A] text-[#3DDD37]"
         />
         <StatCard
           label="활성 회원"
           value={stats?.active}
           badge={stats?.active_growth_rate != null ? `${stats.active_growth_rate > 0 ? '+' : ''}${stats.active_growth_rate}%` : undefined}
-          badgeColor="bg-[#0A2200] text-[#3DDD37]"
+          badgeColor="bg-[#0F172A] text-[#3DDD37]"
         />
         <StatCard
           label="휴면 회원"
@@ -425,12 +431,18 @@ export default function Members() {
           badge={stats?.banned ? `${stats.banned}명` : undefined}
           badgeColor="bg-[#2A0000] text-[#FF5555]"
         />
+        <StatCard
+          label="탈퇴 회원"
+          value={stats?.withdrawn}
+          badge={stats?.withdrawn ? `${stats.withdrawn}명` : undefined}
+          badgeColor="bg-[#1E293B] text-[#AAAAAA]"
+        />
       </div>
 
       {/* 검색 + 필터 바 */}
-      <div className="flex items-center gap-3 rounded-xl bg-[#1A2200] px-4 py-3 shadow-sm">
+      <div className="flex items-center gap-3 rounded-xl bg-[#1E293B] px-4 py-3 shadow-sm">
         <input
-          className="flex-1 rounded-lg border border-[#253900] bg-[#111400] px-3 py-2 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
+          className="flex-1 rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-2 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
           placeholder="이름, 이메일 검색"
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
@@ -444,14 +456,14 @@ export default function Members() {
                 'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
                 activeTab === key
                   ? 'bg-[#08CB00] text-[#000000]'
-                  : 'text-[#AAAAAA] hover:bg-[#253900]',
+                  : 'text-[#AAAAAA] hover:bg-[#334155]',
               ].join(' ')}
             >
               {label}
             </button>
           ))}
         </div>
-        <button className="rounded-lg bg-[#253900] px-4 py-2 text-sm font-semibold text-[#EEEEEE] hover:bg-[#1A2200] border border-[#253900]">
+        <button className="rounded-lg bg-[#334155] px-4 py-2 text-sm font-semibold text-[#EEEEEE] hover:bg-[#1E293B] border border-[#334155]">
           내보내기
         </button>
       </div>
@@ -459,8 +471,8 @@ export default function Members() {
       {/* 콘텐츠 2-컬럼 */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* 멤버 테이블 */}
-        <div className="col-span-2 rounded-xl bg-[#1A2200] shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#253900] px-6 py-4">
+        <div className="col-span-2 rounded-xl bg-[#1E293B] shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#334155] px-6 py-4">
             <h2 className="text-sm font-semibold text-[#EEEEEE]">회원 목록</h2>
             <span className="text-xs text-[#666666]">총 {total.toLocaleString()}명</span>
           </div>
@@ -476,7 +488,7 @@ export default function Members() {
                 <col className="w-[16%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-[#253900]">
+                <tr className="border-b border-[#334155]">
                   {['회원', '플랜', '상태', '면접', '가입일', '관리'].map((h) => (
                     <th
                       key={h}
@@ -487,7 +499,7 @@ export default function Members() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#253900]">
+              <tbody className="divide-y divide-[#334155]">
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="py-16 text-center text-sm text-[#666666]">
@@ -507,7 +519,7 @@ export default function Members() {
                       onClick={() => setSelectedUser(user)}
                       className={[
                         'cursor-pointer transition-colors',
-                        selectedUser?.id === user.id ? 'bg-[#0D1E00]' : 'hover:bg-[#253900]',
+                        selectedUser?.id === user.id ? 'bg-[#0F172A]' : 'hover:bg-[#334155]',
                       ].join(' ')}
                     >
                       <td className="pl-6 pr-4 py-3.5">
@@ -549,7 +561,7 @@ export default function Members() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-1 border-t border-[#253900] px-6 py-4">
+            <div className="flex justify-center gap-1 border-t border-[#334155] px-6 py-4">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
@@ -558,7 +570,7 @@ export default function Members() {
                     'h-7 w-7 rounded text-xs font-medium',
                     p === page
                       ? 'bg-[#08CB00] text-[#000000]'
-                      : 'text-[#AAAAAA] hover:bg-[#253900]',
+                      : 'text-[#AAAAAA] hover:bg-[#334155]',
                   ].join(' ')}
                 >
                   {p}
@@ -578,7 +590,7 @@ export default function Members() {
           user={modalUser}
           onClose={() => setModalUser(null)}
           onSetStatus={handleSetStatus}
-          onDelete={handleDelete}
+          onWithdraw={handleWithdraw}
         />
       )}
 

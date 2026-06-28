@@ -1,3 +1,4 @@
+import axios from 'axios';
 import axiosInstance from './axiosInstance';
 import { normalizeFinalReport } from './reportAdapter';
 import {
@@ -6,6 +7,11 @@ import {
   mockRoadmap,
   mockFeedback,
 } from './reportMock';
+
+// 공유 리포트 조회용 — 인증 헤더 없는 별도 인스턴스
+const publicAxios = axios.create({
+  baseURL: axiosInstance.defaults.baseURL,
+});
 
 /**
  * Evaluation / Report API.
@@ -26,8 +32,24 @@ export const reportApi = {
       const raw = { ...mockFinalReportResponse, session_id: sessionId };
       return normalizeFinalReport(await delay(raw));
     }
-    const res = await axiosInstance.get(`/sessions/${sessionId}/report`);
-    return normalizeFinalReport(res.data);
+    try {
+      // 200(done) → 완성, 202(processing) → 생성 중. 둘 다 정상 응답이므로 status로 구분.
+      const res = await axiosInstance.get(`/sessions/${sessionId}/report`);
+      return normalizeFinalReport(res.data);
+    } catch (err) {
+      const resp = err?.response;
+      // 503(생성 실패)은 폴링을 멈출 수 있도록 status='failed' 객체로 표면화한다(throw 대신).
+      // 그 외(네트워크/인증/404 등)는 react-query 에러로 전파.
+      if (resp?.status === 503 && resp?.data?.error_code === 'AI_REPORT_GENERATION_FAILED') {
+        return normalizeFinalReport({
+          ...resp.data,
+          session_id: sessionId,
+          status: 'failed',
+          summary: {},
+        });
+      }
+      throw err;
+    }
   },
 
   // FinalReport 생성 — POST /reports/sessions/{id}/generate (성공 시 201)
@@ -35,6 +57,26 @@ export const reportApi = {
     if (USE_MOCK) return normalizeFinalReport(await delay(mockFinalReportResponse));
     const res = await axiosInstance.post(`/reports/sessions/${sessionId}/generate`);
     return normalizeFinalReport(res.data);
+  },
+
+  // ── 공유 링크 ─────────────────────────────────────────────
+  // POST /reports/sessions/{id}/share-link → { share_url, expires_at, created }
+  createShareLink: async (sessionId) => {
+    const res = await axiosInstance.post(`/reports/sessions/${sessionId}/share-link`);
+    return res.data;
+  },
+
+  // GET /reports/share/{token}/ → summary raw (normalizeFinalReport로 정규화)
+  // 인증 불필요이므로 publicAxios 사용
+  getSharedReport: async (token) => {
+    if (USE_MOCK) {
+      const raw = { ...mockFinalReportResponse, session_id: 'shared' };
+      return normalizeFinalReport(await delay(raw));
+    }
+    const res = await publicAxios.get(`/reports/share/${token}/`);
+    // 백엔드 응답: { report_id, session_id, generated_at, summary, expires_at }
+    // normalizeFinalReport는 raw.summary를 기대하므로 그대로 전달
+    return { normalized: normalizeFinalReport(res.data), expires_at: res.data.expires_at };
   },
 
   // ── 고도화(보류) ───────────────────────────────────────────

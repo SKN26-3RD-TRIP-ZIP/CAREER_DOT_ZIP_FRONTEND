@@ -38,8 +38,8 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#000000]">
-      <div className="w-full max-w-sm rounded-xl border border-[#253900] bg-[#1A2200] p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-[#0B1120]">
+      <div className="w-full max-w-sm rounded-xl border border-[#334155] bg-[#1E293B] p-8 shadow-lg">
         <div className="mb-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#666666]">Admin</p>
           <h1 className="mt-1 text-3xl font-bold text-[#EEEEEE]">Career.zip</h1>
@@ -55,7 +55,7 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               required
-              className="rounded-md border border-[#253900] bg-[#111400] px-3 py-2 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
+              className="rounded-md border border-[#334155] bg-[#0F172A] px-3 py-2 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -67,7 +67,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              className="rounded-md border border-[#253900] bg-[#111400] px-3 py-2 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
+              className="rounded-md border border-[#334155] bg-[#0F172A] px-3 py-2 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
             />
           </div>
 

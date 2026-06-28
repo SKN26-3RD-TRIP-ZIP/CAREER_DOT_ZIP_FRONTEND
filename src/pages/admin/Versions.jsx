@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getPersonas, getAllTemplates, getVersions, createVersion, setDefaultVersion } from '../../api/adminApi'
 
@@ -48,7 +49,7 @@ function DeployForm({ template, versions, onClose, onDeployed }) {
       {/* 프롬프트 내용 */}
       <label className="mb-2 text-sm font-semibold text-[#CCCCCC]">프롬프트 내용</label>
       <textarea
-        className="mb-5 h-64 resize-none rounded-xl border border-[#253900] bg-[#111400] p-4 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
+        className="mb-5 h-64 resize-none rounded-xl border border-[#334155] bg-[#0F172A] p-4 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
         placeholder="당신은 [페르소나] 면접관 입니다. 지원자의 답변을 분석하고..."
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -57,7 +58,7 @@ function DeployForm({ template, versions, onClose, onDeployed }) {
       {/* 메모 */}
       <label className="mb-2 text-sm font-semibold text-[#CCCCCC]">메모</label>
       <textarea
-        className="mb-4 h-24 resize-none rounded-xl border border-[#253900] bg-[#111400] p-4 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
+        className="mb-4 h-24 resize-none rounded-xl border border-[#334155] bg-[#0F172A] p-4 text-sm text-[#EEEEEE] outline-none placeholder:text-[#444444] focus:border-[#08CB00]"
         placeholder="히스토리에 표시될 메모를 작성하세요."
         value={note}
         onChange={(e) => setNote(e.target.value)}
@@ -79,7 +80,7 @@ function DeployForm({ template, versions, onClose, onDeployed }) {
 }
 
 /* ── 버전 히스토리 ───────────────────────────────────────────────────────── */
-function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) {
+function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh, onTest }) {
   const [activating, setActivating] = useState(null)
   const [rollingBack, setRollingBack] = useState(null)
 
@@ -126,7 +127,7 @@ function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) 
       ) : (
         <div className="relative">
           {/* 타임라인 선 */}
-          <div className="absolute left-[7px] top-3 bottom-3 w-px bg-[#253900]" />
+          <div className="absolute left-[7px] top-3 bottom-3 w-px bg-[#334155]" />
 
           <div className="flex flex-col gap-0">
             {versions.map((ver) => {
@@ -139,19 +140,19 @@ function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) 
                       'relative z-10 mt-1 h-4 w-4 shrink-0 rounded-full border-2',
                       isActive
                         ? 'border-[#08CB00] bg-[#08CB00]'
-                        : 'border-[#AAAAAA] bg-[#1A2200]',
+                        : 'border-[#AAAAAA] bg-[#1E293B]',
                     ].join(' ')}
                   />
 
                   {/* 내용 */}
-                  <div className="flex flex-1 items-start justify-between gap-4 border-b border-[#253900] pb-4">
+                  <div className="flex flex-1 items-start justify-between gap-4 border-b border-[#334155] pb-4">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-[#EEEEEE]">
                           v{ver.version_number}
                         </span>
                         {isActive && (
-                          <span className="rounded-full bg-[#0A2200] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">
+                          <span className="rounded-full bg-[#0F172A] px-2.5 py-0.5 text-xs font-semibold text-[#3DDD37]">
                             활성
                           </span>
                         )}
@@ -167,19 +168,25 @@ function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) 
                           year: 'numeric', month: '2-digit', day: '2-digit',
                         }).replace(/\. /g, '.').slice(0, -1)}
                       </span>
+                      <button
+                        onClick={() => onTest(ver)}
+                        className="rounded-lg border border-[#08CB00] px-3 py-1 text-xs font-medium text-[#3DDD37] hover:bg-[#0F172A]"
+                      >
+                        테스트
+                      </button>
                       {!isActive && (
                         <>
                           <button
                             onClick={() => handleActivate(ver)}
                             disabled={activating === ver.prompt_ver_id}
-                            className="rounded-lg border border-[#253900] px-3 py-1 text-xs font-medium text-[#AAAAAA] hover:bg-[#253900] disabled:opacity-50"
+                            className="rounded-lg border border-[#334155] px-3 py-1 text-xs font-medium text-[#AAAAAA] hover:bg-[#334155] disabled:opacity-50"
                           >
                             {activating === ver.prompt_ver_id ? '...' : '활성화'}
                           </button>
                           <button
                             onClick={() => handleRollback(ver)}
                             disabled={rollingBack === ver.prompt_ver_id}
-                            className="rounded-lg border border-[#253900] px-3 py-1 text-xs font-medium text-[#AAAAAA] hover:bg-[#253900] disabled:opacity-50"
+                            className="rounded-lg border border-[#334155] px-3 py-1 text-xs font-medium text-[#AAAAAA] hover:bg-[#334155] disabled:opacity-50"
                           >
                             {rollingBack === ver.prompt_ver_id ? '...' : '롤백'}
                           </button>
@@ -199,6 +206,7 @@ function VersionHistory({ template, versions, isLoading, onDeploy, onRefresh }) 
 
 /* ── 메인 페이지 ─────────────────────────────────────────────────────────── */
 export default function Versions() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedPersonaId, setSelectedPersonaId] = useState(null)
   const [showDeploy, setShowDeploy] = useState(false)
@@ -235,6 +243,16 @@ export default function Versions() {
     queryClient.invalidateQueries({ queryKey: ['all-templates'] })
   }
 
+  const handleTestVersion = (version) => {
+    if (!activeTemplate || !version) return
+    const params = new URLSearchParams({
+      versionId: String(version.prompt_ver_id),
+      templateId: String(activeTemplate.template_id),
+      persona: activeTemplate.persona_type,
+    })
+    navigate(`/interview/setup-admin?${params.toString()}`)
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* 헤더 */}
@@ -259,8 +277,8 @@ export default function Versions() {
                 className={[
                   'rounded-xl border p-4 text-left transition-colors',
                   isSelected
-                    ? 'border-[#08CB00] bg-[#1A2200] shadow-sm'
-                    : 'border-transparent bg-[#1A2200] shadow-sm hover:border-[#253900]',
+                    ? 'border-[#08CB00] bg-[#1E293B] shadow-sm'
+                    : 'border-transparent bg-[#1E293B] shadow-sm hover:border-[#334155]',
                 ].join(' ')}
               >
                 <p className={`text-sm font-semibold ${isSelected ? 'text-[#EEEEEE]' : 'text-[#AAAAAA]'}`}>
@@ -275,7 +293,7 @@ export default function Versions() {
         </div>
 
         {/* 우: 버전 히스토리 or 새 버전 폼 */}
-        <div className="flex-1 rounded-xl bg-[#1A2200] p-6 shadow-sm">
+        <div className="flex-1 rounded-xl bg-[#1E293B] p-6 shadow-sm">
           {!selectedPersona || !activeTemplate ? (
             <p className="py-20 text-center text-sm text-[#666666]">
               좌측에서 페르소나를 선택하세요.
@@ -294,6 +312,7 @@ export default function Versions() {
               isLoading={versionsLoading}
               onDeploy={() => setShowDeploy(true)}
               onRefresh={handleRefresh}
+              onTest={handleTestVersion}
             />
           )}
         </div>

@@ -31,6 +31,7 @@ import Versions from './pages/admin/Versions.jsx'
 import Guardrails from './pages/admin/Guardrails.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
+import SharedReportPage from './pages/evaluation/SharedReportPage.jsx'
 import SourceSelectionPage from './pages/analysis/SourceSelectionPage.jsx'
 import ResultPage from './pages/analysis/ResultPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
@@ -85,6 +86,9 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/report/*" element={<EvaluationRoutes />} />
       </Route>
+
+      {/* 공유 리포트 — 인증 불필요 공개 라우트 */}
+      <Route path="/shared/:token" element={<SharedReportPage />} />
 
       {/* 입력·면접 흐름 보호 라우트: 토큰 필요 (P0 보호 라우트 완성) */}
       <Route element={<ProtectedRoute />}>
@@ -145,6 +149,18 @@ function App() {
         <Route path="/admin/audit-logs" element={<AuditLogs />} />
         <Route path="/admin/versions" element={<Versions />} />
         <Route path="/admin/guardrails" element={<Guardrails />} />
+        <Route
+          path="/interview/setup-admin"
+          element={<SessionSetupPage adminMode />}
+        />
+        <Route
+          path="/interview/question-admin"
+          element={<InterviewQuestionCheckPage adminMode />}
+        />
+        <Route
+          path="/report-admin/*"
+          element={<EvaluationRoutes adminMode />}
+        />
       </Route>
 
       {/* fallback */}

@@ -4,54 +4,48 @@ import ReportLayout from '../../components/report/ReportLayout';
 import StateView from '../../components/report/StateView';
 import RadarChart from '../../components/report/charts/RadarChart';
 import ScoreBreakdownBars from '../../components/report/charts/ScoreBreakdownBars';
-
-// 레이더 후보 축 — null 값인 축은 buildRadar에서 자동 제외됨
-// BEI / CBI / Speech 는 항상 존재. Technical(SBERT) / Grounding 은
-// 기술 질문이 한 개 이상 있을 때만 백엔드가 값을 채워준다.
-const RADAR_AXES = [
-  { key: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
-  { key: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
-  { key: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
-  { key: 'technical_score', axis: 'Technical', label: '기술 깊이' },
-  { key: 'grounding_score', axis: 'Grounding', label: '근거 제시' },
-];
+import { RADAR_AXES, metricDescription } from '../../utils/reportLabels';
 
 function buildRadar(r) {
   const metrics = r.score_summary?.metrics;
   if (metrics) {
-    // null/undefined/빈 문자열 축은 제외하고 숫자 문자열은 정상 변환한다.
     return RADAR_AXES
+      .filter((a) => metrics[a.metric] != null && metrics[a.metric] !== '')
       .map((a) => {
-        const rawScore = metrics[a.key];
-        if (rawScore === null || rawScore === undefined || rawScore === '') {
-          return null;
-        }
-
-        const score = Number(rawScore);
-        return Number.isFinite(score)
-          ? { axis: a.axis, label: a.label, score }
-          : null;
+        const score = Number(metrics[a.metric]);
+        return Number.isFinite(score) ? { axis: a.axis, label: a.label, score } : null;
       })
       .filter(Boolean);
   }
   return (r.score_detail?.radar ?? []).filter((item) => item?.score != null);
 }
 
-export default function OverallScorePage() {
+export default function OverallScorePage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
   const report = useFinalReport(sessionId);
+  const reportBasePath = adminMode ? '/report-admin' : '/report';
 
   const back = (
-    <button onClick={() => navigate(`/report/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
+    <button onClick={() => navigate(`${reportBasePath}/${sessionId}`)} className="rounded-xl bg-[#253900] px-5 py-3 text-sm font-bold text-[#EEEEEE] hover:opacity-90">
       리포트로 돌아가기
     </button>
   );
 
-  if (report.isLoading || report.isError || !report.data) {
+  const reportStatus = report.data?.status;
+  const isGenerating = reportStatus === 'processing';
+  const isFailed = reportStatus === 'failed';
+
+  if (report.isLoading || isGenerating || report.isError || isFailed || !report.data) {
     return (
-      <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
-        <StateView isLoading={report.isLoading} isError={report.isError} error={report.error} onRetry={report.refetch} />
+      <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back} adminMode={adminMode}>
+        <StateView
+          isLoading={report.isLoading}
+          isGenerating={isGenerating}
+          isError={report.isError || isFailed}
+          error={isFailed ? { response: { status: 503 } } : report.error}
+          onRetry={report.refetch}
+        />
       </ReportLayout>
     );
   }
@@ -77,9 +71,9 @@ export default function OverallScorePage() {
       : Number(rawGroundingScore);
 
   const breakdownRows = [
-    ...categories.map((c) => ({ label: c.label, score: c.score })),
+    ...categories.map((c) => ({ label: c.label, score: c.score, description: metricDescription(c.label) })),
     ...(Number.isFinite(groundingScore)
-      ? [{ label: '근거 제시', score: Math.round(groundingScore) }]
+      ? [{ label: '근거 제시', score: Math.round(groundingScore), description: metricDescription('근거 제시') }]
       : []),
     { label: '전체 요약', score: r.score_summary?.overall_score },
   ]
@@ -96,7 +90,7 @@ export default function OverallScorePage() {
     .filter((row) => Number.isFinite(row.score));
 
   return (
-    <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back}>
+    <ReportLayout title="Overall Score 상세" subtitle="종합 점수의 산출 근거와 4축 분석, 항목별 점수 Breakdown을 확인합니다." action={back} adminMode={adminMode}>
       {/* 평가 기준 안내 */}
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[rgba(0,0,0,0.08)] bg-[#EEEEEE] px-4 py-2.5">
         <span className="mr-1 shrink-0 text-xs text-[rgba(0,0,0,0.45)]">이 세션 평가 기준</span>
@@ -116,7 +110,7 @@ export default function OverallScorePage() {
           </div>
           <button
             type="button"
-            onClick={() => navigate(`/report/${sessionId}/feedback`)}
+            onClick={() => navigate(`${reportBasePath}/${sessionId}/feedback`)}
             className="flex flex-1 w-full items-center gap-4 rounded-xl bg-[#08CB00] p-6 text-left text-[#EEEEEE] shadow-sm transition-colors hover:opacity-90"
           >
             <div className="text-6xl leading-none">{persona.avatar_emoji}</div>

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Mic, RotateCcw } from 'lucide-react';
 import { coverLetterApi } from '../../api/coverLetterApi';
 import { interviewApi } from '../../api/interviewApi';
 import { jdApi } from '../../api/jdApi';
 import { projectApi } from '../../api/projectApi';
 import { resumeApi } from '../../api/resumeApi';
+import { getPromptVersionTestSetup } from '../../api/adminApi';
 import { useJdStore } from '../../store/jdStore';
 import { useInterviewStore } from '../../store/interviewStore';
 import { useMicrophoneSetupCheck } from '../../hooks/useMicrophoneSetupCheck';
@@ -140,12 +141,18 @@ function OptionCard({ option, checked, name, onChange }) {
   );
 }
 
-function SelectableItem({ selected, title, meta, onClick }) {
+function SelectableItem({ selected, title, meta, onClick, disabled = false }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
       className={`w-full rounded-lg border p-4 text-left transition ${
+        disabled
+          ? selected
+            ? 'cursor-not-allowed border-[#253900] bg-[#08CB00] text-[#000000] opacity-80 shadow-[0_8px_18px_rgba(0,0,0,0.14)]'
+            : 'cursor-not-allowed border-[rgba(0,0,0,0.12)] bg-[rgba(0,0,0,0.04)] text-[rgba(0,0,0,0.45)]'
+          :
         selected
           ? 'border-[#253900] bg-[#08CB00] text-[#000000] shadow-[0_8px_18px_rgba(0,0,0,0.14)]'
           : 'border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] text-[#000000] hover:border-[#253900]'
@@ -160,6 +167,7 @@ function SelectableItem({ selected, title, meta, onClick }) {
   );
 }
 
+// 음성 면접 시작 전 마이크 권한, 장치 선택, 실제 입력 레벨을 확인하는 패널.
 function MicrophoneCheckPanel({ micCheck, required }) {
   const {
     isSupported,
@@ -286,8 +294,10 @@ function MicrophoneCheckPanel({ micCheck, required }) {
   );
 }
 
-function SessionSetupPage() {
+// JD/이력서/프로젝트를 선택하고 면접 세션과 질문을 생성한 뒤 실제 질문 화면으로 넘기는 설정 페이지.
+function SessionSetupPage({ adminMode = false }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { jdId, setJd } = useJdStore();
   const { setSessionId, setQuestions, setCurrentQuestionIndex, resetInterview } = useInterviewStore();
   const micCheck = useMicrophoneSetupCheck();
@@ -309,6 +319,7 @@ function SessionSetupPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState('');
+  const [adminTestSetup, setAdminTestSetup] = useState(null);
 
   const selectedJd = useMemo(() => jds.find((item) => item.jd_id === selectedJdId) || null, [jds, selectedJdId]);
   const selectedResume = useMemo(() => resumes.find((item) => item.resume_id === selectedResumeId) || null, [resumes, selectedResumeId]);
@@ -320,9 +331,57 @@ function SessionSetupPage() {
     () => projects.filter((item) => selectedProjectIds.includes(item.project_id)),
     [projects, selectedProjectIds],
   );
+  // 음성 면접일 때만 마이크 확인 완료 여부를 세션 생성 조건으로 사용한다.
   const requiresMicrophone = interviewMode === 'voice';
 
+  const applyAdminSetup = (setup) => {
+    const materials = setup?.materials ?? {};
+    const jd = materials.jd;
+    const resume = materials.resume;
+    const coverLetter = materials.cover_letter;
+    const nextProjects = materials.projects ?? [];
+    const setupPersona = setup?.persona?.persona_type || 'practical';
+    const nextPersona = setupPersona === 'verifier' ? 'verify' : setupPersona;
+    const nextQuestionCount = setup?.defaults?.question_count || DEFAULT_QUESTION_COUNT;
+
+    setAdminTestSetup(setup);
+    setJds(jd ? [jd] : []);
+    setResumes(resume ? [resume] : []);
+    setCoverLetters(coverLetter ? [coverLetter] : []);
+    setProjects(nextProjects);
+    setSelectedJdId(jd?.jd_id || '');
+    setSelectedResumeId(resume?.resume_id || '');
+    setSelectedCoverLetterId(coverLetter?.cover_letter_id || '');
+    setSelectedProjectIds(nextProjects.map((item) => item.project_id).filter(Boolean));
+    setInterviewType(setup?.defaults?.interview_type || 'comprehensive');
+    setInterviewMode(setup?.defaults?.interview_mode || 'voice');
+    setPersona(nextPersona);
+    setTotalQuestionCount(String(nextQuestionCount));
+  };
+
+  const fetchAdminSetup = async () => {
+    const versionId = searchParams.get('versionId');
+    if (!versionId) {
+      setError('관리자 테스트에 사용할 프롬프트 버전이 없습니다. 버전 관리 화면에서 테스트 버튼으로 진입해주세요.');
+      setInitialLoading(false);
+      return;
+    }
+
+    setInitialLoading(true);
+    setError('');
+    try {
+      const setup = await getPromptVersionTestSetup(versionId);
+      applyAdminSetup(setup);
+    } catch (err) {
+      setError(formatApiError(err, '관리자 테스트 자료를 불러오지 못했습니다.'));
+      if (err?.response?.status === 401) navigate('/admin/login');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
   const fetchSources = async () => {
+    // 세션 생성 화면에 필요한 JD/이력서/자소서/프로젝트 목록을 한 번에 불러온다.
     setInitialLoading(true);
     setError('');
     try {
@@ -371,10 +430,11 @@ function SessionSetupPage() {
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
       setError('로그인이 필요합니다. 다시 로그인해주세요.');
-      navigate('/auth/login');
+      navigate(adminMode ? '/admin/login' : '/auth/login');
       return;
     }
-    fetchSources();
+    if (adminMode) fetchAdminSetup();
+    else fetchSources();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -413,6 +473,7 @@ function SessionSetupPage() {
     e.preventDefault();
     setError('');
 
+    // 질문 생성에 필요한 핵심 자료가 없으면 세션 생성을 시작하지 않는다.
     if (!selectedJdId) {
       setError('면접에 사용할 JD를 선택해주세요. JD가 없다면 먼저 등록해야 합니다.');
       return;
@@ -427,12 +488,13 @@ function SessionSetupPage() {
     }
     if (!localStorage.getItem('access_token')) {
       setError('로그인이 필요합니다. 다시 로그인해주세요.');
-      navigate('/auth/login');
+      navigate(adminMode ? '/admin/login' : '/auth/login');
       return;
     }
 
     const count = parseInt(totalQuestionCount, 10);
     const questionCount = !Number.isNaN(count) && count > 0 ? count : DEFAULT_QUESTION_COUNT;
+    // 백엔드 세션 생성 API가 사용하는 필드명과 기존 프론트 필드명을 함께 맞춰 보낸다.
     const sessionPayload = {
       jd_id: selectedJdId,
       resume_id: selectedResumeId,
@@ -449,6 +511,7 @@ function SessionSetupPage() {
 
     try {
       setLoadingStep('세션 생성 중...');
+      // 이전 면접 상태를 비우고 새 세션부터 질문 목록까지 한 흐름으로 준비한다.
       resetInterview();
       const sessionData = await interviewApi.createSession(sessionPayload);
       newSessionId = sessionData?.session_id ?? sessionData?.id;
@@ -456,21 +519,39 @@ function SessionSetupPage() {
       setSessionId(newSessionId);
 
       setLoadingStep('면접 질문 생성 중...');
+      // 세션에 연결된 JD/이력서/프로젝트를 바탕으로 실제 면접 질문을 생성한다.
       await interviewApi.generateQuestions(newSessionId, {
         question_count: questionCount,
         project_ids: selectedProjectIds,
+        ...(adminMode && adminTestSetup?.prompt_version?.prompt_ver_id
+          ? { prompt_version_id: adminTestSetup.prompt_version.prompt_ver_id }
+          : {}),
       });
 
       setLoadingStep('생성된 질문을 불러오는 중...');
+      // 생성 직후 다시 조회해 store에 정렬된 질문 목록을 넣고 실제 면접 화면으로 이동한다.
       const questionResponse = await interviewApi.getQuestions(newSessionId);
       const orderedQuestions = normalizeQuestions(questionResponse);
       setQuestions(orderedQuestions);
       setCurrentQuestionIndex(0);
 
-      navigate('/interview/question');
+      if (adminMode) {
+        window.localStorage.setItem(
+          'careerzip_admin_interview_test',
+          JSON.stringify({
+            session_id: newSessionId,
+            prompt_version_id: adminTestSetup?.prompt_version?.prompt_ver_id,
+            template_id: adminTestSetup?.template?.template_id,
+            persona_type: adminTestSetup?.persona?.persona_type,
+            return_to: '/admin/versions',
+          }),
+        );
+      }
+
+      navigate(adminMode ? '/interview/question-admin' : '/interview/question');
     } catch (err) {
       setError(formatApiError(err, newSessionId ? '질문 생성에 실패했습니다.' : '세션 생성에 실패했습니다.'));
-      if (err?.response?.status === 401) navigate('/auth/login');
+      if (err?.response?.status === 401) navigate(adminMode ? '/admin/login' : '/auth/login');
     } finally {
       setLoading(false);
       setLoadingStep('');
@@ -482,13 +563,19 @@ function SessionSetupPage() {
       title="면접 설정"
       description="선택한 자료를 바탕으로 면접 유형, 면접관 페르소나, 질문 수, 진행 방식을 설정합니다."
       actions={
-        <Button type="button" variant="secondary" onClick={fetchSources} disabled={initialLoading || loading}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={adminMode ? fetchAdminSetup : fetchSources}
+          disabled={initialLoading || loading}
+        >
           목록 새로고침
         </Button>
       }
       steps={STEPS}
       currentStep={5}
       activeNav="면접 진행"
+      navDisabled={adminMode}
     >
       <Card className="overflow-hidden">
         <div className="border-b border-[rgba(0,0,0,0.10)] bg-[#253900] px-6 py-5 text-[#EEEEEE]">
@@ -515,7 +602,7 @@ function SessionSetupPage() {
                 <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="text-sm font-black text-[#253900]">JD 선택</p>
-                    <Button type="button" variant="ghost" onClick={() => navigate('/jd')} className="h-9 px-3 py-0">
+                    <Button type="button" variant="ghost" onClick={() => navigate('/jd')} disabled={adminMode} className="h-9 px-3 py-0">
                       추가
                     </Button>
                   </div>
@@ -535,6 +622,7 @@ function SessionSetupPage() {
                           title={`${item.company_name || '회사명 없음'} · ${item.position || '직무명 없음'}`}
                           meta={`등록 ${fmtDateTime(item.created_at)}`}
                           onClick={() => handleSelectJd(item.jd_id)}
+                          disabled={adminMode}
                         />
                       ))}
                     </div>
@@ -544,7 +632,7 @@ function SessionSetupPage() {
                 <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="text-sm font-black text-[#253900]">이력서 선택</p>
-                    <Button type="button" variant="ghost" onClick={() => navigate('/input/documents')} className="h-9 px-3 py-0">
+                    <Button type="button" variant="ghost" onClick={() => navigate('/input/documents')} disabled={adminMode} className="h-9 px-3 py-0">
                       추가
                     </Button>
                   </div>
@@ -564,6 +652,7 @@ function SessionSetupPage() {
                           title={item.name || '이력서'}
                           meta={`수정 ${fmtDateTime(item.updated_at)}`}
                           onClick={() => handleSelectResume(item.resume_id)}
+                          disabled={adminMode}
                         />
                       ))}
                     </div>
@@ -578,6 +667,7 @@ function SessionSetupPage() {
                       title="선택 안 함"
                       meta="자기소개서 없이 JD와 이력서만으로 질문을 생성합니다."
                       onClick={() => handleSelectCoverLetter('')}
+                      disabled={adminMode}
                     />
                     {coverLetters.length === 0 ? (
                       <EmptyState
@@ -592,6 +682,7 @@ function SessionSetupPage() {
                           title={item.title || '자기소개서'}
                           meta={item.company_name || fmtDateTime(item.created_at)}
                           onClick={() => handleSelectCoverLetter(item.cover_letter_id)}
+                          disabled={adminMode}
                         />
                       ))
                     )}
@@ -601,7 +692,7 @@ function SessionSetupPage() {
                 <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="text-sm font-black text-[#253900]">프로젝트 선택</p>
-                    <Button type="button" variant="ghost" onClick={() => navigate('/input/cover-letter-project')} className="h-9 px-3 py-0">
+                    <Button type="button" variant="ghost" onClick={() => navigate('/input/cover-letter-project')} disabled={adminMode} className="h-9 px-3 py-0">
                       추가
                     </Button>
                   </div>
@@ -611,6 +702,7 @@ function SessionSetupPage() {
                       title="선택 안 함"
                       meta="프로젝트 없이 JD, 이력서, 자기소개서 기준으로 질문을 생성합니다."
                       onClick={handleClearProjects}
+                      disabled={adminMode}
                     />
                     {projects.length === 0 ? (
                       <EmptyState
@@ -625,6 +717,7 @@ function SessionSetupPage() {
                           title={item.project_name || '프로젝트'}
                           meta={item.contribution || item.description || fmtDateTime(item.created_at)}
                           onClick={() => handleToggleProject(item.project_id)}
+                          disabled={adminMode}
                         />
                       ))
                     )}
@@ -682,7 +775,13 @@ function SessionSetupPage() {
               />
               <div className="grid gap-3 md:grid-cols-3">
                 {PERSONA_OPTIONS.map((opt) => (
-                  <OptionCard key={opt.value} option={opt} checked={persona === opt.value} name="persona" onChange={setPersona} />
+                  <OptionCard
+                    key={opt.value}
+                    option={{ ...opt, disabled: adminMode || opt.disabled }}
+                    checked={persona === opt.value}
+                    name="persona"
+                    onChange={setPersona}
+                  />
                 ))}
               </div>
             </section>
@@ -725,7 +824,13 @@ function SessionSetupPage() {
               />
               <div className="grid gap-3 md:grid-cols-2">
                 {INTERVIEW_MODE_OPTIONS.map((opt) => (
-                  <OptionCard key={opt.value} option={opt} checked={interviewMode === opt.value} name="interview_mode" onChange={setInterviewMode} />
+                  <OptionCard
+                    key={opt.value}
+                    option={{ ...opt, disabled: adminMode || opt.disabled }}
+                    checked={interviewMode === opt.value}
+                    name="interview_mode"
+                    onChange={setInterviewMode}
+                  />
                 ))}
               </div>
             </section>
@@ -735,7 +840,12 @@ function SessionSetupPage() {
             {error && <Alert tone="danger">{error}</Alert>}
 
             <div className="flex flex-wrap justify-between gap-3 border-t border-[rgba(0,0,0,0.10)] pt-6">
-              <Button type="button" variant="secondary" onClick={() => navigate('/input/cover-letter-project')} disabled={loading}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate(adminMode ? '/admin/versions' : '/input/cover-letter-project')}
+                disabled={loading}
+              >
                 이전
               </Button>
               <Button type="submit" disabled={loading || !selectedJdId || !selectedResumeId || (requiresMicrophone && !micCheck.isVerified)} className="min-w-36">

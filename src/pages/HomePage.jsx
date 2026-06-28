@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, BarChart3, FileText, MessagesSquare, ShieldCheck } from 'lucide-react';
 import { Button, Card, Logo } from '../components/ui/DemoLayout';
 
@@ -23,6 +23,7 @@ const valueCards = [
 const flow = ['JD 입력', '이력서 업로드', '면접 설정', '면접 진행', '리포트 확인'];
 
 function HomePage() {
+  const navigate = useNavigate();
   return (
     <main className="min-h-screen bg-[#EEEEEE] text-[#000000]">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6">
@@ -131,9 +132,12 @@ function HomePage() {
         </Card>
       </section>
       <footer className="py-6 text-center">
-        <Link to="/admin/login" className="text-xs text-[#CCCCCC] hover:text-[#AAAAAA] transition-colors">
+        <span
+          onDoubleClick={() => navigate('/admin/login')}
+          className="cursor-default text-xs text-[#CCCCCC] select-none"
+        >
           ©2026 Career.zip
-        </Link>
+        </span>
       </footer>
     </main>
   );

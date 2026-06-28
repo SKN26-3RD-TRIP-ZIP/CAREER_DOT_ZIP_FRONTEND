@@ -39,7 +39,9 @@ export async function setUserStatus(id, newStatus) {
 }
 
 
-export async function deleteMember(id) {
+// 백엔드 DELETE 엔드포인트는 하드 삭제가 아니라 탈퇴(소프트 삭제) 처리다.
+// status='withdrawn'으로 바꾸고 데이터는 보관 기간 경과 후 배치에서 익명화한다.
+export async function withdrawMember(id) {
   await axiosInstance.delete(`/admin/members/${id}`)
 }
 
@@ -103,6 +105,15 @@ export async function setDefaultVersion(templateId, versionId) {
   await axiosInstance.patch(`/admin/prompt-templates/${templateId}/default-version`, {
     default_version_id: versionId,
   })
+}
+
+export async function getPromptVersionTestSetup(versionId) {
+  const res = await axiosInstance.get(`/admin/prompt-versions/${versionId}/test-setup`)
+  return res.data
+}
+
+export async function cleanupPromptTestRun(sessionId) {
+  await axiosInstance.delete(`/admin/prompt-test-runs/${sessionId}`)
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────

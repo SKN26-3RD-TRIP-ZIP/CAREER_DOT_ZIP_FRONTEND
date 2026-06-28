@@ -65,6 +65,11 @@ export function normalizeFinalReport(raw) {
     evaluation_status: raw?.evaluation_status ?? (overallScore == null ? 'PENDING' : 'COMPLETED'),
     is_mock: Boolean(raw?.is_mock ?? meta?.is_mock),
 
+    // 비동기 생성 상태(폴링용): 'completed' | 'processing' | 'failed'.
+    // 구버전 응답엔 없으므로 completed로 폴백(기존 동작 보존).
+    status: raw?.status ?? 'completed',
+    error_code: raw?.error_code ?? null,
+
     score_summary: {
       overall_score: overallScore,
       grade_label: '',
@@ -82,12 +87,14 @@ export function normalizeFinalReport(raw) {
         score: numOrNull(metrics[c.metric]),
         description: c.description,
       })),
-      // 레이더 4축 ← metrics (grounding 제거, A안)
-      radar: RADAR_AXES.map((a) => ({
-        axis: a.axis,
-        label: a.label,
-        score: numOrNull(metrics[a.metric]),
-      })),
+      // 레이더 축 ← metrics, 평가되지 않은 null 축은 제외
+      radar: RADAR_AXES
+        .filter((a) => metrics[a.metric] != null)
+        .map((a) => ({
+          axis: a.axis,
+          label: a.label,
+          score: numOrNull(metrics[a.metric]),
+        })),
       // 질문별 평가 (B안: 백엔드 summary.score_detail.questions)
       questions,
       // 백엔드 원본 score_detail 패스스루(향후 직접 소비/디버깅용 — 비파괴)
@@ -99,10 +106,24 @@ export function normalizeFinalReport(raw) {
       ...tagsFrom(triggered.weakness_tags, 'weakness'),
     ],
 
-    evaluation_metadata: {
-      persona_key: meta.persona_type || '',
-      ...personaMeta(meta.persona_type),
-    },
+    evaluation_metadata: (() => {
+      const answerCount = Number(meta.answer_count) || 0;
+      const evaluatedCount = Number(meta.evaluated_answer_count) || 0;
+      // unscored_answer_count는 신규 필드(부분 리포트, #5). 구버전 캐시 리포트에는 없으므로
+      // answer_count - evaluated_answer_count로 폴백.
+      const unscored =
+        meta.unscored_answer_count != null
+          ? Number(meta.unscored_answer_count) || 0
+          : Math.max(answerCount - evaluatedCount, 0);
+      return {
+        persona_key: meta.persona_type || '',
+        ...personaMeta(meta.persona_type),
+        answer_count: answerCount,
+        evaluated_answer_count: evaluatedCount,
+        unscored_answer_count: unscored,
+        format_failed_answer_count: Number(meta.format_failed_answer_count) || 0,
+      };
+    })(),
 
     score_interpretation: {
       strength: localizeList(detail.strength) || '두드러진 강점 태그가 아직 집계되지 않았습니다.',

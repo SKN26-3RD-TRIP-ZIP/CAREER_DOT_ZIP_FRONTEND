@@ -11,18 +11,19 @@
  * 기술 질문(question_category=technical)이 없는 세션은 technical_score=null → 카드에서 "해당없음" 표시.
  */
 export const CATEGORY_CARDS = [
-  { key: 'answer_structure', label: '답변 구조', metric: 'bei_logic_score', description: '논리 흐름과 STAR 구성' },
-  { key: 'competency', label: '역량 측정', metric: 'cbi_competency_score', description: '행동 기반 역량 측정' },
-  { key: 'tech_depth', label: '기술 깊이', metric: 'technical_score', description: 'SBERT 기반 하드스킬 깊이 평가' },
-  { key: 'communication', label: '커뮤니케이션', metric: 'speech_delivery_score', description: '명확성, 속도, 태도' },
+  { key: 'answer_structure', label: '답변 구조', metric: 'bei_logic_score', description: '답변이 상황·과제·행동·결과(STAR) 구조로 얼마나 잘 구성되었는지 측정합니다. 4개 항목 각 25점, 합산 100점 만점입니다.' },
+  { key: 'competency', label: '역량 측정', metric: 'cbi_competency_score', description: '답변에서 드러나는 직무 역량 수준을 1~5단계로 평가해 100점으로 환산합니다. 구체적인 경험과 행동이 얼마나 명확히 나타나는지를 봅니다.' },
+  { key: 'tech_depth', label: '기술 깊이', metric: 'technical_score', description: '기술 질문에 대한 답변이 직무 요구 수준과 얼마나 일치하는지 측정합니다. 기술 면접 답변에만 적용됩니다.' },
+  { key: 'communication', label: '커뮤니케이션', metric: 'speech_delivery_score', description: '습관어 빈도, 긴 침묵 비율, 발화 속도를 종합 분석합니다. 말의 명확성과 전달력을 0~100점으로 나타냅니다.' },
 ];
 
-/** Overall 상세 레이더 4축 ← metrics (grounding 제거: 인성면접 세션에서 항상 0이라 오해 소지) */
+/** Overall 상세 레이더 5축 ← metrics (grounding은 applicable 답변이 없으면 null → 축 자동 제거) */
 export const RADAR_AXES = [
-  { metric: 'bei_logic_score', axis: 'BEI', label: '행동 기반' },
-  { metric: 'cbi_competency_score', axis: 'CBI', label: '역량 기반' },
-  { metric: 'speech_delivery_score', axis: 'Speech', label: '전달력' },
-  { metric: 'technical_score', axis: 'Technical', label: '기술 깊이' },
+  { metric: 'bei_logic_score',       axis: 'BEI',        label: '행동 기반', description: '답변이 상황·과제·행동·결과(STAR) 구조로 얼마나 잘 구성되었는지 측정합니다. 4개 항목 각 25점, 합산 100점 만점입니다.' },
+  { metric: 'cbi_competency_score',  axis: 'CBI',        label: '역량 기반', description: '답변에서 드러나는 직무 역량 수준을 1~5단계로 평가해 100점으로 환산합니다. 구체적인 경험과 행동이 얼마나 명확히 나타나는지를 봅니다.' },
+  { metric: 'speech_delivery_score', axis: 'Speech',     label: '전달력',    description: '습관어 빈도, 긴 침묵 비율, 발화 속도를 종합 분석합니다. 말의 명확성과 전달력을 0~100점으로 나타냅니다.' },
+  { metric: 'technical_score',       axis: 'Technical',  label: '기술 깊이', description: '기술 질문에 대한 답변이 직무 요구 수준과 얼마나 일치하는지 측정합니다. 기술 면접 답변에만 적용됩니다.' },
+  { metric: 'grounding_score',       axis: 'Grounding',  label: '근거 제시', description: '기술 답변에서 구체적인 수치·사례·근거가 포함되었는지 AI가 판단한 비율입니다. 인성 면접 전용 세션에는 표시되지 않습니다.' },
 ];
 
 /** 면접관 페르소나 라벨 */
@@ -74,6 +75,22 @@ export const TAG_LABELS = {
   frequent_long_pauses: '긴 침묵',
   unbalanced_speech_pace: '발화 페이스',
 };
+
+/**
+ * label / metric key / axis 중 하나를 받아 해당 지표의 description을 반환.
+ * 매칭되지 않으면 null.
+ */
+const _ALL_METRICS = [...CATEGORY_CARDS, ...RADAR_AXES];
+export function metricDescription(labelOrMetricOrAxis) {
+  return (
+    _ALL_METRICS.find(
+      (m) =>
+        m.metric === labelOrMetricOrAxis ||
+        m.label  === labelOrMetricOrAxis ||
+        m.axis   === labelOrMetricOrAxis,
+    )?.description ?? null
+  );
+}
 
 /** 알 수 없는 tag_name 은 snake_case → 사람이 읽을 형태로 폴백 */
 export function tagLabel(tagName) {
