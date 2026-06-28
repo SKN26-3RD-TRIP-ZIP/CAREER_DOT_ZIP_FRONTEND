@@ -54,3 +54,28 @@ export function scoreBarClass(score) {
 }
 
 export const priorityLabel = (p) => (p === 'high' ? '높음' : p === 'mid' ? '중간' : '낮음');
+
+/**
+ * 실제 점수 여부. null/undefined/NaN/문자열 등은 '점수 없음'으로 본다.
+ * 주의: 실제 0점(typeof number && 0)은 true 다. (null 을 0 으로 변환 금지)
+ */
+export function isRealScore(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+/**
+ * 점수 상태 구분 (리포트 신뢰성):
+ *   'none'    → null (평가 전/데이터 없음)
+ *   'unknown' → undefined (응답 누락)
+ *   'invalid' → 숫자로 해석 불가
+ *   'real'    → 실제 점수(0 포함)
+ */
+export function scoreState(value) {
+  if (value === null) return 'none';
+  if (value === undefined) return 'unknown';
+  if (!isRealScore(typeof value === 'number' ? value : Number(value))) return 'invalid';
+  return 'real';
+}
+
+/** 점수 없음 표시용 중립색 (실제 0점과 시각적으로 구분) */
+export const EMPTY_SCORE_HEX = '#EEEEEE';

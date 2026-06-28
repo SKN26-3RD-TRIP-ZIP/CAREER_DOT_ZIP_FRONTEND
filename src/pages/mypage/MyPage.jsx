@@ -323,6 +323,18 @@ function MyPage() {
           <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
             내 정보 수정
           </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/terms')}>
+            약관·동의 관리
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/interview/question-packs')}>
+            질문팩
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/growth')}>
+            성장 대시보드
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/points')}>
+            포인트 내역
+          </Button>
           <Button type="button" variant="danger" onClick={handleLogout}>
             로그아웃
           </Button>

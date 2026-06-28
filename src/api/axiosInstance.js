@@ -18,6 +18,8 @@ const PUBLIC_ENDPOINTS = [
   '/auth/token/refresh',
   '/auth/verify-email',
   '/auth/resend-verification',
+  // 소셜 로그인 시작/콜백은 인증 불필요(AllowAny) — Authorization·자동 refresh 대상 제외
+  '/auth/oauth',
 ];
 
 let refreshPromise = null;

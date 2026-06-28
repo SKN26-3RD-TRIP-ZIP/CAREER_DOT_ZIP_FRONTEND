@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { login as loginApi, getMe } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
+import { resolveAuthedRedirect } from '../../utils/authNavigation';
+import SocialLoginButtons from '../../components/auth/SocialLoginButtons';
 import { Alert, AuthShell, Button, Field, inputClass } from '../../components/ui/DemoLayout';
 
 function getLoginError(err) {
@@ -47,6 +49,8 @@ function LoginPage() {
   const location = useLocation();
   const [params] = useSearchParams();
   const mode = params.get('mode');
+  // 보호 페이지 차단 시 저장된 원래 경로 (?next=). 로그인 후 프로필 완료 사용자 복원용.
+  const nextParam = params.get('next') || '';
   const notice =
     location.state?.notice ||
     (params.get('verified') === '1'
@@ -83,7 +87,8 @@ function LoginPage() {
       setToken(token);
       const me = await getMe();
       setUser(me.data);
-      navigate(me.data?.next_path || '/profile');
+      // 이동 정책: 프로필 미완성 → /profile, 완료 → 저장된 next 또는 next_path/mypage
+      navigate(resolveAuthedRedirect(me.data, nextParam), { replace: true });
     } catch (err) {
       setError(getLoginError(err));
       reset();
@@ -146,6 +151,9 @@ function LoginPage() {
           {loading ? '로그인 중...' : error ? '다시 로그인' : '로그인'}
         </Button>
       </form>
+      <div className="mt-5">
+        <SocialLoginButtons next={nextParam} />
+      </div>
     </AuthShell>
   );
 }

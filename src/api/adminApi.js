@@ -124,3 +124,19 @@ export async function getAuditLogs(params = {}) {
   const res = await axiosInstance.get('/admin/audit-logs', { params: query })
   return res.data // { total, page, size, results }
 }
+
+// ── Guardrail Events ────────────────────────────────────────────
+// GET /admin/guardrails/events ? category|action|stage|direction|user_id|page|size
+export async function getGuardrailEvents(params = {}) {
+  const { category, action, stage, direction, user_id, page, size } = params
+  const query = {}
+  if (category) query.category = category
+  if (action) query.action = action
+  if (stage) query.stage = stage
+  if (direction) query.direction = direction
+  if (user_id) query.user_id = user_id
+  if (page) query.page = page
+  if (size) query.size = size
+  const res = await axiosInstance.get('/admin/guardrails/events', { params: query })
+  return res.data // { total, page, size, results }
+}

@@ -199,6 +199,35 @@ export default function FinalReportPage() {
         )}
       </Section>
 
+      {weaknesses.length > 0 && (
+        <section className="no-print mt-5 rounded-2xl border border-[#08CB00] bg-[rgba(8,203,0,0.06)] p-5">
+          <h2 className="text-base font-black text-[#253900]">약점 집중 연습</h2>
+          <p className="mt-1 text-sm text-[rgba(0,0,0,0.6)]">취약한 역량을 골라 관련 질문팩으로 바로 연습할 수 있습니다.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {weaknesses.slice(0, 4).map((w, idx) => {
+              const label = typeof w === "string" ? w : (w?.label ?? "");
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => navigate(`/interview/question-packs?focus=${encodeURIComponent(label)}`)}
+                  className="rounded-full border border-[#253900] px-3 py-1 text-xs font-black text-[#253900] transition hover:bg-[rgba(37,57,0,0.08)]"
+                >
+                  {label || "약점"} · 집중 연습
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => navigate("/interview/question-packs")}
+              className="rounded-full border border-[rgba(0,0,0,0.18)] px-3 py-1 text-xs font-black text-[rgba(0,0,0,0.6)] transition hover:bg-[rgba(0,0,0,0.04)]"
+            >
+              추천 질문팩 보기
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="no-print mt-5 flex flex-col gap-3 rounded-2xl border border-[rgba(0,0,0,0.08)] bg-[#EEEEEE] p-5 shadow-[0_8px_28px_rgba(0,0,0,0.08)] sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-bold text-[#000000]">다음 액션</h2>

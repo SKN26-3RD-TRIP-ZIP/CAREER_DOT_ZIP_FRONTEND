@@ -286,6 +286,7 @@ function JdInputPage() {
       description="직접 입력, 개발·연습용 합성 공고 검색, PDF 업로드 중 하나를 선택해 면접 질문의 기준이 될 JD를 저장합니다."
       steps={STEPS}
       currentStep={2}
+      actions={<Button type="button" variant="secondary" onClick={() => navigate('/input/jd-import')}>URL·이미지로 가져오기</Button>}
     >
       <Card className="mx-auto max-w-4xl p-6">
         {successData ? (

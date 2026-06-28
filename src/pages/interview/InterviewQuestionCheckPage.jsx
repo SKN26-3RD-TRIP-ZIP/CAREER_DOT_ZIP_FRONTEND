@@ -14,6 +14,8 @@ import {
 import { interviewApi } from '../../api/interviewApi';
 import { useTTS } from '../../hooks/useTTS';
 import { useInterviewStore } from '../../store/interviewStore';
+import { extractGuardrail, guardrailUserMessage, categoryLabel, actionLabel, retryAllowed } from '../../utils/guardrail';
+import { sttErrorMessage } from '../../utils/voice';
 import './InterviewQuestionCheckPage.css';
 
 const waveBars = [18, 32, 44, 25, 58, 36, 68, 42, 60, 28, 52, 38, 70, 46, 34, 56, 24, 48, 30, 40];
@@ -157,6 +159,7 @@ function InterviewQuestionCheckPage() {
   const [processingStep, setProcessingStep] = useState('idle');
   const [failedStep, setFailedStep] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [guardrailNotice, setGuardrailNotice] = useState(null);
   const [followupNotice, setFollowupNotice] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
@@ -351,7 +354,15 @@ function InterviewQuestionCheckPage() {
         const step = nextSttResult ? (nextAnswerId ? 'patch' : 'answer') : 'stt';
         setFailedStep(step);
         setProcessingStep('idle');
-        setErrorMessage(getErrorMessage(error, '답변 처리 중 문제가 발생했습니다.'));
+        const guardrail = extractGuardrail(error);
+        if (guardrail) {
+          setGuardrailNotice(guardrail);
+          setErrorMessage(guardrailUserMessage(guardrail));
+        } else if (step === 'stt') {
+          setErrorMessage(sttErrorMessage(error));
+        } else {
+          setErrorMessage(getErrorMessage(error, '답변 처리 중 문제가 발생했습니다.'));
+        }
       }
     },
     [answerId, audioBlob, currentQuestionId, recordedDuration, sessionId, setQuestions, sttResult]
@@ -361,6 +372,7 @@ function InterviewQuestionCheckPage() {
     if (!hasQuestion || isProcessing) return;
     stop();
     setErrorMessage('');
+    setGuardrailNotice(null);
     setFailedStep('');
     setProcessingStep('idle');
     setAudioBlob(null);
@@ -502,6 +514,17 @@ function InterviewQuestionCheckPage() {
           <section className="question-check-status is-error" role="alert">
             <strong>처리 중 문제가 발생했습니다.</strong>
             <span>{errorMessage}</span>
+          </section>
+        )}
+
+        {guardrailNotice && (
+          <section className="question-check-status is-error" role="alert">
+            <strong>가드레일 안내</strong>
+            <span>{guardrailUserMessage(guardrailNotice)}</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+              {categoryLabel(guardrailNotice.category)} · {actionLabel(guardrailNotice.action)}
+              {retryAllowed(guardrailNotice.action) ? ' · 다시 답변할 수 있습니다.' : ' · 세션이 종료되었습니다.'}
+            </span>
           </section>
         )}
 
