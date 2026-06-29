@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jdApi } from '../../api/jdApi';
 import { jobsApi } from '../../api/jobsApi';
+import { toUserMessage } from '../../api/errors';
 import { useJdStore } from '../../store/jdStore';
 import { getCreatedJdId } from '../../utils/talentProfile';
 import {
@@ -80,20 +81,13 @@ function listText(value) {
 }
 
 function formatApiError(err, fallback) {
-  const status = err?.response?.status;
-  const detail = err?.response?.data?.detail || err?.response?.data;
-  if (!err?.response) return '서버에 연결할 수 없습니다. 백엔드 실행 상태를 확인해주세요.';
-  if (status === 401) return '로그인이 필요합니다. 다시 로그인해주세요.';
-  if (status === 413) return '파일 크기는 10MB를 초과할 수 없습니다.';
-  if (status === 422) return typeof detail === 'string' ? detail : '파일에서 텍스트를 추출하지 못했습니다.';
-  if (status === 400) return typeof detail === 'string' ? detail : `입력값 오류: ${JSON.stringify(detail)}`;
-  return `${fallback} (HTTP ${status})`;
+  return toUserMessage(err, fallback);
 }
 
-function validateJdPdf(file) {
-  if (!file) return '업로드할 PDF 파일을 선택해주세요.';
+function validateJdFile(file) {
+  if (!file) return '업로드할 PDF 또는 DOCX 파일을 선택해 주세요.';
   const ext = file.name.split('.').pop()?.toLowerCase();
-  if (ext !== 'pdf') return 'JD 업로드는 PDF 파일만 가능합니다.';
+  if (!['pdf', 'docx'].includes(ext)) return 'PDF 또는 DOCX 파일만 업로드할 수 있습니다.';
   if (file.size > MAX_UPLOAD_SIZE) return '파일 크기는 10MB를 초과할 수 없습니다.';
   return null;
 }
@@ -257,7 +251,7 @@ function JdInputPage() {
       setError('직무명을 입력해주세요.');
       return;
     }
-    const fileError = validateJdPdf(uploadForm.file);
+    const fileError = validateJdFile(uploadForm.file);
     if (fileError) {
       setError(fileError);
       return;
@@ -505,10 +499,10 @@ function JdInputPage() {
                     />
                   </Field>
                 </div>
-                <Field label="JD PDF 파일" hint="PDF만 가능하며 최대 10MB까지 업로드할 수 있습니다." required>
+                <Field label="JD 파일" hint="PDF 또는 DOCX 파일만 가능하며 최대 10MB까지 업로드할 수 있습니다." required>
                   <input
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     className={inputClass}
                     onChange={(e) => setUploadForm((prev) => ({ ...prev, file: e.target.files?.[0] ?? null }))}
                   />
