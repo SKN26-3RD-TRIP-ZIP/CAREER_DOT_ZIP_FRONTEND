@@ -55,16 +55,36 @@ function getResults(data) {
 function getStoredProjectIds() {
   try {
     const parsed = JSON.parse(window.localStorage.getItem('careerzip_selected_project_ids') || '[]');
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    return Array.isArray(parsed) ? parsed.map((id) => String(id)).filter(Boolean) : [];
   } catch {
     return [];
   }
 }
 
 function storeProjectIds(ids) {
-  const nextIds = ids.filter(Boolean);
+  const nextIds = ids.map((id) => String(id)).filter(Boolean);
   if (nextIds.length) window.localStorage.setItem('careerzip_selected_project_ids', JSON.stringify(nextIds));
   else window.localStorage.removeItem('careerzip_selected_project_ids');
+}
+
+function getProjectId(project) {
+  const id = project?.project_id ?? project?.id;
+  return id == null ? '' : String(id);
+}
+
+function getProjectGithubUrl(project) {
+  return project?.github_url || project?.githubUrl || project?.github || project?.repository_url || project?.repo_url || '';
+}
+
+function normalizeTechStack(techStack) {
+  if (Array.isArray(techStack)) return techStack.map((item) => String(item).trim()).filter(Boolean);
+  if (typeof techStack === 'string') {
+    return techStack
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 function normalizeQuestions(response) {
@@ -141,7 +161,7 @@ function OptionCard({ option, checked, name, onChange }) {
   );
 }
 
-function SelectableItem({ selected, title, meta, onClick, disabled = false }) {
+function SelectableItem({ selected, title, meta, onClick, disabled = false, children }) {
   return (
     <button
       type="button"
@@ -163,7 +183,40 @@ function SelectableItem({ selected, title, meta, onClick, disabled = false }) {
         {selected && <StatusBadge tone="success">선택됨</StatusBadge>}
       </div>
       {meta && <p className="mt-2 text-xs leading-5 text-[rgba(0,0,0,0.64)]">{meta}</p>}
+      {children}
     </button>
+  );
+}
+
+function ProjectDetails({ project }) {
+  const techStack = normalizeTechStack(project?.tech_stack);
+  const githubUrl = getProjectGithubUrl(project);
+  const contribution = project?.contribution;
+  const description = project?.description;
+
+  return (
+    <div className="mt-3 space-y-2">
+      {description && (
+        <p className="text-xs leading-5 text-[rgba(0,0,0,0.70)]">
+          {description}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        {contribution && (
+          <span className="rounded-full border border-[rgba(0,0,0,0.14)] bg-white px-2 py-0.5 text-[11px] font-bold text-[#253900]">
+            기여도 {contribution}
+          </span>
+        )}
+        {techStack.map((stack) => (
+          <span key={stack} className="rounded-full border border-[rgba(0,0,0,0.14)] bg-white px-2 py-0.5 text-[11px] font-bold text-[#253900]">
+            {stack}
+          </span>
+        ))}
+      </div>
+      <p className="text-[11px] font-semibold leading-5 text-[rgba(0,0,0,0.55)]">
+        {githubUrl ? `GitHub ${githubUrl}` : 'GitHub 링크 없음'}
+      </p>
+    </div>
   );
 }
 
@@ -328,7 +381,7 @@ function SessionSetupPage({ adminMode = false }) {
     [coverLetters, selectedCoverLetterId],
   );
   const selectedProjects = useMemo(
-    () => projects.filter((item) => selectedProjectIds.includes(item.project_id)),
+    () => projects.filter((item) => selectedProjectIds.includes(getProjectId(item))),
     [projects, selectedProjectIds],
   );
   // 음성 면접일 때만 마이크 확인 완료 여부를 세션 생성 조건으로 사용한다.
@@ -352,7 +405,7 @@ function SessionSetupPage({ adminMode = false }) {
     setSelectedJdId(jd?.jd_id || '');
     setSelectedResumeId(resume?.resume_id || '');
     setSelectedCoverLetterId(coverLetter?.cover_letter_id || '');
-    setSelectedProjectIds(nextProjects.map((item) => item.project_id).filter(Boolean));
+    setSelectedProjectIds(nextProjects.map(getProjectId).filter(Boolean));
     setInterviewType(setup?.defaults?.interview_type || 'comprehensive');
     setInterviewMode(setup?.defaults?.interview_mode || 'voice');
     setPersona(nextPersona);
@@ -403,7 +456,7 @@ function SessionSetupPage({ adminMode = false }) {
       const rememberedJd = nextJds.some((item) => item.jd_id === selectedJdId) ? selectedJdId : nextJds[0]?.jd_id || '';
       const rememberedResume = nextResumes.some((item) => item.resume_id === selectedResumeId) ? selectedResumeId : nextResumes[0]?.resume_id || '';
       const rememberedCoverLetter = nextCoverLetters.some((item) => item.cover_letter_id === selectedCoverLetterId) ? selectedCoverLetterId : '';
-      const nextProjectIdSet = new Set(nextProjects.map((item) => item.project_id));
+      const nextProjectIdSet = new Set(nextProjects.map(getProjectId).filter(Boolean));
       const rememberedProjectIds = selectedProjectIds.filter((projectId) => nextProjectIdSet.has(projectId));
 
       if (rememberedJd) {
@@ -520,13 +573,17 @@ function SessionSetupPage({ adminMode = false }) {
 
       setLoadingStep('면접 질문 생성 중...');
       // 세션에 연결된 JD/이력서/프로젝트를 바탕으로 실제 면접 질문을 생성한다.
-      await interviewApi.generateQuestions(newSessionId, {
+      const questionPayload = {
         question_count: questionCount,
         project_ids: selectedProjectIds,
         ...(adminMode && adminTestSetup?.prompt_version?.prompt_ver_id
           ? { prompt_version_id: adminTestSetup.prompt_version.prompt_ver_id }
           : {}),
-      });
+      };
+      if (import.meta.env.DEV) {
+        console.debug('[SessionSetupPage] generateQuestions payload', questionPayload);
+      }
+      await interviewApi.generateQuestions(newSessionId, questionPayload);
 
       setLoadingStep('생성된 질문을 불러오는 중...');
       // 생성 직후 다시 조회해 store에 정렬된 질문 목록을 넣고 실제 면접 화면으로 이동한다.
@@ -710,16 +767,21 @@ function SessionSetupPage({ adminMode = false }) {
                         description="프로젝트는 선택 항목입니다. 없어도 면접을 시작할 수 있습니다."
                       />
                     ) : (
-                      projects.map((item) => (
-                        <SelectableItem
-                          key={item.project_id}
-                          selected={selectedProjectIds.includes(item.project_id)}
-                          title={item.project_name || '프로젝트'}
-                          meta={item.contribution || item.description || fmtDateTime(item.created_at)}
-                          onClick={() => handleToggleProject(item.project_id)}
-                          disabled={adminMode}
-                        />
-                      ))
+                      projects.map((item) => {
+                        const projectId = getProjectId(item);
+                        return (
+                          <SelectableItem
+                            key={projectId || item.project_name || item.created_at}
+                            selected={selectedProjectIds.includes(projectId)}
+                            title={item.project_name || '프로젝트'}
+                            meta={`등록 ${fmtDateTime(item.created_at)}`}
+                            onClick={() => handleToggleProject(projectId)}
+                            disabled={adminMode || !projectId}
+                          >
+                            <ProjectDetails project={item} />
+                          </SelectableItem>
+                        );
+                      })
                     )}
                   </div>
                 </section>
