@@ -28,6 +28,11 @@ export const generateQuestions = (sessionId) =>
 export const regenerateQuestions = (sessionId) =>
   axiosInstance.post('/analysis/questions/', { session_id: sessionId, regenerate: true })
 
+// 인재상
+export const getTalentCatalog = () => axiosInstance.get('/analysis/talent-profiles/catalog/')
+export const getJdTalentProfile = (jdId) => axiosInstance.get(`/analysis/jds/${jdId}/talent-profile/`)
+export const saveJdTalentProfile = (jdId, data) => axiosInstance.put(`/analysis/jds/${jdId}/talent-profile/`, data)
+
 // 예상 질문 만족도 신호 (👍/👎)
 export const submitQuestionFeedback = (sessionId, rating) =>
   axiosInstance.post('/analysis/feedback/', { session_id: sessionId, rating })
