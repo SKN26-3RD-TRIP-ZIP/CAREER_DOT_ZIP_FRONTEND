@@ -36,7 +36,7 @@ export const verifyCode = ({ email, code }) =>
 
 // 이메일 인증번호 재발송 (성공: expires_in/resend_after, 쿨다운: retry_after, 발송 실패: EMAIL_SEND_FAILED)
 export const resendVerification = (email) =>
-  axiosInstance.post('/auth/resend-verification', { email });
+  axiosInstance.post('/auth/verify-email/resend', { email });
 
 // 현재 로그인 사용자 조회 — 화면 표시 사용자의 단일 출처
 export const getMe = () => axiosInstance.get('/auth/me');

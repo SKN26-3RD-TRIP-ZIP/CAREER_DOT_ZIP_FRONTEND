@@ -9,6 +9,8 @@ import JdImportPage from './pages/input/JdImportPage.jsx'
 import DocumentsInputPage from './pages/input/DocumentsInputPage.jsx'
 import CoverLetterProjectPage from './pages/input/CoverLetterProjectPage.jsx'
 import SessionSetupPage from './pages/input/SessionSetupPage.jsx'
+import OnboardingPage from './pages/input/OnboardingPage.jsx'
+import TalentProfilePage from './pages/input/TalentProfilePage.jsx'
 import ProfilePage from './pages/profile/ProfilePage.jsx'
 import AuthLoginPage from './pages/auth/LoginPage.jsx'
 import SignupPage from './pages/auth/SignupPage.jsx'
@@ -21,6 +23,8 @@ import QuestionPacksPage from './pages/interview/QuestionPacksPage.jsx'
 import GrowthDashboardPage from './pages/mypage/GrowthDashboardPage.jsx'
 import PointsPage from './pages/mypage/PointsPage.jsx'
 import MyPage from './pages/mypage/MyPage.jsx'
+import InterviewRecordsPage from './pages/mypage/InterviewRecordsPage.jsx'
+import ProfileSettingsPage from './pages/mypage/ProfileSettingsPage.jsx'
 import TermsManagementPage from './pages/mypage/TermsManagementPage.jsx'
 import Login from './pages/admin/Login.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
@@ -38,7 +42,6 @@ import ResultPage from './pages/analysis/ResultPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
 
 const prototypeRoutes = [
-  '/onboarding',
   '/dashboard',
   '/data',
   '/data/jd',
@@ -58,12 +61,6 @@ const prototypeRoutes = [
   '/interview/text',
   '/interview/voice',
   '/interview/result',
-  '/mypage/profile',
-  '/mypage/analysis',
-  '/mypage/projects',
-  '/mypage/interviews',
-  '/mypage/reports',
-  '/mypage/settings',
   '/prototype',
 ]
 
@@ -93,11 +90,13 @@ function App() {
 
       {/* 입력·면접 흐름 보호 라우트: 토큰 필요 (P0 보호 라우트 완성) */}
       <Route element={<ProtectedRoute />}>
+      <Route path="/input/onboarding/:step" element={<OnboardingPage />} />
       {/* develop 기존 JD 입력 라우트 보존 */}
       <Route path="/jd" element={<JdInputPage />} />
       <Route path="/input/jd-import" element={<JdImportPage />} />
       <Route path="/JD" element={<JdInputPage />} />
       <Route path="/input/jd" element={<JdInputPage />} />
+      <Route path="/input/jd/:jdId/talent-profile" element={<TalentProfilePage />} />
       <Route path="/input/documents" element={<DocumentsInputPage />} />
       <Route path="/input/cover-letter-project" element={<CoverLetterProjectPage />} />
       <Route path="/input/session-setup" element={<SessionSetupPage />} />
@@ -124,6 +123,8 @@ function App() {
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/growth" element={<GrowthDashboardPage />} />
         <Route path="/mypage/points" element={<PointsPage />} />
+        <Route path="/mypage/interviews" element={<InterviewRecordsPage />} />
+        <Route path="/mypage/profile-settings" element={<ProfileSettingsPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route path="/mypage/terms" element={<TermsManagementPage />} />
