@@ -10,7 +10,6 @@ const NAV_ITEMS = [
   { to: '/admin/points', label: '포인트 관리' },
   { to: '/admin/prompts', label: '프롬프트 관리' },
   { to: '/admin/versions', label: '버전 관리' },
-  { to: '/admin/guardrails', label: '가드레일' },
   { to: '/admin/audit-logs', label: '서비스 통계' },
 ]
 

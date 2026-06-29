@@ -30,7 +30,6 @@ import Points from './pages/admin/Points.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import AuditLogs from './pages/admin/AuditLogs.jsx'
 import Versions from './pages/admin/Versions.jsx'
-import Guardrails from './pages/admin/Guardrails.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
 import SharedReportPage from './pages/evaluation/SharedReportPage.jsx'
@@ -158,7 +157,6 @@ function App() {
         <Route path="/admin/prompts" element={<Prompts />} />
         <Route path="/admin/audit-logs" element={<AuditLogs />} />
         <Route path="/admin/versions" element={<Versions />} />
-        <Route path="/admin/guardrails" element={<Guardrails />} />
         <Route
           path="/interview/setup-admin"
           element={<SessionSetupPage adminMode />}
