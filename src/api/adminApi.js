@@ -135,3 +135,44 @@ export async function getAuditLogs(params = {}) {
   const res = await axiosInstance.get('/admin/audit-logs', { params: query })
   return res.data // { total, page, size, results }
 }
+
+// ── Points ──────────────────────────────────────────────────────────────────
+
+export async function getPointHistory(params = {}) {
+  const { user_id, transaction_type, search, page, size } = params
+  const query = {}
+  if (user_id) query.user_id = user_id
+  if (transaction_type) query.transaction_type = transaction_type
+  if (search) query.search = search
+  if (page) query.page = page
+  if (size) query.size = size
+  const res = await axiosInstance.get('/admin/points/history', { params: query })
+  return res.data // { total, page, size, results }
+}
+
+// 자동 적립/차감 정책 목록 (PointPolicy)
+export async function getPointPolicies() {
+  const res = await axiosInstance.get('/admin/points/policies')
+  return res.data?.results ?? []
+}
+
+// 정책 단가/활성 편집 (REQ 미정 → 김이선 결정으로 추가). 변경은 이후 적립분부터 적용(소급 없음).
+export async function updatePointPolicy(policyId, body) {
+  const res = await axiosInstance.patch(`/admin/points/policies/${policyId}`, body)
+  return res.data
+}
+
+// 포인트 통계 — 전용 엔드포인트가 아직 없어 대시보드 집계(points, 기간 미지정=전체기간)를 재사용한다.
+// TODO(REQ-ADM-015): 보유 합계(ΣUser.point_balance)·금일 적립을 포함한 전용 통계 엔드포인트로 교체.
+export async function getPointStats() {
+  const res = await axiosInstance.get('/admin/dashboard')
+  return res.data?.points ?? { earned: 0, used: 0, refunded: 0, transaction_count: 0 }
+}
+
+// 관리자 수동 지급/차감 (REQ-ADM-013). 다음 단계의 지급/회수 모달에서 사용.
+export async function adjustMemberPoints(memberId, { amount, reason, idempotency_key } = {}) {
+  const body = { amount, reason }
+  if (idempotency_key) body.idempotency_key = idempotency_key
+  const res = await axiosInstance.post(`/admin/members/${memberId}/points/adjust`, body)
+  return res.data
+}

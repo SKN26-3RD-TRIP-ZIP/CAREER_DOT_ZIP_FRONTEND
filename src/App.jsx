@@ -18,6 +18,7 @@ import Login from './pages/admin/Login.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
 import MemberDetail from './pages/admin/MemberDetail.jsx'
+import Points from './pages/admin/Points.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import AuditLogs from './pages/admin/AuditLogs.jsx'
 import Versions from './pages/admin/Versions.jsx'
@@ -115,6 +116,7 @@ function App() {
         <Route path="/admin/dashboard" element={<Dashboard />} />
         <Route path="/admin/members" element={<Members />} />
         <Route path="/admin/members/:userId" element={<MemberDetail />} />
+        <Route path="/admin/points" element={<Points />} />
         <Route path="/admin/prompts" element={<Prompts />} />
         <Route path="/admin/audit-logs" element={<AuditLogs />} />
         <Route path="/admin/versions" element={<Versions />} />
