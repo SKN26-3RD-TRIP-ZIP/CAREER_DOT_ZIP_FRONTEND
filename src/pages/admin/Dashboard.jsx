@@ -1,9 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardStats } from '../../api/adminApi'
-import { statNum, statMoney } from '../../utils/adminStats'
+import { statNum, isMissing } from '../../utils/adminStats'
 
 const DAY_LABEL = ['일', '월', '화', '수', '목', '금', '토']
 
+function statCostUsd(value) {
+  if (isMissing(value)) return '미집계'
+  return `$${Number(value).toFixed(4)}`
+}
+
+/* ── Weekly bar chart ──────────────────────────────────────────────────── */
 function WeeklyBarChart({ data = [] }) {
   const max = Math.max(...data.map((d) => d.count), 1)
   return (
@@ -24,31 +30,20 @@ function WeeklyBarChart({ data = [] }) {
   )
 }
 
-function StatCard({ label, value }) {
+/* ── Stat card (icon + value + label) ──────────────────────────────────── */
+function StatCard({ label, value, icon }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-[#1A2200] p-5 shadow-sm">
-      <p className="text-[26px] font-bold leading-none tracking-tight text-[#EEEEEE]">{value}</p>
+    <div className="flex flex-col gap-3 rounded-xl bg-[#1E293B] p-5 shadow-sm">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0A1A00]">
+        <span className="text-base text-[#08CB00]">{icon}</span>
+      </div>
+      <p className="text-[28px] font-bold leading-none tracking-tight text-[#EEEEEE]">{value}</p>
       <p className="text-sm text-[#AAAAAA]">{label}</p>
     </div>
   )
 }
 
-function StatGroup({ title, items }) {
-  return (
-    <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
-      <h2 className="text-base font-semibold text-[#EEEEEE]">{title}</h2>
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {items.map((it) => (
-          <div key={it.label}>
-            <p className="text-xl font-bold text-[#EEEEEE]">{it.value}</p>
-            <p className="text-xs text-[#AAAAAA]">{it.label}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
+/* ── Dashboard ─────────────────────────────────────────────────────────── */
 export default function Dashboard() {
   const { data: stats, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard-stats'],
@@ -68,56 +63,37 @@ export default function Dashboard() {
     )
   }
 
-  const reports = stats.reports ?? {}
-  const evals = stats.evaluations ?? {}
-  const points = stats.points ?? {}
-  const guardrails = stats.guardrails ?? {}
-
-  const MEMBER_CARDS = [
-    { label: '전체 회원', value: statNum(stats.total_members) },
-    { label: '활성 회원', value: statNum(stats.active_members) },
-    { label: '휴면 회원', value: statNum(stats.suspended_members) },
-    { label: '탈퇴 회원', value: statNum(stats.withdrawn_members) },
-    { label: '신규 회원', value: statNum(stats.new_members) },
-    { label: '완료 면접', value: statNum(stats.completed_sessions) },
+  // 명세서 기준 통계 카드 6개. 전부 백엔드 실집계 필드이며 가짜 system_health는 쓰지 않는다.
+  const STAT_CARDS = [
+    { label: '전체 회원', value: statNum(stats.total_members), icon: '△' },
+    { label: '면접 세션', value: statNum(stats.total_sessions), icon: '●' },
+    { label: '리포트', value: statNum(stats.total_reports), icon: '◇' },
+    { label: 'AI 호출', value: statNum(stats.ai_calls), icon: '↓' },
+    { label: '에러', value: statNum(stats.error_count), icon: '△' },
+    { label: '이번 달 비용', value: statCostUsd(stats.monthly_cost), icon: '□' },
   ]
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-[#EEEEEE]">대시보드</h1>
-        <p className="mt-1 text-sm text-[#AAAAAA]">실제 집계 통계입니다. 미집계 항목은 0으로 위장하지 않고 "미집계"로 표시합니다.</p>
+        <p className="mt-1 text-sm text-[#AAAAAA]">서비스 운영 현황을 한눈에 확인하세요. </p>
       </div>
 
+      {/* 6 stat cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        {MEMBER_CARDS.map((c) => <StatCard key={c.label} {...c} />)}
+        {STAT_CARDS.map((card) => (
+          <StatCard key={card.label} {...card} />
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <StatGroup title="리포트 · 평가" items={[
-          { label: '전체 리포트', value: statNum(stats.total_reports) },
-          { label: '리포트 성공', value: statNum(reports.success) },
-          { label: '리포트 실패', value: statNum(reports.failed) },
-          { label: '평가 완료', value: statNum(evals.completed) },
-          { label: '평가 실패', value: statNum(evals.failed) },
-          { label: '면접 세션', value: statNum(stats.total_sessions) },
-        ]} />
-        <StatGroup title="LLM · 가드레일" items={[
-          { label: 'AI 호출', value: statNum(stats.ai_calls) },
-          { label: 'API 오류', value: statNum(stats.error_count) },
-          { label: '이번 달 비용', value: statMoney(stats.monthly_cost) },
-          { label: '가드레일 이벤트', value: statNum(guardrails.event_count) },
-        ]} />
-        <StatGroup title="포인트" items={[
-          { label: '적립', value: statNum(points.earned) },
-          { label: '차감', value: statNum(points.used) },
-          { label: '환불', value: statNum(points.refunded) },
-          { label: '거래 수', value: statNum(points.transaction_count) },
-        ]} />
-        <div className="rounded-xl bg-[#1A2200] p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
-          <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
-          <div className="mt-6"><WeeklyBarChart data={stats.weekly_sessions ?? []} /></div>
+      {/* Weekly bar chart (full width) */}
+      <div className="rounded-xl bg-[#1E293B] p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-[#EEEEEE]">주간 면접 세션</h2>
+        <p className="mt-0.5 text-xs text-[#666666]">최근 7일 일별 진행 수</p>
+        <div className="mt-6">
+          <WeeklyBarChart data={stats.weekly_sessions ?? []} />
         </div>
       </div>
     </div>

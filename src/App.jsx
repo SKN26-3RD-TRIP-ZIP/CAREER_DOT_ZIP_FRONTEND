@@ -30,10 +30,10 @@ import Login from './pages/admin/Login.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Members from './pages/admin/Members.jsx'
 import MemberDetail from './pages/admin/MemberDetail.jsx'
+import Points from './pages/admin/Points.jsx'
 import Prompts from './pages/admin/Prompts.jsx'
 import AuditLogs from './pages/admin/AuditLogs.jsx'
 import Versions from './pages/admin/Versions.jsx'
-import Guardrails from './pages/admin/Guardrails.jsx'
 import PrivateRoute from './components/admin/layout/PrivateRoute.jsx'
 import EvaluationRoutes from './routes/evaluationRoutes.jsx'
 import SharedReportPage from './pages/evaluation/SharedReportPage.jsx'
@@ -43,6 +43,7 @@ import AppLayout from './components/layout/AppLayout.jsx'
 
 const prototypeRoutes = [
   '/dashboard',
+  '/onboarding',
   '/data',
   '/data/jd',
   '/data/resume',
@@ -120,6 +121,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
       <Route element={<ProtectedRoute requireComplete />}>
+        <Route path="/dashboard" element={<MyPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/growth" element={<GrowthDashboardPage />} />
         <Route path="/mypage/points" element={<PointsPage />} />
@@ -154,10 +156,10 @@ function App() {
         <Route path="/admin/dashboard" element={<Dashboard />} />
         <Route path="/admin/members" element={<Members />} />
         <Route path="/admin/members/:userId" element={<MemberDetail />} />
+        <Route path="/admin/points" element={<Points />} />
         <Route path="/admin/prompts" element={<Prompts />} />
         <Route path="/admin/audit-logs" element={<AuditLogs />} />
         <Route path="/admin/versions" element={<Versions />} />
-        <Route path="/admin/guardrails" element={<Guardrails />} />
         <Route
           path="/interview/setup-admin"
           element={<SessionSetupPage adminMode />}
