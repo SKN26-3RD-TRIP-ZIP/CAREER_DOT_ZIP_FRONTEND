@@ -30,7 +30,7 @@ export function useTTS() {
   }, []);
 
   const speakWithBrowser = useCallback(
-    (text, requestId = requestIdRef.current) => {
+    (text, requestId = requestIdRef.current, options = {}) => {
       // 백엔드 TTS가 없거나 실패했을 때 브라우저 기본 TTS로 fallback한다.
       if (!browserTtsSupported || !text) return false;
       if (requestId !== requestIdRef.current) return false;
@@ -49,7 +49,9 @@ export function useTTS() {
         setIsSpeaking(true);
       };
       utterance.onend = () => {
-        if (requestId === requestIdRef.current) setIsSpeaking(false);
+        if (requestId !== requestIdRef.current) return;
+        setIsSpeaking(false);
+        options.onEnd?.({ method: 'browser' });
       };
       utterance.onerror = () => {
         if (requestId === requestIdRef.current) setIsSpeaking(false);
@@ -73,7 +75,10 @@ export function useTTS() {
 
   const speak = useCallback(
     async (text, options = {}) => {
-      if (!isSupported || !text) return;
+      if (!isSupported || !text) {
+        options.onEnd?.({ method: 'none' });
+        return;
+      }
 
       stop();
       const requestId = requestIdRef.current + 1;
@@ -112,7 +117,7 @@ export function useTTS() {
             if (requestId !== requestIdRef.current) return;
             cleanupOpenAiAudio();
             setIsSpeaking(false);
-            speakWithBrowser(text, requestId);
+            speakWithBrowser(text, requestId, options);
           };
 
           await audio.play();
@@ -125,7 +130,10 @@ export function useTTS() {
       }
 
       // 백엔드 TTS를 사용할 수 없는 경우에도 최소한 질문 읽기 경험은 유지한다.
-      speakWithBrowser(text, requestId);
+      const started = speakWithBrowser(text, requestId, options);
+      if (!started && requestId === requestIdRef.current) {
+        options.onEnd?.({ method: 'none' });
+      }
     },
     [audioSupported, cleanupOpenAiAudio, isSupported, speakWithBrowser, stop]
   );

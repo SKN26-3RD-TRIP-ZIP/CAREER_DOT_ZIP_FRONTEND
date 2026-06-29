@@ -3,12 +3,17 @@
 // FE는 STT 결과를 자동 제출하지 않는다(사용자 확인·수정 후 제출).
 
 const STT_CODE_MESSAGE = {
+  stt_answer_too_short: '답변이 너무 짧아 다시 녹음이 필요합니다. 질문에 대해 한두 문장 이상으로 답변해 주세요.',
   audio_too_large: '녹음 파일이 너무 큽니다. 더 짧게 녹음해 주세요.',
   whisper_stt_failed: '음성 변환 서버 호출에 실패했습니다. 잠시 후 다시 시도해 주세요.',
   whisper_stt_timeout: '음성 변환이 지연되어 시간이 초과됐습니다. 다시 시도해 주세요.',
 };
 
 // 서버 Whisper는 OPENAI_API_KEY 미설정 시 500 + detail 로 응답한다(실 Provider 키 부재).
+const MIN_STT_TEXT_CHARS = 5;
+const MIN_STT_WORD_COUNT = 2;
+const MIN_STT_SPEECH_DURATION_SEC = 1.0;
+
 export function isSttEnvRequired(error) {
   const data = error?.response?.data || {};
   const detail = typeof data.detail === 'string' ? data.detail : '';
@@ -38,6 +43,33 @@ export function sttErrorMessage(error) {
 
 export function isEmptyTranscript(text) {
   return !text || !String(text).trim();
+}
+
+export function validateSttAnswerQuality({ text, speechDuration } = {}) {
+  const normalizedText = String(text || '').trim();
+  const wordCount = normalizedText.split(/\s+/).filter(Boolean).length;
+  const duration = speechDuration == null || speechDuration === ''
+    ? null
+    : Number(speechDuration);
+  const reasons = [];
+
+  if (!normalizedText) reasons.push('empty_text');
+  if (normalizedText.length < MIN_STT_TEXT_CHARS) reasons.push('text_too_short');
+  if (wordCount < MIN_STT_WORD_COUNT) reasons.push('word_count_too_low');
+  if (Number.isFinite(duration) && duration < MIN_STT_SPEECH_DURATION_SEC) {
+    reasons.push('speech_duration_too_short');
+  }
+
+  return {
+    ok: reasons.length === 0,
+    reasons,
+    message: STT_CODE_MESSAGE.stt_answer_too_short,
+    metrics: {
+      textLength: normalizedText.length,
+      wordCount,
+      speechDuration: Number.isFinite(duration) ? duration : null
+    }
+  };
 }
 
 export function isSupportedAudioMime(type) {

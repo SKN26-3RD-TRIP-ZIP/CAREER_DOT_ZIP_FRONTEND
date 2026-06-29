@@ -317,7 +317,7 @@ function MyPage() {
       description="최근 면접 리포트와 약점 기반 연습 흐름을 한 화면에서 확인하세요."
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => navigate('/interview/setup')}>
+          <Button type="button" onClick={() => navigate('/analysis')}>
             면접 시작하기
           </Button>
           <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
@@ -368,7 +368,7 @@ function MyPage() {
           <DashboardCard>
             <h2 className="text-lg font-black text-[#253900]">추천 다음 행동</h2>
             <div className="mt-4 grid gap-2">
-              <Button type="button" onClick={() => navigate('/interview/setup')}>
+              <Button type="button" onClick={() => navigate('/analysis')}>
                 다시 면접하기
               </Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/jd')}>
@@ -422,7 +422,7 @@ function MyPage() {
                   )}
                 </div>
               ) : (
-                <EmptyState title="아직 생성된 리포트가 없습니다" description="면접을 완료하면 점수와 요약이 이곳에 표시됩니다." actionLabel="면접 시작하기" actionTo="/interview/setup" />
+                <EmptyState title="아직 생성된 리포트가 없습니다" description="면접을 완료하면 점수와 요약이 이곳에 표시됩니다." actionLabel="면접 시작하기" actionTo="/analysis" />
               )}
             </DashboardCard>
 
@@ -464,7 +464,7 @@ function MyPage() {
             <DashboardCard>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-xl font-black text-[#253900]">추천 연습 질문</h2>
-                <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
+                <Button type="button" variant="secondary" onClick={() => navigate('/analysis')}>
                   다시 면접하기
                 </Button>
               </div>
@@ -559,7 +559,7 @@ function MyPage() {
             ) : historyError ? (
               <Alert tone="danger">{historyError}</Alert>
             ) : history.length === 0 ? (
-              <EmptyState title="아직 면접 기록이 없습니다" description="JD와 이력서를 선택해 첫 면접을 시작해보세요." actionLabel="면접 시작하기" actionTo="/interview/setup" />
+              <EmptyState title="아직 면접 기록이 없습니다" description="JD와 이력서를 선택해 첫 면접을 시작해보세요." actionLabel="면접 시작하기" actionTo="/analysis" />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] border-collapse text-left text-sm">

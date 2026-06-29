@@ -17,7 +17,7 @@ function ReportPage() {
             title="표시할 리포트 데이터가 없습니다"
             description="면접을 완료하면 최종 리포트가 생성됩니다. 세션이 있다면 실제 리포트 화면으로 이동할 수 있습니다."
             actionLabel={sessionId ? '최종 리포트로 이동' : '면접 시작하기'}
-            actionTo={sessionId ? `/report/${sessionId}` : '/interview/setup'}
+            actionTo={sessionId ? `/report/${sessionId}` : '/analysis'}
           />
         </Card>
       </PageShell>
@@ -54,7 +54,7 @@ function ReportPage() {
           <Button type="button" variant="secondary" onClick={() => navigate('/mypage')}>
             마이페이지
           </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
+          <Button type="button" variant="secondary" onClick={() => navigate('/analysis')}>
             다시 면접하기
           </Button>
         </div>

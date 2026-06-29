@@ -39,7 +39,6 @@ import AppLayout from './components/layout/AppLayout.jsx'
 
 const prototypeRoutes = [
   '/onboarding',
-  '/dashboard',
   '/data',
   '/data/jd',
   '/data/resume',
@@ -121,6 +120,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
       <Route element={<ProtectedRoute requireComplete />}>
+        <Route path="/dashboard" element={<MyPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/growth" element={<GrowthDashboardPage />} />
         <Route path="/mypage/points" element={<PointsPage />} />

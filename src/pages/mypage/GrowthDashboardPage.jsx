@@ -63,7 +63,7 @@ export default function GrowthDashboardPage() {
       description="실제 평가가 완료된 면접 결과만으로 성장 추이를 비교합니다. (Mock·미평가·실패 결과 제외)"
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => navigate('/interview/setup')}>면접 시작하기</Button>
+          <Button type="button" onClick={() => navigate('/analysis')}>면접 시작하기</Button>
           <Button type="button" variant="secondary" onClick={() => navigate('/interview/question-packs')}>질문팩</Button>
           <Button type="button" variant="secondary" onClick={() => navigate('/mypage/terms')}>약관·동의 관리</Button>
         </div>
@@ -95,7 +95,7 @@ export default function GrowthDashboardPage() {
             {state === 'none' && (
               <div className="mt-4">
                 <Alert tone="info">아직 분석 가능한 면접 결과가 없습니다.</Alert>
-                <Button type="button" className="mt-4" onClick={() => navigate('/interview/setup')}>면접 시작하기</Button>
+                <Button type="button" className="mt-4" onClick={() => navigate('/analysis')}>면접 시작하기</Button>
               </div>
             )}
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import TopNav from '../layout/TopNav.jsx';
 
 const toneMap = {
   default: 'border-[#000000] bg-[#EEEEEE] text-[#000000]',
@@ -14,60 +15,6 @@ export const palette = {
   black: '#000000',
   bg: '#EEEEEE',
 };
-
-// 상단 글로벌 네비게이션 (Figma v5: 자료 입력 / 마이페이지 등 공통 헤더)
-const NAV_ITEMS = [
-  { label: '대시보드', to: '/mypage' },
-  { label: '자료 입력', to: '/jd' },
-  { label: 'AI 분석', to: '/analysis' },
-  { label: '면접 진행', to: '/interview/setup' },
-  { label: '리포트', to: '/mypage' },
-  { label: '마이페이지', to: '/mypage' },
-];
-
-export function TopNav({ active = '', disabled = false }) {
-  return (
-    <header className="sticky top-0 z-30 border-b border-[rgba(0,0,0,0.08)] bg-[#EEEEEE]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5">
-        <div className="flex items-center gap-8">
-          <Logo disabled={disabled} />
-          <nav className="hidden items-center gap-6 text-sm lg:flex">
-            {NAV_ITEMS.map((item) =>
-              disabled ? (
-                <span
-                  key={item.label}
-                  aria-disabled="true"
-                  className={
-                    active === item.label
-                      ? 'cursor-not-allowed font-black text-[#08CB00]'
-                      : 'cursor-not-allowed font-bold text-[rgba(0,0,0,0.40)]'
-                  }
-                >
-                  {item.label}
-                </span>
-              ) : (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className={
-                    active === item.label
-                      ? 'font-black text-[#08CB00]'
-                      : 'font-bold text-[#000000] transition hover:text-[#253900]'
-                  }
-                >
-                  {item.label}
-                </Link>
-              ),
-            )}
-          </nav>
-        </div>
-        <Button as={disabled ? 'button' : Link} to={disabled ? undefined : '/interview/setup'} disabled={disabled} className="h-10 px-4 py-0 text-sm">
-          면접 시작하기
-        </Button>
-      </div>
-    </header>
-  );
-}
 
 export function PageShell({
   eyebrow,
