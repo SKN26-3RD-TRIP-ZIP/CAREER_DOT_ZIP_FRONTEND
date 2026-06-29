@@ -27,6 +27,19 @@ const CODE_MESSAGES = {
   // points
   INSUFFICIENT_POINTS: '포인트 잔액이 부족합니다.',
   DUPLICATE_REQUEST: '이미 처리 중인 요청입니다. 잠시 후 다시 시도해 주세요.',
+  INVALID_FILE_TYPE: 'PDF 또는 DOCX 파일만 업로드할 수 있습니다.',
+  INVALID_FILE_SIGNATURE: '파일 형식이 올바르지 않습니다. PDF 또는 DOCX 파일인지 확인해 주세요.',
+  FILE_EMPTY: '내용이 없는 파일은 업로드할 수 없습니다.',
+  FILE_TOO_LARGE: '파일은 최대 10MB까지 업로드할 수 있습니다.',
+  DOCUMENT_CORRUPTED: '파일이 손상되어 내용을 읽을 수 없습니다.',
+  DOCUMENT_ENCRYPTED: '암호가 설정된 PDF는 사용할 수 없습니다. 암호를 해제한 뒤 다시 업로드해 주세요.',
+  DOCUMENT_MACRO_DETECTED: '매크로가 포함된 DOCX 파일은 업로드할 수 없습니다.',
+  TEXT_EXTRACTION_FAILED: '문서에서 텍스트를 추출하지 못했습니다.',
+  DOCUMENT_TOO_SHORT: '분석하기에 문서 내용이 너무 짧습니다. 내용을 확인한 후 다시 업로드해 주세요.',
+  DOCUMENT_TYPE_MISMATCH: '선택한 문서 종류와 실제 문서 내용이 일치하지 않습니다.',
+  DOCUMENT_NOT_RELEVANT: '면접 준비에 사용할 수 없는 문서입니다.',
+  UNSAFE_DOCUMENT_CONTENT: '문서에서 처리할 수 없는 명령성 내용이 발견되었습니다.',
+  OCR_NOT_SUPPORTED: '이미지로만 구성된 문서는 현재 지원하지 않습니다. 텍스트가 포함된 PDF 또는 DOCX를 업로드해 주세요.',
 };
 
 // HTTP status → 기본 메시지 (코드 매칭 실패 시 fallback)
@@ -43,7 +56,7 @@ const STATUS_MESSAGES = {
 };
 
 export function getErrorCode(err) {
-  return err?.response?.data?.code || null;
+  return err?.response?.data?.error_code || err?.response?.data?.code || null;
 }
 
 export function getErrorStatus(err) {

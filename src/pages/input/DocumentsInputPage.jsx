@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { resumeApi } from '../../api/resumeApi';
+import { toUserMessage } from '../../api/errors';
 import {
   Alert,
   Button,
@@ -27,14 +28,7 @@ function validateResumeFile(file) {
 }
 
 function formatApiError(err, fallback) {
-  const status = err?.response?.status;
-  const detail = err?.response?.data?.detail || err?.response?.data;
-  if (!err?.response) return '서버에 연결할 수 없습니다. 백엔드 실행 상태를 확인해주세요.';
-  if (status === 401) return '로그인이 필요합니다. 다시 로그인해주세요.';
-  if (status === 413) return '파일 크기는 10MB를 초과할 수 없습니다.';
-  if (status === 422) return typeof detail === 'string' ? detail : '파일에서 텍스트를 추출하지 못했습니다.';
-  if (status === 400) return typeof detail === 'string' ? detail : `입력값 오류: ${JSON.stringify(detail)}`;
-  return `${fallback} (HTTP ${status})`;
+  return toUserMessage(err, fallback);
 }
 
 function DocumentsInputPage() {
