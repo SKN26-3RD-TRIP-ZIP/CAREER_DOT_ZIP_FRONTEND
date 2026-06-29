@@ -22,6 +22,34 @@ const JOB_LABEL = {
   etc: '기타',
 };
 
+const POINT_TYPE_LABEL = {
+  EARN: '적립',
+  USE: '사용',
+  REFUND: '환불',
+  EXPIRE: '만료',
+  ADMIN: '관리자 조정',
+};
+
+const POINT_REASON_LABEL = {
+  REPORT_PURCHASE: '리포트 생성',
+  REPORT_REFUND: '리포트 환불',
+  ADMIN_ADJUST: '관리자 조정',
+  SIGNUP_BONUS: '가입 보너스',
+  EVENT_REWARD: '이벤트 적립',
+};
+
+const pointTypeTone = (type) => {
+  if (type === 'EARN' || type === 'REFUND') return 'success';
+  if (type === 'USE' || type === 'EXPIRE') return 'warning';
+  if (type === 'ADMIN') return 'default';
+  return 'default';
+};
+
+const formatPointAmount = (amount) => {
+  const value = Number(amount || 0);
+  return `${value > 0 ? '+' : ''}${value.toLocaleString('ko-KR')}P`;
+};
+
 function safeJsonParse(value) {
   if (!value) return null;
   try {
@@ -103,6 +131,12 @@ function MyPage() {
   const [reports, setReports] = useState([]);
   const [latestReportDetail, setLatestReportDetail] = useState(null);
   const [latestReportDetailError, setLatestReportDetailError] = useState('');
+  const [pointBalance, setPointBalance] = useState(null);
+  const [pointHistory, setPointHistory] = useState([]);
+  const [pointTotal, setPointTotal] = useState(0);
+  const [pointPage, setPointPage] = useState(1);
+  const [pointLoading, setPointLoading] = useState(true);
+  const [pointError, setPointError] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -169,6 +203,40 @@ function MyPage() {
     };
   }, [navigate, setUser]);
 
+  useEffect(() => {
+    if (!localStorage.getItem('access_token')) return undefined;
+    let active = true;
+    setPointLoading(true);
+    setPointError('');
+
+    Promise.all([
+      mypageApi.getPointBalance(),
+      mypageApi.getPointHistory({ page: pointPage, size: 10 }),
+    ])
+      .then(([balanceData, historyData]) => {
+        if (!active) return;
+        const results = Array.isArray(historyData?.results) ? historyData.results : [];
+        setPointBalance(balanceData);
+        setPointHistory(results);
+        setPointTotal(historyData?.total ?? results.length);
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err.response?.status === 401) {
+          navigate('/auth/login');
+          return;
+        }
+        setPointError('포인트 내역을 불러오지 못했습니다.');
+      })
+      .finally(() => {
+        if (active) setPointLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate, pointPage]);
+
   const handleLogout = async () => {
     try {
       await logoutApi();
@@ -188,6 +256,12 @@ function MyPage() {
   const latestReportScore = latestReport ? getOverallScore(latestReport, null) : null;
   const latestReportSessionId = reportSessionId(latestReport);
   const interviewCount = summary?.interview_count ?? historyTotal;
+  const pointSummaryBalance = pointBalance?.point_balance ?? summary?.point_balance ?? 0;
+  const latestEarn = pointHistory.find((item) => item.transaction_type === 'EARN');
+  const latestUse = pointHistory.find((item) => item.transaction_type === 'USE');
+  const latestRefund = pointHistory.find((item) => item.transaction_type === 'REFUND');
+  const latestAdminAdjust = pointHistory.find((item) => item.transaction_type === 'ADMIN');
+  const pointTotalPages = Math.max(1, Math.ceil(pointTotal / 10));
 
   useEffect(() => {
     if (!latestReportSessionId) {
@@ -215,7 +289,7 @@ function MyPage() {
   const growthPoints = useMemo(
     () =>
       [...reports]
-        .filter((r) => getOverallScore(r, null) != null)
+        .filter((r) => !r?.is_mock && getOverallScore(r, null) != null)
         .sort((a, b) => new Date(a.generated_at || a.created_at || 0) - new Date(b.generated_at || b.created_at || 0))
         .map((r) => ({
           session_id: reportSessionId(r),
@@ -243,11 +317,23 @@ function MyPage() {
       description="최근 면접 리포트와 약점 기반 연습 흐름을 한 화면에서 확인하세요."
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => navigate('/interview/setup')}>
+          <Button type="button" onClick={() => navigate('/analysis')}>
             면접 시작하기
           </Button>
           <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
             내 정보 수정
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/terms')}>
+            약관·동의 관리
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/interview/question-packs')}>
+            질문팩
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/growth')}>
+            성장 대시보드
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/points')}>
+            포인트 내역
           </Button>
           <Button type="button" variant="danger" onClick={handleLogout}>
             로그아웃
@@ -282,7 +368,7 @@ function MyPage() {
           <DashboardCard>
             <h2 className="text-lg font-black text-[#253900]">추천 다음 행동</h2>
             <div className="mt-4 grid gap-2">
-              <Button type="button" onClick={() => navigate('/interview/setup')}>
+              <Button type="button" onClick={() => navigate('/analysis')}>
                 다시 면접하기
               </Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/jd')}>
@@ -301,12 +387,13 @@ function MyPage() {
           ) : summaryError ? (
             <Alert tone="danger">{summaryError}</Alert>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
               <StatCard label="총 면접 수" value={interviewCount ?? 0} />
               <StatCard label="등록 JD 수" value={summary?.jd_count ?? 0} />
               <StatCard label="등록 이력서 수" value={summary?.resume_count ?? 0} />
               <StatCard label="자소서 수" value={summary?.cover_letter_count ?? 0} />
               <StatCard label="프로젝트 수" value={summary?.project_count ?? 0} />
+              <StatCard label="포인트" value={`${Number(pointSummaryBalance).toLocaleString('ko-KR')}P`} />
             </div>
           )}
 
@@ -335,7 +422,7 @@ function MyPage() {
                   )}
                 </div>
               ) : (
-                <EmptyState title="아직 생성된 리포트가 없습니다" description="면접을 완료하면 점수와 요약이 이곳에 표시됩니다." actionLabel="면접 시작하기" actionTo="/interview/setup" />
+                <EmptyState title="아직 생성된 리포트가 없습니다" description="면접을 완료하면 점수와 요약이 이곳에 표시됩니다." actionLabel="면접 시작하기" actionTo="/analysis" />
               )}
             </DashboardCard>
 
@@ -377,7 +464,7 @@ function MyPage() {
             <DashboardCard>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-xl font-black text-[#253900]">추천 연습 질문</h2>
-                <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
+                <Button type="button" variant="secondary" onClick={() => navigate('/analysis')}>
                   다시 면접하기
                 </Button>
               </div>
@@ -396,6 +483,73 @@ function MyPage() {
           </section>
 
           <DashboardCard>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black text-[#253900]">포인트 내역</h2>
+                <p className="mt-1 text-sm font-semibold">현재 잔액 {Number(pointSummaryBalance).toLocaleString('ko-KR')}P</p>
+              </div>
+              <StatusBadge>{pointTotal}건</StatusBadge>
+            </div>
+            {pointLoading ? (
+              <LoadingState title="포인트 내역을 불러오는 중입니다" />
+            ) : pointError ? (
+              <Alert tone="danger">{pointError}</Alert>
+            ) : (
+              <>
+                <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatCard label="최근 적립" value={latestEarn ? formatPointAmount(latestEarn.amount) : '-'} />
+                  <StatCard label="최근 사용" value={latestUse ? formatPointAmount(latestUse.amount) : '-'} />
+                  <StatCard label="최근 환불" value={latestRefund ? formatPointAmount(latestRefund.amount) : '-'} />
+                  <StatCard label="관리자 조정" value={latestAdminAdjust ? formatPointAmount(latestAdminAdjust.amount) : '-'} />
+                </div>
+                {pointHistory.length === 0 ? (
+                  <EmptyState title="포인트 거래 내역이 없습니다" description="포인트가 적립되거나 사용되면 이곳에 표시됩니다." />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-[rgba(0,0,0,0.12)] text-[#253900]">
+                          <th className="py-3 pr-4">날짜</th>
+                          <th className="py-3 pr-4">구분</th>
+                          <th className="py-3 pr-4">사유</th>
+                          <th className="py-3 pr-4">변동</th>
+                          <th className="py-3 pr-4">거래 후 잔액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pointHistory.map((item) => (
+                          <tr key={item.point_history_id} className="border-b border-[rgba(0,0,0,0.12)]">
+                            <td className="py-3 pr-4">{fmtDateTime(item.created_at)}</td>
+                            <td className="py-3 pr-4">
+                              <StatusBadge tone={pointTypeTone(item.transaction_type)}>
+                                {POINT_TYPE_LABEL[item.transaction_type] || item.transaction_type}
+                              </StatusBadge>
+                            </td>
+                            <td className="py-3 pr-4 font-semibold">
+                              {POINT_REASON_LABEL[item.reason_code] || item.description || item.reason_code || '-'}
+                            </td>
+                            <td className="py-3 pr-4 font-black">{formatPointAmount(item.amount)}</td>
+                            <td className="py-3 pr-4 font-black">{Number(item.balance_after ?? 0).toLocaleString('ko-KR')}P</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="mt-4 flex items-center justify-end gap-2">
+                  <Button type="button" variant="secondary" disabled={pointPage <= 1} onClick={() => setPointPage((p) => Math.max(1, p - 1))}>
+                    이전
+                  </Button>
+                  <span className="text-sm font-black">{pointPage} / {pointTotalPages}</span>
+                  <Button type="button" variant="secondary" disabled={pointPage >= pointTotalPages} onClick={() => setPointPage((p) => Math.min(pointTotalPages, p + 1))}>
+                    다음
+                  </Button>
+                </div>
+              </>
+            )}
+          </DashboardCard>
+
+          <DashboardCard>
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-xl font-black text-[#253900]">최근 면접 기록</h2>
               <StatusBadge>{historyTotal}건</StatusBadge>
@@ -405,7 +559,7 @@ function MyPage() {
             ) : historyError ? (
               <Alert tone="danger">{historyError}</Alert>
             ) : history.length === 0 ? (
-              <EmptyState title="아직 면접 기록이 없습니다" description="JD와 이력서를 선택해 첫 면접을 시작해보세요." actionLabel="면접 시작하기" actionTo="/interview/setup" />
+              <EmptyState title="아직 면접 기록이 없습니다" description="JD와 이력서를 선택해 첫 면접을 시작해보세요." actionLabel="면접 시작하기" actionTo="/analysis" />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] border-collapse text-left text-sm">

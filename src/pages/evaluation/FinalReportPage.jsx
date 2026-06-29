@@ -45,6 +45,76 @@ function ShareButton({ sessionId }) {
   );
 }
 
+
+function getWeaknessLabels(report) {
+  const candidates = [
+    report?.weaknesses,
+    report?.summary?.weaknesses,
+    report?.score_detail?.weaknesses,
+    report?.score_summary?.weaknesses,
+    report?.raw_data?.weaknesses,
+    report?.raw_data?.summary?.weaknesses,
+  ]
+
+  const source = candidates.find(Array.isArray) ?? []
+
+  return source
+    .map((item) => {
+      if (typeof item === 'string') {
+        return item.trim()
+      }
+
+      return String(
+        item?.label ??
+          item?.name ??
+          item?.tag ??
+          item?.weakness ??
+          '',
+      ).trim()
+    })
+    .filter(Boolean)
+    .slice(0, 4)
+}
+
+function WeaknessPracticeCta({ report }) {
+  const weaknesses = getWeaknessLabels(report)
+
+  if (weaknesses.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="no-print mt-5 rounded-2xl border border-[#08CB00] bg-[rgba(8,203,0,0.06)] p-5">
+      <h2 className="text-base font-black text-[#253900]">
+        약점 집중 연습
+      </h2>
+
+      <p className="mt-1 text-sm text-[rgba(0,0,0,0.6)]">
+        취약한 역량을 골라 관련 질문팩으로 바로 연습할 수 있습니다.
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {weaknesses.map((label, index) => (
+          <a
+            key={`${label}-${index}`}
+            href={`/interview/question-packs?focus=${encodeURIComponent(label)}`}
+            className="rounded-full border border-[#253900] px-3 py-1 text-xs font-black text-[#253900] transition hover:bg-[rgba(37,57,0,0.08)]"
+          >
+            {label} · 집중 연습
+          </a>
+        ))}
+
+        <a
+          href="/interview/question-packs"
+          className="rounded-full border border-[rgba(0,0,0,0.18)] px-3 py-1 text-xs font-black text-[rgba(0,0,0,0.6)] transition hover:bg-[rgba(0,0,0,0.04)]"
+        >
+          추천 질문팩 보기
+        </a>
+      </div>
+    </section>
+  )
+}
+
 export default function FinalReportPage({ adminMode = false }) {
   const { sessionId = 'latest' } = useParams();
   const navigate = useNavigate();
@@ -98,7 +168,15 @@ export default function FinalReportPage({ adminMode = false }) {
         </div>
       }
     >
-      <FinalReportView report={reportQuery.data} reportBasePath={reportBasePath} adminMode={adminMode} />
+      <FinalReportView
+        report={reportQuery.data}
+        reportBasePath={reportBasePath}
+        adminMode={adminMode}
+      />
+
+      {!adminMode && (
+        <WeaknessPracticeCta report={reportQuery.data} />
+      )}
     </ReportLayout>
   );
 }

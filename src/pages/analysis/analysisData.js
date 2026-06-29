@@ -1,8 +1,7 @@
 export const navItems = [
   { label: '대시보드', to: '/dashboard' },
   { label: '자료 입력', to: '/data' },
-  { label: 'AI 분석', to: '/analysis/source' },
-  { label: '면접 진행', to: '/interview/setup' },
+  { label: '면접 진행', to: '/analysis/source' },
   { label: '리포트', to: '/report' },
   { label: '마이페이지', to: '/mypage' },
 ]

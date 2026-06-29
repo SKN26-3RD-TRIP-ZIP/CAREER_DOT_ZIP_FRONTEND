@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuthStore } from '../../../store/authStore'
+import { useEnsureMe } from '../../../hooks/useEnsureMe'
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', label: '대시보드' },
@@ -9,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/admin/points', label: '포인트 관리' },
   { to: '/admin/prompts', label: '프롬프트 관리' },
   { to: '/admin/versions', label: '버전 관리' },
+  { to: '/admin/guardrails', label: '가드레일' },
   { to: '/admin/audit-logs', label: '서비스 통계' },
 ]
 
@@ -65,14 +67,21 @@ function ProfileMenu() {
 }
 
 export default function PrivateRoute() {
-  const token = useAuthStore((s) => s.token)
-  const user = useAuthStore((s) => s.user)
+  // 토큰이 있으나 user 미hydrate(새로고침/직접진입) 시 /auth/me 로 staff 여부를 확정한다.
+  const { status, user } = useEnsureMe()
 
-  if (!token) {
+  if (status === 'unauthenticated') {
     return <Navigate to="/admin/login" replace />
   }
-
-  if (user && !user.is_staff) {
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#000000] text-[#AAAAAA]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#253900] border-t-[#08CB00]" />
+      </div>
+    )
+  }
+  // 조회 실패 또는 관리자 권한 없음 → 관리자 로그인으로 차단
+  if (status === 'error' || !user?.is_staff) {
     return <Navigate to="/admin/login" replace />
   }
 

@@ -6,7 +6,6 @@ import {
   Clock,
   Loader2,
   Mic,
-  Play,
   RotateCcw,
   Square,
   Volume2
@@ -14,6 +13,8 @@ import {
 import { interviewApi } from '../../api/interviewApi';
 import { useTTS } from '../../hooks/useTTS';
 import { useInterviewStore } from '../../store/interviewStore';
+import { extractGuardrail, guardrailUserMessage, categoryLabel, actionLabel, retryAllowed } from '../../utils/guardrail';
+import { sttErrorMessage, validateSttAnswerQuality } from '../../utils/voice';
 import './InterviewQuestionCheckPage.css';
 
 const waveBars = [18, 32, 44, 25, 58, 36, 68, 42, 60, 28, 52, 38, 70, 46, 34, 56, 24, 48, 30, 40];
@@ -158,15 +159,19 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
   const [processingStep, setProcessingStep] = useState('idle');
   const [failedStep, setFailedStep] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [guardrailNotice, setGuardrailNotice] = useState(null);
   const [followupNotice, setFollowupNotice] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [questionLoadError, setQuestionLoadError] = useState('');
+  const [countdown, setCountdown] = useState(null);
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
   const recordingStartedAtRef = useRef(0);
+  const countdownTimeoutRef = useRef(null);
+  const autoRecordingStartedRef = useRef(false);
 
   const totalQuestions = questions.length;
   const safeCurrentIndex = Math.min(currentQuestionIndex, Math.max(totalQuestions - 1, 0));
@@ -206,6 +211,14 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
     mediaRecorderRef.current = null;
   }, []);
 
+  const clearCountdown = useCallback(() => {
+    if (countdownTimeoutRef.current) {
+      window.clearTimeout(countdownTimeoutRef.current);
+      countdownTimeoutRef.current = null;
+    }
+    setCountdown(null);
+  }, []);
+
   const resetAnswerState = useCallback(() => {
     setMode('reading');
     setRecordingSeconds(0);
@@ -217,7 +230,9 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
     setFailedStep('');
     setErrorMessage('');
     setFollowupNotice('');
-  }, []);
+    clearCountdown();
+    autoRecordingStartedRef.current = false;
+  }, [clearCountdown]);
 
   useEffect(() => {
     if (!sessionId) return undefined;
@@ -266,15 +281,21 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
     resetAnswerState();
     if (isTtsSupported) {
       // 질문이 바뀔 때마다 세션 persona가 반영된 백엔드 TTS를 우선 재생한다.
-      speak(currentQuestionText, { sessionId });
+      speak(currentQuestionText, {
+        sessionId,
+        onEnd: () => setCountdown(3)
+      });
+    } else {
+      setCountdown(3);
     }
 
     return () => {
       // 질문 이동/페이지 이탈 시 이전 TTS와 녹음 스트림이 남지 않게 정리한다.
       stop();
+      clearCountdown();
       cleanupRecording();
     };
-  }, [cleanupRecording, currentQuestionId, currentQuestionText, hasQuestion, isCompleted, isTtsSupported, resetAnswerState, sessionId, speak, stop]);
+  }, [cleanupRecording, clearCountdown, currentQuestionId, currentQuestionText, hasQuestion, isCompleted, isTtsSupported, resetAnswerState, sessionId, speak, stop]);
 
   const processAndSave = useCallback(
     async ({ blob = audioBlob, duration = recordedDuration, reuseStt = false } = {}) => {
@@ -308,6 +329,17 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
         const sttText = nextSttResult?.stt_text?.trim();
         if (!sttText) {
           throw new Error('Whisper STT 결과 텍스트가 비어 있습니다.');
+        }
+
+        const sttQuality = validateSttAnswerQuality({
+          text: sttText,
+          speechDuration: nextSttResult?.speech_duration ?? duration
+        });
+        if (!sttQuality.ok) {
+          const qualityError = new Error(sttQuality.message);
+          qualityError.isSttQualityError = true;
+          qualityError.reasons = sttQuality.reasons;
+          throw qualityError;
         }
 
         if (!nextAnswerId) {
@@ -358,20 +390,40 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
         setProcessingStep('saved');
       } catch (error) {
         // 실패 단계에 따라 재시도 시 STT를 다시 할지, 기존 STT 결과로 저장만 재시도할지 나눈다.
+        const isQualityError = error?.isSttQualityError || error?.response?.data?.code === 'stt_answer_too_short';
+        if (isQualityError) {
+          setFailedStep('recording_quality');
+          setProcessingStep('idle');
+          setAudioBlob(null);
+          setSttResult(null);
+          setAnswerId('');
+          setRecordedDuration(0);
+          setErrorMessage(sttErrorMessage(error));
+          return;
+        }
         const step = nextSttResult ? (nextAnswerId ? 'patch' : 'answer') : 'stt';
         setFailedStep(step);
         setProcessingStep('idle');
-        setErrorMessage(getErrorMessage(error, '답변 처리 중 문제가 발생했습니다.'));
+        const guardrail = extractGuardrail(error);
+        if (guardrail) {
+          setGuardrailNotice(guardrail);
+          setErrorMessage(guardrailUserMessage(guardrail));
+        } else if (step === 'stt') {
+          setErrorMessage(sttErrorMessage(error));
+        } else {
+          setErrorMessage(getErrorMessage(error, '답변 처리 중 문제가 발생했습니다.'));
+        }
       }
     },
     [answerId, audioBlob, currentQuestionId, recordedDuration, sessionId, setQuestions, sttResult]
   );
 
-  const handleStartRecording = async () => {
+  const handleStartRecording = useCallback(async () => {
     if (!hasQuestion || isProcessing) return;
     // 사용자가 답변을 시작하면 질문 TTS를 멈추고 이전 답변 상태를 초기화한다.
     stop();
     setErrorMessage('');
+    setGuardrailNotice(null);
     setFailedStep('');
     setProcessingStep('idle');
     setAudioBlob(null);
@@ -416,7 +468,31 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
     } catch (error) {
       setErrorMessage(getErrorMessage(error, '마이크 녹음을 시작하지 못했습니다.'));
     }
-  };
+  }, [hasQuestion, isProcessing, processAndSave, stop]);
+
+  useEffect(() => {
+    if (!countdown || isCompleted || isAnswering || isProcessing) return undefined;
+
+    countdownTimeoutRef.current = window.setTimeout(() => {
+      if (countdown > 1) {
+        setCountdown(countdown - 1);
+        return;
+      }
+
+      setCountdown(null);
+      if (!autoRecordingStartedRef.current) {
+        autoRecordingStartedRef.current = true;
+        handleStartRecording();
+      }
+    }, 1000);
+
+    return () => {
+      if (countdownTimeoutRef.current) {
+        window.clearTimeout(countdownTimeoutRef.current);
+        countdownTimeoutRef.current = null;
+      }
+    };
+  }, [countdown, handleStartRecording, isAnswering, isCompleted, isProcessing]);
 
   const handleStopRecording = () => {
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return;
@@ -424,6 +500,18 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
   };
 
   const handleRetry = () => {
+    if (failedStep === 'recording_quality') {
+      setErrorMessage('');
+      setFailedStep('');
+      setAudioBlob(null);
+      setSttResult(null);
+      setAnswerId('');
+      setRecordedDuration(0);
+      setRecordingSeconds(0);
+      autoRecordingStartedRef.current = false;
+      setCountdown(3);
+      return;
+    }
     if (failedStep === 'stt') {
       // STT 단계에서 실패했다면 원본 blob으로 처음부터 다시 처리한다.
       processAndSave({ blob: audioBlob, duration: recordedDuration });
@@ -461,11 +549,12 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
     if (!sessionId) return '면접 설정 화면에서 세션과 질문을 먼저 생성해 주세요.';
     if (isLoadingQuestions) return '질문을 불러오고 있습니다.';
     if (questionLoadError) return questionLoadError;
+    if (countdown) return `${countdown}초 뒤 답변 녹음을 자동으로 시작합니다.`;
     if (isAnswering) return '답변을 녹음하고 있습니다.';
     if (isProcessing && processingStep !== 'saved') return processingLabel;
     if (isSaved) return '저장이 완료되었습니다. 다음 질문으로 이동할 수 있습니다.';
-    return isTtsSupported ? '질문을 듣고 준비가 되면 답변 녹음을 시작하세요.' : '브라우저 TTS를 사용할 수 없습니다. 질문을 읽고 답변해 주세요.';
-  }, [isAnswering, isLoadingQuestions, isProcessing, isSaved, isTtsSupported, processingLabel, processingStep, questionLoadError, sessionId]);
+    return isTtsSupported ? '질문을 모두 들으면 카운트다운 후 답변 녹음이 자동으로 시작됩니다.' : '질문을 확인한 뒤 카운트다운 후 답변 녹음이 자동으로 시작됩니다.';
+  }, [countdown, isAnswering, isLoadingQuestions, isProcessing, isSaved, isTtsSupported, processingLabel, processingStep, questionLoadError, sessionId]);
 
   return (
     <main className="interview-question-check">
@@ -522,6 +611,17 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
           </section>
         )}
 
+        {guardrailNotice && (
+          <section className="question-check-status is-error" role="alert">
+            <strong>가드레일 안내</strong>
+            <span>{guardrailUserMessage(guardrailNotice)}</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+              {categoryLabel(guardrailNotice.category)} · {actionLabel(guardrailNotice.action)}
+              {retryAllowed(guardrailNotice.action) ? ' · 다시 답변할 수 있습니다.' : ' · 세션이 종료되었습니다.'}
+            </span>
+          </section>
+        )}
+
         {followupNotice && (
           <section className="question-check-status">
             <strong>꼬리질문 확인</strong>
@@ -541,22 +641,12 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
               {!isCompleted && failedStep ? (
                 <button type="button" className="question-check-primary" disabled={isProcessing} onClick={handleRetry}>
                   <RotateCcw size={18} />
-                  {failedStep === 'stt' ? 'STT 재시도' : '저장 재시도'}
+                  {failedStep === 'recording_quality' ? '다시 녹음' : failedStep === 'stt' ? 'STT 재시도' : '저장 재시도'}
                 </button>
               ) : !isCompleted && isSaved ? (
                 <button type="button" className="question-check-primary question-check-wide" onClick={handleNext}>
                   <Check size={18} />
                   {safeCurrentIndex >= totalQuestions - 1 ? '세션 완료 처리' : '다음 질문으로 이동'}
-                </button>
-              ) : !isCompleted ? (
-                <button
-                  type="button"
-                  className="question-check-primary"
-                  disabled={!hasQuestion || isProcessing}
-                  onClick={handleStartRecording}
-                >
-                  <Play size={18} />
-                  답변 녹음 시작
                 </button>
               ) : null}
             </>
