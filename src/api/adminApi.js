@@ -176,4 +176,3 @@ export async function adjustMemberPoints(memberId, { amount, reason, idempotency
   const res = await axiosInstance.post(`/admin/members/${memberId}/points/adjust`, body)
   return res.data
 }
-

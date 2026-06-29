@@ -17,7 +17,7 @@ const PUBLIC_ENDPOINTS = [
   '/auth/signup',
   '/auth/token/refresh',
   '/auth/verify-email',
-  '/auth/resend-verification',
+  '/auth/verify-email/resend',
   // 소셜 로그인 시작/교환은 인증 불필요(AllowAny) — Authorization·자동 refresh 대상 제외.
   // 단, /auth/oauth/social/terms 는 인증이 필요하므로 여기에 포함하지 않는다(Bearer 헤더 필요).
   '/auth/oauth/exchange',

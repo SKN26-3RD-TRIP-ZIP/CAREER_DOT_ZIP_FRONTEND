@@ -123,7 +123,7 @@ export default function JdImportPage() {
       setSaveNotice('수정 내용을 저장했습니다.');
       if (navigateAfter) {
         localStorage.setItem('careerzip_selected_jd_id', String(result.jdId));
-        navigate('/session-setup');
+        navigate(`/input/jd/${result.jdId}/talent-profile`);
       }
       return true;
     } catch (err) {
@@ -135,7 +135,7 @@ export default function JdImportPage() {
   const useWithoutEdit = () => {
     if (!result?.jdId) return;
     localStorage.setItem('careerzip_selected_jd_id', String(result.jdId));
-    navigate('/session-setup');
+    navigate(`/input/jd/${result.jdId}/talent-profile`);
   };
 
   const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -211,6 +211,7 @@ export default function JdImportPage() {
           {saveNotice && <Alert tone="info" className="mt-4">{saveNotice}</Alert>}
           {saveError && <Alert tone="danger" className="mt-4">{saveError}</Alert>}
 
+          <p className="mt-4 text-sm font-bold text-[#253900]">저장 후 인재상 설정 화면으로 이동합니다.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button type="button" onClick={() => saveEdits(false)} disabled={saving}>{saving ? '저장 중...' : '수정 내용 저장'}</Button>
             <Button type="button" variant="secondary" onClick={() => saveEdits(true)} disabled={saving}>저장하고 면접 설정으로</Button>

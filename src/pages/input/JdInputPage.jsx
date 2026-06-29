@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { jdApi } from '../../api/jdApi';
 import { jobsApi } from '../../api/jobsApi';
 import { useJdStore } from '../../store/jdStore';
+import { getCreatedJdId } from '../../utils/talentProfile';
 import {
   Alert,
   Button,
@@ -112,11 +113,21 @@ function JdInputPage() {
   const [successData, setSuccessData] = useState(null);
 
   const rememberJd = (data) => {
-    const nextJdId = data?.jd_id ?? data?.id ?? null;
-    if (!nextJdId) return;
+    const nextJdId = getCreatedJdId(data);
+    if (!nextJdId) return null;
     setJd(nextJdId, data);
     window.localStorage.setItem('careerzip_temp_jd_id', nextJdId);
     window.localStorage.setItem('careerzip_selected_jd_id', nextJdId);
+    return nextJdId;
+  };
+
+  const goTalentProfile = (data) => {
+    const nextJdId = rememberJd(data);
+    if (!nextJdId) {
+      setError('JD 저장은 완료됐지만 응답에서 JD ID를 찾을 수 없습니다. 새로고침 후 다시 시도해주세요.');
+      return;
+    }
+    navigate(`/input/jd/${nextJdId}/talent-profile`);
   };
 
   const handleChange = (e) => {
@@ -181,9 +192,8 @@ function JdInputPage() {
     setLoading(true);
     try {
       const data = await jdApi.createJd(buildPayload());
-      rememberJd(data);
       setSuccessData(data);
-      navigate('/input/documents');
+      goTalentProfile(data);
     } catch (err) {
       setError(formatApiError(err, 'JD 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -224,9 +234,8 @@ function JdInputPage() {
     setLoading(true);
     try {
       const data = await jobsApi.saveJobAsJd(selectedMockJob);
-      rememberJd(data);
       setSuccessData(data);
-      navigate('/input/documents');
+      goTalentProfile(data);
     } catch (err) {
       setError(formatApiError(err, '합성 공고 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -260,9 +269,8 @@ function JdInputPage() {
         company_name: uploadForm.company_name.trim(),
         position: uploadForm.position.trim(),
       });
-      rememberJd(data);
       setSuccessData(data);
-      navigate('/input/documents');
+      goTalentProfile(data);
     } catch (err) {
       setError(formatApiError(err, 'JD PDF 업로드에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
@@ -294,14 +302,14 @@ function JdInputPage() {
             <Alert tone="success">
               JD가 저장되었습니다. {successData.company_name || ''} {successData.position || ''}
             </Alert>
-            {(successData.jd_id ?? successData.id) && (
+            {getCreatedJdId(successData) && (
               <p className="text-sm text-[#000000]">
-                JD ID: <span className="font-mono font-semibold text-[#253900]">{successData.jd_id ?? successData.id}</span>
+                JD ID: <span className="font-mono font-semibold text-[#253900]">{getCreatedJdId(successData)}</span>
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={() => navigate('/input/documents')}>
-                저장하고 다음
+              <Button type="button" onClick={() => goTalentProfile(successData)}>
+                인재상 설정으로
               </Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
                 면접 설정으로 이동
