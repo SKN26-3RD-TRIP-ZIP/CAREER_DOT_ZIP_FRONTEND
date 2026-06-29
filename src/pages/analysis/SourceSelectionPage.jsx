@@ -8,8 +8,10 @@ import {
   getCoverLetterList,
   getJdList,
   getResumeList,
+  saveJdTalentProfile,
   startAnalysis,
 } from '../../api/analysisApi'
+import TalentProfileSelector from '../../components/talent/TalentProfileSelector'
 import {
   Alert,
   Button,
@@ -172,8 +174,14 @@ function SourceSelectionPage() {
         career_level: 'entry',
       })
       navigate('/analysis/result', { state: { sessionId: res.data.session_id } })
-    } catch {
-      setError('분석을 시작하지 못했습니다. 다시 시도해주세요.')
+    } catch (err) {
+      const data = err?.response?.data
+      const message =
+        data?.message ||   // INVALID_INPUT (가드레일)
+        data?.error ||     // JD/이력서 없음
+        '분석을 시작하지 못했습니다. 다시 시도해주세요.'
+      window.alert(message)
+      setError(message)
       setAnalyzing(false)
     }
   }
@@ -496,9 +504,14 @@ function JdModal({ onClose, onSaved }) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  const [talentSourceType, setTalentSourceType] = useState('USER_DEFINED')
+  const [officialText, setOfficialText] = useState('')
+  const [selectedTraits, setSelectedTraits] = useState([])
+
+  const totalSteps = JD_STEPS.length
   const current = JD_STEPS[step]
-  const isLast = step === JD_STEPS.length - 1
   const isFirst = step === 0
+  const isLast = step === JD_STEPS.length - 1
 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -508,11 +521,17 @@ function JdModal({ onClose, onSaved }) {
     setError(''); return true
   }
 
-  const handleNext = () => { if (!validateStep()) return; setStep((s) => s + 1) }
+  const handleNext = () => {
+    if (!validateStep()) return
+    setStep((s) => s + 1)
+  }
+
   const handlePrev = () => { setError(''); setStep((s) => s - 1) }
 
   const handleSubmit = async () => {
-    setError(''); setSubmitting(true)
+    if (!validateStep()) return
+    setSubmitting(true)
+    setError('')
     try {
       const techStacks = (form.tech_input || '').split(',').map((s) => s.trim()).filter(Boolean)
       const res = await createJd({
@@ -522,7 +541,28 @@ function JdModal({ onClose, onSaved }) {
         requirements: form.requirements || '', preferences: form.preferences || '',
         jd_text: form.jd_text || '', input_method: 'TEXT',
       })
-      onSaved('jd', res.data.jd_id)
+      const jdId = res.data.jd_id
+      if (selectedTraits.length > 0) {
+        const actualSourceType = talentSourceType === 'USER_DEFINED_UNKNOWN' ? 'USER_DEFINED' : talentSourceType
+        const items = talentSourceType === 'OFFICIAL'
+          ? []
+          : selectedTraits.map((t) => ({
+              trait_code: t.trait_code,
+              priority_order: t.priority_order,
+              custom_description: t.custom_description || '',
+              weight: null,
+            }))
+        if (items.length > 0) {
+          await saveJdTalentProfile(jdId, {
+            source_type: actualSourceType,
+            source_text: talentSourceType === 'OFFICIAL' ? officialText : null,
+            custom_summary: '',
+            confirmed_by_user: true,
+            items,
+          })
+        }
+      }
+      onSaved('jd', jdId)
     } catch (e) {
       const msg = e.response?.data
       setError(typeof msg === 'string' ? msg : '저장 중 오류가 발생했습니다.')
@@ -532,14 +572,35 @@ function JdModal({ onClose, onSaved }) {
 
   return (
     <ModalBackdrop>
-      <ModalShell id="jd-modal-title" title={current.title} description={current.description} onClose={onClose} step={step} totalSteps={JD_STEPS.length}>
+      <ModalShell id="jd-modal-title" title={current.title} description={current.description} onClose={onClose} step={step} totalSteps={totalSteps}>
         <div className="overflow-y-auto flex-1">
           <div className="space-y-4 p-6">
             {renderStepFields(current.fields, form, handleChange)}
+            {isLast && (
+              <div className="space-y-2">
+                <p className="text-sm font-black text-[#253900]">인재상 설정 <span className="text-xs font-normal text-[rgba(0,0,0,0.55)]">(선택 사항)</span></p>
+                <TalentProfileSelector
+                  sourceType={talentSourceType}
+                  onSourceTypeChange={setTalentSourceType}
+                  officialText={officialText}
+                  onOfficialTextChange={setOfficialText}
+                  selectedItems={selectedTraits}
+                  onSelectedChange={setSelectedTraits}
+                />
+              </div>
+            )}
             {error && <Alert tone="danger">{error}</Alert>}
           </div>
         </div>
-        <ModalFooter isFirst={isFirst} isLast={isLast} submitting={submitting} onClose={onClose} onPrev={handlePrev} onNext={handleNext} onSubmit={handleSubmit} />
+        <ModalFooter
+          isFirst={isFirst}
+          isLast={isLast}
+          submitting={submitting}
+          onClose={onClose}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onSubmit={handleSubmit}
+        />
       </ModalShell>
     </ModalBackdrop>
   )
