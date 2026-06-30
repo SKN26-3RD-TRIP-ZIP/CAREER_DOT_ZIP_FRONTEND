@@ -50,10 +50,6 @@ const prototypeRoutes = [
   '/data/cover-letter',
   '/data/projects',
   '/data/complete',
-  '/analysis',
-  '/analysis/source',
-  '/analysis/result',
-  '/analysis/questions',
   '/interview/mic-check',
   '/interview/start',
   '/interview/answering',
@@ -70,11 +66,13 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
 
-      <Route element={<AppLayout />}>
-        <Route path="/analysis" element={<SourceSelectionPage />} />
-        <Route path="/analysis/source" element={<SourceSelectionPage />} />
-        <Route path="/analysis/result" element={<ResultPage />} />
-        <Route path="/analysis/questions" element={<ResultPage expanded />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/analysis" element={<SourceSelectionPage />} />
+          <Route path="/analysis/source" element={<SourceSelectionPage />} />
+          <Route path="/analysis/result" element={<ResultPage />} />
+          <Route path="/analysis/questions" element={<ResultPage expanded />} />
+        </Route>
       </Route>
       {/* Figma 기반 MVP 통합 데모 라우트 */}
       {prototypeRoutes.map((path) => (

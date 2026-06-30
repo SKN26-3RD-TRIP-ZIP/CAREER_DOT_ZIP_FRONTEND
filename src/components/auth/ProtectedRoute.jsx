@@ -5,7 +5,7 @@ import { isProfileComplete } from '../../utils/authNavigation';
 
 const AUTH_CHECK_TIMEOUT_MS = 120000;
 
-function AuthGateLoading({ timedOut = false, onRetry }) {
+function AuthGateLoading({ timedOut = false }) {
   if (timedOut) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
@@ -26,13 +26,6 @@ function AuthGateLoading({ timedOut = false, onRetry }) {
           >
             다시 로그인
           </Link>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-transparent bg-transparent px-5 text-sm font-black text-[#253900] transition hover:bg-[rgba(0,0,0,0.05)]"
-          >
-            다시 확인
-          </button>
         </div>
       </div>
     );
@@ -101,7 +94,7 @@ export default function ProtectedRoute({ requireComplete = false }) {
     return <Navigate to={`/auth/login?next=${next}`} replace />;
   }
   if (status === 'loading') {
-    return <AuthGateLoading timedOut={authCheckTimedOut} onRetry={handleRetry} />;
+    return <AuthGateLoading timedOut={authCheckTimedOut} />;
   }
   if (status === 'error') {
     return <AuthGateError onRetry={handleRetry} />;
