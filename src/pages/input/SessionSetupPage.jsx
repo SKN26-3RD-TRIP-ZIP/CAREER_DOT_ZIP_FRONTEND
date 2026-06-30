@@ -42,6 +42,8 @@ const INTERVIEW_MODE_OPTIONS = [
 ];
 
 const DEFAULT_QUESTION_COUNT = 5;
+const CURRENT_SESSION_STORAGE_KEY = 'careerzip_current_session_id';
+const QA_METADATA_SOURCE_LABEL = 'generation_metadata';
 
 function fmtDateTime(v) {
   return v ? new Date(v).toLocaleString('ko-KR') : '기록 없음';
@@ -85,6 +87,62 @@ function normalizeTechStack(techStack) {
       .filter(Boolean);
   }
   return [];
+}
+
+function rememberCurrentSessionId(sessionId) {
+  if (!sessionId || typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(CURRENT_SESSION_STORAGE_KEY, sessionId);
+  } catch {
+    // sessionStorage may be unavailable in some privacy/browser modes.
+  }
+}
+
+function collectSourceTags(payload, depth = 0) {
+  if (!payload || depth > 3) return [];
+  if (Array.isArray(payload)) {
+    return payload.flatMap((item) => collectSourceTags(item, depth + 1));
+  }
+  if (typeof payload !== 'object') return [];
+
+  const directTags = Array.isArray(payload.source_tags)
+    ? payload.source_tags
+    : payload.source_tags
+      ? [payload.source_tags]
+      : [];
+
+  return [
+    ...directTags,
+    ...collectSourceTags(payload.data, depth + 1),
+    ...collectSourceTags(payload.results, depth + 1),
+    ...collectSourceTags(payload.questions, depth + 1),
+  ];
+}
+
+function extractGenerationMetadata(...payloads) {
+  const metadataTag = payloads
+    .flatMap((payload) => collectSourceTags(payload))
+    .find((tag) => tag?.source_label === QA_METADATA_SOURCE_LABEL);
+
+  if (!metadataTag) return null;
+
+  return (
+    metadataTag.metadata ??
+    metadataTag.generation_metadata ??
+    metadataTag.value ??
+    metadataTag.data ??
+    metadataTag.source_value ??
+    metadataTag.payload ??
+    metadataTag
+  );
+}
+
+function debugGenerationMetadata(...payloads) {
+  if (!import.meta.env.DEV) return;
+  const metadata = extractGenerationMetadata(...payloads);
+  if (metadata) {
+    console.debug('[CareerZip QA] question generation metadata', metadata);
+  }
 }
 
 function normalizeQuestions(response) {
@@ -583,14 +641,16 @@ function SessionSetupPage({ adminMode = false }) {
       if (import.meta.env.DEV) {
         console.debug('[SessionSetupPage] generateQuestions payload', questionPayload);
       }
-      await interviewApi.generateQuestions(newSessionId, questionPayload);
+      const questionGenerationResponse = await interviewApi.generateQuestions(newSessionId, questionPayload);
 
       setLoadingStep('생성된 질문을 불러오는 중...');
       // 생성 직후 다시 조회해 store에 정렬된 질문 목록을 넣고 실제 면접 화면으로 이동한다.
       const questionResponse = await interviewApi.getQuestions(newSessionId);
+      debugGenerationMetadata(questionGenerationResponse, questionResponse);
       const orderedQuestions = normalizeQuestions(questionResponse);
       setQuestions(orderedQuestions);
       setCurrentQuestionIndex(0);
+      rememberCurrentSessionId(newSessionId);
 
       if (adminMode) {
         window.localStorage.setItem(
@@ -605,7 +665,8 @@ function SessionSetupPage({ adminMode = false }) {
         );
       }
 
-      navigate(adminMode ? '/interview/question-admin' : '/interview/question');
+      const nextInterviewPath = adminMode ? '/interview/question-admin' : '/interview/question';
+      navigate(`${nextInterviewPath}?sessionId=${encodeURIComponent(newSessionId)}`);
     } catch (err) {
       setError(formatApiError(err, newSessionId ? '질문 생성에 실패했습니다.' : '세션 생성에 실패했습니다.'));
       if (err?.response?.status === 401) navigate(adminMode ? '/admin/login' : '/auth/login');
