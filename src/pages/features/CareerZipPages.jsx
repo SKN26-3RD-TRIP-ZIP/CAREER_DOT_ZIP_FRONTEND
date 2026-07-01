@@ -214,10 +214,10 @@ function AuthHero() {
           {['직무 맞춤 질문으로 실전 완벽 대비', 'AI 피드백으로 강점과 개선점 파악', '성장 리포트로 합격 가능성 높이기'].map((item) => <li className="flex items-center gap-7" key={item}><Target size={32} className="text-[#24ff1a]" />{item}</li>)}
         </ul>
       </div>
-      <div className="absolute bottom-[60px] right-[120px] h-48 w-48 rounded-full bg-[#1b3d09] shadow-[inset_0_0_45px_rgba(36,255,26,.65)]">
+      {/* <div className="absolute bottom-[60px] right-[120px] h-48 w-48 rounded-full bg-[#1b3d09] shadow-[inset_0_0_45px_rgba(36,255,26,.65)]">
         <span className="absolute left-14 top-16 h-16 w-7 rounded-full bg-[#57ff34]" />
         <span className="absolute right-14 top-16 h-16 w-7 rounded-full bg-[#57ff34]" />
-      </div>
+      </div> */}
     </aside>
   );
 }
@@ -225,7 +225,7 @@ function AuthHero() {
 function AuthFrame({ children }) {
   return (
     <main className="min-h-screen bg-[#f8fafb] text-black">
-      <PublicHeader />
+      {/* <PublicHeader /> */}
       <div className="grid min-h-[calc(100vh-76px)] grid-cols-1 lg:grid-cols-[42%_58%]">
         <AuthHero />
         <section className="flex items-center justify-center px-8 py-12">{children}</section>
@@ -271,7 +271,19 @@ export function LoginPage() {
   const [keep, setKeep] = useState(false);
   const [error, setError] = useState(params.get('error') === '1' ? '이메일 또는 비밀번호를 다시 확인해주세요.' : '');
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setKeep(true);
+    }
+  }, []);
   if (params.get('mode') === 'find') return <ForgotPasswordPage />;
+  function handleKeepChange(checked) {
+    setKeep(checked);
+    if (checked) localStorage.setItem('savedEmail', email);
+    else localStorage.removeItem('savedEmail');
+  }
   async function submit(e) {
     e.preventDefault();
     setLoading(true);
@@ -282,6 +294,8 @@ export function LoginPage() {
       const token = res.data?.access_token;
       if (!token) throw new Error('no token');
       setToken(token);
+      if (keep) localStorage.setItem('savedEmail', email);
+      else localStorage.removeItem('savedEmail');
       const me = await getMe();
       setUser(me.data);
       navigate(resolveAuthedRedirect(me.data, params.get('next') || ''), { replace: true });
@@ -300,7 +314,7 @@ export function LoginPage() {
           {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
           <TextInput label="비밀번호" type={showPw ? 'text' : 'password'} placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} required right={<button type="button" aria-label="비밀번호 보기 전환" onClick={() => setShowPw((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7b8791]">{showPw ? <EyeOff size={20} /> : <Eye size={20} />}</button>} />
           <div className="flex items-center justify-between text-sm font-bold">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />로그인 상태 유지</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => handleKeepChange(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />아이디 자동 저장</label>
             <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link>
           </div>
           <button type="submit" disabled={loading} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '로그인 중...' : '로그인'}</button>
@@ -373,7 +387,7 @@ export function SignupPage() {
         {step === 1 ? (
           <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); if (form.password !== form.confirm) setError('비밀번호 확인이 일치하지 않습니다.'); else setStep(2); }}>
             <TextInput label="이름" placeholder="이름을 입력하세요" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <TextInput label="이메일" type="email" placeholder="이메일 주소를 입력하세요" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            <TextInput label="이메일" type="email" placeholder="이메일 주소를 입력하세요" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="off" required />
             <TextInput label="비밀번호" type="password" placeholder="비밀번호를 입력하세요" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
             <TextInput label="비밀번호 확인" type="password" placeholder="비밀번호를 다시 입력하세요" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required />
             {error && <div className="rounded-lg border border-[#ffb9b9] bg-[#fff1f1] p-3 text-sm font-black text-[#e02929]">{error}</div>}
