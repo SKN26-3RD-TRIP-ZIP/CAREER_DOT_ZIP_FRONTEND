@@ -44,21 +44,23 @@ import {
   updateTraitDescription,
 } from '../../components/talent-profile/talentProfileSelection';
 import { getJdTalentProfile, getTalentProfileCatalog, saveJdTalentProfile } from '../../api/talentProfileApi';
+import TopNav from '../../components/layout/TopNav.jsx';
+import { BrandLogo } from '../../components/layout/BrandLogo.jsx';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 const GREEN = '#08CB00';
 
-export function BrandLogo({ light = false }) {
-  return (
-    <Link to="/" className={cx('inline-flex items-center gap-3 font-black tracking-tight', light ? 'text-white' : 'text-black')}>
-      <span className="relative flex h-8 w-8 items-center justify-center rounded-md bg-[#08CB00] shadow-[inset_0_0_0_2px_rgba(255,255,255,.35)]">
-        <span className="absolute -top-1 left-1 h-2 w-5 rounded-t-md bg-[#12e20a]" />
-        <Folder size={19} className="text-white" />
-      </span>
-      <span className="text-[25px] leading-none">Career.zip</span>
-    </Link>
-  );
-}
+// export function BrandLogo({ light = false }) {
+//   return (
+//     <Link to="/" className={cx('inline-flex items-center gap-3 font-black tracking-tight', light ? 'text-white' : 'text-black')}>
+//       <span className="relative flex h-8 w-8 items-center justify-center rounded-md bg-[#08CB00] shadow-[inset_0_0_0_2px_rgba(255,255,255,.35)]">
+//         <span className="absolute -top-1 left-1 h-2 w-5 rounded-t-md bg-[#12e20a]" />
+//         <Folder size={19} className="text-white" />
+//       </span>
+//       <span className="text-[25px] leading-none">Career.zip</span>
+//     </Link>
+//   );
+// }
 
 function PublicHeader() {
   const navItems = [
@@ -72,14 +74,13 @@ function PublicHeader() {
   return (
     <header className="h-[76px] border-b border-[#e5e8eb] bg-white">
       <div className="mx-auto flex h-full max-w-[1460px] items-center justify-between px-8">
-        <BrandLogo />
         <nav className="hidden items-center gap-14 text-[15px] font-bold lg:flex">
           {navItems.map(([label, id]) => <a key={id} href={`#${id}`}>{label}</a>)}
         </nav>
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4">
           <Link to="/auth/login" className="flex h-12 min-w-[86px] items-center justify-center rounded-lg border border-[#d6dde3] px-5 text-[15px] font-bold">로그인</Link>
           <Link to="/auth/signup" className="flex h-12 min-w-[148px] items-center justify-center rounded-lg bg-[#05b700] px-5 text-[15px] font-black text-white">무료 면접 시작하기</Link>
-        </div>
+        </div> */}
       </div>
     </header>
   );
@@ -130,6 +131,7 @@ export default function HomePage() {
   ];
   return (
     <main className="min-h-screen bg-white text-black">
+      <TopNav variant='public'/>
       <PublicHeader />
       <section id="service-intro" className="mx-auto grid max-w-[1460px] grid-cols-[1fr_1.12fr] items-center gap-8 px-8 pb-10 pt-14">
         <div className="pl-8">
