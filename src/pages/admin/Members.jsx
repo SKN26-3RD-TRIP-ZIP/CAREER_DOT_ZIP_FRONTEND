@@ -410,31 +410,26 @@ export default function Members() {
         <StatCard
           label="전체 회원"
           value={stats?.total}
-          badge={stats?.total_growth_rate != null ? `${stats.total_growth_rate > 0 ? '+' : ''}${stats.total_growth_rate}%` : undefined}
           badgeColor="bg-[#0F172A] text-[#3DDD37]"
         />
         <StatCard
           label="활성 회원"
           value={stats?.active}
-          badge={stats?.active_growth_rate != null ? `${stats.active_growth_rate > 0 ? '+' : ''}${stats.active_growth_rate}%` : undefined}
           badgeColor="bg-[#0F172A] text-[#3DDD37]"
         />
         <StatCard
           label="휴면 회원"
           value={stats?.dormant}
-          badge={stats?.dormant ? `${stats.dormant}명` : undefined}
           badgeColor="bg-[#2A2000] text-[#DDAA00]"
         />
         <StatCard
           label="차단 회원"
           value={stats?.banned}
-          badge={stats?.banned ? `${stats.banned}명` : undefined}
           badgeColor="bg-[#2A0000] text-[#FF5555]"
         />
         <StatCard
           label="탈퇴 회원"
           value={stats?.withdrawn}
-          badge={stats?.withdrawn ? `${stats.withdrawn}명` : undefined}
           badgeColor="bg-[#1E293B] text-[#AAAAAA]"
         />
       </div>

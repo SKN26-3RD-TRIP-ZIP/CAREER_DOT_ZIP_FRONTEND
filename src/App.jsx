@@ -1,6 +1,5 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
 import HomePage from './pages/HomePage.jsx'
-import SaaSPrototype from './pages/prototype/SaaSPrototype.jsx'
 import VoiceInterviewPage from './pages/interview/VoiceInterviewPage.jsx'
 import InterviewQuestionCheckPage from './pages/interview/InterviewQuestionCheckPage.jsx'
 import InterviewSetupCheckPage from './pages/interview/InterviewSetupCheckPage.jsx'
@@ -41,26 +40,6 @@ import SourceSelectionPage from './pages/analysis/SourceSelectionPage.jsx'
 import ResultPage from './pages/analysis/ResultPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
 
-const prototypeRoutes = [
-  '/dashboard',
-  '/onboarding',
-  '/data',
-  '/data/jd',
-  '/data/resume',
-  '/data/cover-letter',
-  '/data/projects',
-  '/data/complete',
-  '/interview/mic-check',
-  '/interview/start',
-  '/interview/answering',
-  '/interview/last',
-  '/interview/generating',
-  '/interview/text',
-  '/interview/voice',
-  '/interview/result',
-  '/prototype',
-]
-
 function App() {
   return (
     <Routes>
@@ -74,10 +53,6 @@ function App() {
           <Route path="/analysis/questions" element={<ResultPage expanded />} />
         </Route>
       </Route>
-      {/* Figma 기반 MVP 통합 데모 라우트 */}
-      {prototypeRoutes.map((path) => (
-        <Route key={path} path={path} element={<SaaSPrototype />} />
-      ))}
 
       {/* 실제 구현된 리포트(평가) 페이지 — 세션별 (인증 필요) */}
       <Route element={<ProtectedRoute />}>
@@ -149,6 +124,7 @@ function App() {
       </Route>
 
       {/* 어드민 라우트 */}
+      <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
       <Route path="/admin/login" element={<Login />} />
       <Route element={<PrivateRoute />}>
         <Route path="/admin/dashboard" element={<Dashboard />} />
@@ -172,8 +148,8 @@ function App() {
         />
       </Route>
 
-      {/* fallback */}
-      <Route path="*" element={<SaaSPrototype />} />
+      {/* fallback: 정의되지 않은 경로는 홈으로 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
