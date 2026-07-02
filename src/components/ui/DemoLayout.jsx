@@ -246,7 +246,7 @@ export function StatCard({ label, value, helper }) {
   return (
     <Card className="p-4">
       <p className="text-xs font-bold text-[rgba(0,0,0,0.6)]">{label}</p>
-      <p className="mt-2 text-3xl font-black text-[#08CB00]">{value ?? '-'}</p>
+      <p className="mt-2 text-2xl font-black text-[#08CB00]">{value ?? '-'}</p>
       {helper && <p className="mt-1 text-xs leading-5 text-[rgba(0,0,0,0.55)]">{helper}</p>}
     </Card>
   );

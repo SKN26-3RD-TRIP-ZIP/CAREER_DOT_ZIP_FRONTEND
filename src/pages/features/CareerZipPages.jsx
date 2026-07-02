@@ -50,18 +50,6 @@ import { BrandLogo } from '../../components/layout/BrandLogo.jsx';
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 const GREEN = '#08CB00';
 
-// export function BrandLogo({ light = false }) {
-//   return (
-//     <Link to="/" className={cx('inline-flex items-center gap-3 font-black tracking-tight', light ? 'text-white' : 'text-black')}>
-//       <span className="relative flex h-8 w-8 items-center justify-center rounded-md bg-[#08CB00] shadow-[inset_0_0_0_2px_rgba(255,255,255,.35)]">
-//         <span className="absolute -top-1 left-1 h-2 w-5 rounded-t-md bg-[#12e20a]" />
-//         <Folder size={19} className="text-white" />
-//       </span>
-//       <span className="text-[25px] leading-none">Career.zip</span>
-//     </Link>
-//   );
-// }
-
 function PublicHeader() {
   const navItems = [
     ['서비스 소개', 'service-intro'],
@@ -185,19 +173,15 @@ export default function HomePage() {
 
 function AuthHero() {
   return (
-    <aside className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_70%_75%,rgba(8,203,0,.35),transparent_28%),linear-gradient(135deg,#071a00,#253900)] px-[68px] py-[86px] text-white lg:block">
+    <aside className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_70%_75%,rgba(8,203,0,.35),transparent_28%),linear-gradient(135deg,#071a00,#253900)] px-[34px] py-[43px] text-white lg:block">
       <BrandLogo light />
-      <div className="mt-28">
+      <div className="mt-14">
         <p className="inline-flex rounded-full border border-[rgba(8,203,0,.45)] bg-[rgba(8,203,0,.08)] px-4 py-2 text-[15px] font-black text-[#24ff1a]">AI Hybrid Interview Coach</p>
-        <h1 className="mt-8 text-[38px] font-black leading-[1.28]"><span className="whitespace-nowrap">실전 같은 AI 모의면접으로</span><br /><span className="text-[#18e40d]">합격에 한 걸음</span> 더 가까이</h1>
+        <h1 className="mt-8 text-[30px] font-black leading-[1.28]"><span className="whitespace-nowrap">실전 같은 AI 모의면접으로</span><br /><span className="text-[#18e40d]">합격에 한 걸음</span> 더 가까이</h1>
         <p className="mt-8 text-xl font-medium leading-8 text-white/90">JD 분석부터 맞춤 질문, 실전 피드백까지<br />AI가 당신의 커리어 여정을 함께합니다.</p>
-        <ul className="mt-14 space-y-9 text-lg font-bold">
+        <ul className="mt-14 space-y-7 text-lg font-bold">
           {['직무 맞춤 질문으로 실전 완벽 대비', 'AI 피드백으로 강점과 개선점 파악', '성장 리포트로 합격 가능성 높이기'].map((item) => <li className="flex items-center gap-7" key={item}><Target size={32} className="text-[#24ff1a]" />{item}</li>)}
         </ul>
-      </div>
-      <div className="absolute bottom-[60px] right-[120px] h-48 w-48 rounded-full bg-[#1b3d09] shadow-[inset_0_0_45px_rgba(36,255,26,.65)]">
-        <span className="absolute left-14 top-16 h-16 w-7 rounded-full bg-[#57ff34]" />
-        <span className="absolute right-14 top-16 h-16 w-7 rounded-full bg-[#57ff34]" />
       </div>
     </aside>
   );
@@ -206,7 +190,6 @@ function AuthHero() {
 function AuthFrame({ children }) {
   return (
     <main className="min-h-screen bg-[#f8fafb] text-black">
-      <PublicHeader />
       <div className="grid min-h-[calc(100vh-76px)] grid-cols-1 lg:grid-cols-[42%_58%]">
         <AuthHero />
         <section className="flex items-center justify-center px-8 py-12">{children}</section>
@@ -285,8 +268,8 @@ export function LoginPage() {
             <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link>
           </div>
           <button type="submit" disabled={loading} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '로그인 중...' : '로그인'}</button>
+          <SocialLoginButtons next={params.get('next') || '/mypage'} mode="login" />
         </form>
-        <SocialLoginButtons next={params.get('next') || '/mypage'} mode="login" />
         <p className="mt-8 text-center text-sm text-[#6c7781]">아직 계정이 없으신가요? <Link to="/auth/signup" className="font-black text-[#009900]">회원가입</Link></p>
       </AuthCard>
     </AuthFrame>
