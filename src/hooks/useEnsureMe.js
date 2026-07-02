@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { getMe } from '../api/authApi';
 
@@ -21,7 +21,6 @@ export function useEnsureMe() {
     return user ? 'ready' : 'loading';
   });
   const [attempt, setAttempt] = useState(0);
-  const inFlight = useRef(false);
 
   useEffect(() => {
     if (!token) {
@@ -32,9 +31,12 @@ export function useEnsureMe() {
       setStatus('ready');
       return undefined;
     }
-    if (inFlight.current) return undefined;
 
-    inFlight.current = true;
+    // StrictMode 는 개발 모드에서 setup→cleanup→setup 을 동기적으로 한 번 더 실행한다.
+    // 이전에는 inFlight ref 로 두 번째 setup 을 건너뛰었는데, 그러면 실제로 살아남는
+    // 요청은 "취소된"(active=false) 첫 번째 setup 의 것뿐이라 결과가 영구히 버려져
+    // 로딩 스피너가 멈추지 않았다. active 플래그만으로 취소를 판단하고, 각 setup 이
+    // 자신만의 요청을 독립적으로 처리하게 한다(개발 모드에서만 요청이 1회 더 발생).
     let active = true;
     setStatus('loading');
 
@@ -49,9 +51,6 @@ export function useEnsureMe() {
         // 401 → axios interceptor 가 refresh 시도 후 실패 시 로그아웃/리다이렉트 처리.
         // 그 외(네트워크/5xx) → error 로 두어 재시도 UI 노출.
         setStatus(err?.response?.status === 401 ? 'unauthenticated' : 'error');
-      })
-      .finally(() => {
-        inFlight.current = false;
       });
 
     return () => {

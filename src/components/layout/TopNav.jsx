@@ -5,6 +5,7 @@ import { useEnsureMe } from '../../hooks/useEnsureMe';
 import { logout as logoutApi } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { mypageApi } from '../../api/mypageApi';
+import { BrandLogo } from './BrandLogo.jsx';
 
 const NAV_ITEMS = [
   { label: '대시보드', to: '/dashboard' },
@@ -21,26 +22,6 @@ function isActiveItem(item, pathname, active) {
   if (item.to === '/dashboard') return pathname === '/dashboard';
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
-function Logo({ disabled = false }) {
-  const image = (
-    <img src="/logo/careerzip-logo-horizontal.png" alt="Career.zip" className="h-8 w-auto" />
-  );
-
-  if (disabled) {
-    return (
-      <span aria-disabled="true" className="inline-flex cursor-default items-center">
-        {image}
-      </span>
-    );
-  }
-
-  return (
-    <Link to="/" className="inline-flex items-center">
-      {image}
-    </Link>
-  );
-}
-
 function UserAvatar() {
   return (
     <span className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#f1f3f5] text-[#4b5563]">
@@ -91,7 +72,7 @@ function NavLinks({ disabled, location, active, mobile = false }) {
   );
 }
 
-export default function TopNav({ active = '', disabled = false, variant = 'app', userName, points, onLogout }) {
+export default function TopNav({ active = true, disabled = false, variant = 'app', userName, points, onLogout }) {
   const location = useLocation();
   // 토큰이 있으면 /auth/me 로 사용자 복원(새로고침 후에도 로그인 유지). 토큰 없으면 즉시 unauthenticated.
   const { status, user } = useEnsureMe();
@@ -210,7 +191,7 @@ export default function TopNav({ active = '', disabled = false, variant = 'app',
     <header className="relative border-b border-[#eceef1] bg-white">
       <div className="mx-auto flex h-[72px] max-w-[1460px] items-center justify-between px-8">
         <div className="flex items-center gap-11">
-          <Logo disabled={disabled} />
+          <BrandLogo disabled={disabled} />
           <nav className="hidden items-center gap-9 min-[1025px]:flex" aria-label="주요 메뉴">
             <NavLinks disabled={disabled} location={location} active={active} />
           </nav>
