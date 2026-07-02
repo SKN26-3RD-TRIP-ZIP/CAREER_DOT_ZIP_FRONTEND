@@ -66,23 +66,21 @@ function PublicHeader() {
   const navItems = [
     ['서비스 소개', 'service-intro'],
     ['기능', 'features'],
-    ['면접 연습', 'interview-practice'],
-    ['요금제', 'pricing'],
     ['이용 방법', 'how-it-works'],
-    ['고객 후기', 'testimonials'],
   ];
   return (
-    <header className="h-[76px] border-b border-[#e5e8eb] bg-white">
-      <div className="mx-auto flex h-full max-w-[1460px] items-center justify-between px-8">
-        <nav className="hidden items-center gap-14 text-[15px] font-bold lg:flex">
-          {navItems.map(([label, id]) => <a key={id} href={`#${id}`}>{label}</a>)}
-        </nav>
-        {/* <div className="flex items-center gap-4">
-          <Link to="/auth/login" className="flex h-12 min-w-[86px] items-center justify-center rounded-lg border border-[#d6dde3] px-5 text-[15px] font-bold">로그인</Link>
-          <Link to="/auth/signup" className="flex h-12 min-w-[148px] items-center justify-center rounded-lg bg-[#05b700] px-5 text-[15px] font-black text-white">무료 면접 시작하기</Link>
-        </div> */}
-      </div>
-    </header>
+    // 화면 오른쪽에 고정된 세로 목차. fixed 라서 스크롤해도 제자리에 붙어 따라옴.
+    // 항목 클릭 시 href="#id" 로 해당 섹션까지 부드럽게 스크롤(기존 동작 유지).
+    <nav
+      aria-label="목차"
+      className="fixed right-8 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 border-l border-[#e5e8eb] pl-4 text-[13px] font-bold text-[#8b95a1] lg:flex"
+    >
+      {navItems.map(([label, id]) => (
+        <a key={id} href={`#${id}`} className="whitespace-nowrap transition-colors hover:text-[#08CB00]">
+          {label}
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -121,6 +119,7 @@ function RobotHero() {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const features = [
     ['데이터 입력', 'JD, 이력서, 자소서, 프로젝트 경험을 입력', FileText],
     ['AI 분석', '핵심 역량, 경험, 키워드 AI 심층 분석', Code2],
@@ -133,7 +132,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-white text-black">
       <TopNav variant='public'/>
       <PublicHeader />
-      <section id="service-intro" className="mx-auto grid max-w-[1460px] grid-cols-[1fr_1.12fr] items-center gap-8 px-8 pb-10 pt-14">
+      <section id="service-intro" className="mx-auto grid max-w-[1180px] grid-cols-[1fr_1.12fr] items-center gap-8 px-8 pb-10 pt-14">
         <div className="pl-8">
           <p className="inline-flex rounded-full border border-[#b9eab6] bg-[#effcef] px-4 py-2 text-[15px] font-black text-[#009900]">AI Hybrid Interview Coach</p>
           <h1 className="mt-7 text-[48px] font-black leading-[1.18]">
@@ -150,7 +149,7 @@ export default function HomePage() {
         </div>
         <RobotHero />
       </section>
-      <section id="features" className="mx-auto max-w-[1340px] rounded-[22px] bg-white px-8 py-8 shadow-[0_18px_54px_rgba(0,0,0,.06)]">
+      <section id="features" className="mx-auto max-w-[1180px] rounded-[22px] bg-white px-8 py-8 shadow-[0_18px_54px_rgba(0,0,0,.06)]">
         <h2 className="text-xl font-black">합격까지 필요한 모든 지원</h2>
         <div className="mt-5 grid grid-cols-6 gap-8">
           {features.map(([title, desc, Icon]) => (
@@ -162,7 +161,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      <section id="how-it-works" className="mx-auto max-w-[1340px] px-8 py-10">
+      <section id="how-it-works" className="mx-auto max-w-[1180px] px-8 py-10">
         <h2 className="text-xl font-black">이렇게 진행돼요</h2>
         <div className="mt-10 grid grid-cols-5 gap-10">
           {['정보 입력', 'AI 분석', '맞춤 질문 생성', '실전 면접 연습', '피드백 및 리포트'].map((item, index) => (
@@ -174,31 +173,11 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      <section id="interview-practice" className="mx-auto max-w-[1340px] px-8 py-10">
-        <div className="grid grid-cols-[1.1fr_.9fr] items-center gap-8 rounded-xl border border-[#dfe5ea] bg-[#f8fafb] p-8">
-          <div>
-            <h2 className="text-xl font-black">면접 연습</h2>
-            <p className="mt-4 max-w-[720px] text-sm font-bold leading-6 text-[#64717d]">JD와 이력서 기반 질문으로 음성 또는 텍스트 면접을 진행하고, 완료 후 리포트에서 강점과 보완점을 확인합니다.</p>
-          </div>
-          <Link to="/interview/setup" className="flex h-12 items-center justify-center rounded-lg bg-[#05b700] px-6 font-black text-white">면접 연습 시작</Link>
-        </div>
-      </section>
-      <section id="pricing" className="mx-auto max-w-[1340px] px-8 py-10">
-        <h2 className="text-xl font-black">요금제</h2>
-        <div className="mt-5 rounded-xl border border-[#dfe5ea] bg-white p-7">
-          <p className="text-sm font-bold text-[#64717d]">현재 Career.zip 면접 준비 플로우는 무료로 시작할 수 있습니다. 유료 플랜은 준비 중이며, 아직 결제 기능이 없어 선택 버튼을 제공하지 않습니다.</p>
-        </div>
-      </section>
-      <section id="testimonials" className="mx-auto max-w-[1340px] px-8 py-10">
-        <h2 className="text-xl font-black">고객 후기</h2>
-        <div className="mt-5 grid grid-cols-3 gap-5">
-          {['JD에서 바로 질문이 뽑혀 연습 흐름이 빨라졌어요.', '리포트로 약점을 다시 볼 수 있어 복습이 쉬웠습니다.', '면접 전에 말하는 연습을 반복하기 좋았습니다.'].map((quote) => (
-            <article key={quote} className="rounded-xl border border-[#e2e7eb] bg-white p-6 text-sm font-bold leading-6 text-[#4f5c66]">{quote}</article>
-          ))}
-        </div>
-      </section>
-      <footer className="border-t border-[#e5e8eb] py-8 text-center text-xs font-bold text-[#7b8791]">
-        © 2026 Career.zip · <Link to="/admin/login" className="text-[#6c7781] underline-offset-4 hover:underline">관리자 페이지</Link>
+      <footer className="border-t border-[#e5e8eb] py-8 text-center text-xs font-bold text-[#E5E4E2]">
+          <span onDoubleClick={() => navigate("/admin/login")} 
+            className="cursor-default select-none">
+            © 2026 Career.zip
+          </span>
       </footer>
     </main>
   );
@@ -216,10 +195,10 @@ function AuthHero() {
           {['직무 맞춤 질문으로 실전 완벽 대비', 'AI 피드백으로 강점과 개선점 파악', '성장 리포트로 합격 가능성 높이기'].map((item) => <li className="flex items-center gap-7" key={item}><Target size={32} className="text-[#24ff1a]" />{item}</li>)}
         </ul>
       </div>
-      {/* <div className="absolute bottom-[60px] right-[120px] h-48 w-48 rounded-full bg-[#1b3d09] shadow-[inset_0_0_45px_rgba(36,255,26,.65)]">
+      <div className="absolute bottom-[60px] right-[120px] h-48 w-48 rounded-full bg-[#1b3d09] shadow-[inset_0_0_45px_rgba(36,255,26,.65)]">
         <span className="absolute left-14 top-16 h-16 w-7 rounded-full bg-[#57ff34]" />
         <span className="absolute right-14 top-16 h-16 w-7 rounded-full bg-[#57ff34]" />
-      </div> */}
+      </div>
     </aside>
   );
 }
@@ -227,7 +206,7 @@ function AuthHero() {
 function AuthFrame({ children }) {
   return (
     <main className="min-h-screen bg-[#f8fafb] text-black">
-      {/* <PublicHeader /> */}
+      <PublicHeader />
       <div className="grid min-h-[calc(100vh-76px)] grid-cols-1 lg:grid-cols-[42%_58%]">
         <AuthHero />
         <section className="flex items-center justify-center px-8 py-12">{children}</section>
@@ -273,19 +252,7 @@ export function LoginPage() {
   const [keep, setKeep] = useState(false);
   const [error, setError] = useState(params.get('error') === '1' ? '이메일 또는 비밀번호를 다시 확인해주세요.' : '');
   const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('savedEmail');
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setKeep(true);
-    }
-  }, []);
   if (params.get('mode') === 'find') return <ForgotPasswordPage />;
-  function handleKeepChange(checked) {
-    setKeep(checked);
-    if (checked) localStorage.setItem('savedEmail', email);
-    else localStorage.removeItem('savedEmail');
-  }
   async function submit(e) {
     e.preventDefault();
     setLoading(true);
@@ -296,8 +263,6 @@ export function LoginPage() {
       const token = res.data?.access_token;
       if (!token) throw new Error('no token');
       setToken(token);
-      if (keep) localStorage.setItem('savedEmail', email);
-      else localStorage.removeItem('savedEmail');
       const me = await getMe();
       setUser(me.data);
       navigate(resolveAuthedRedirect(me.data, params.get('next') || ''), { replace: true });
@@ -316,7 +281,7 @@ export function LoginPage() {
           {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
           <TextInput label="비밀번호" type={showPw ? 'text' : 'password'} placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} required right={<button type="button" aria-label="비밀번호 보기 전환" onClick={() => setShowPw((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7b8791]">{showPw ? <EyeOff size={20} /> : <Eye size={20} />}</button>} />
           <div className="flex items-center justify-between text-sm font-bold">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => handleKeepChange(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />아이디 자동 저장</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />로그인 상태 유지</label>
             <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link>
           </div>
           <button type="submit" disabled={loading} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '로그인 중...' : '로그인'}</button>
@@ -389,7 +354,7 @@ export function SignupPage() {
         {step === 1 ? (
           <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); if (form.password !== form.confirm) setError('비밀번호 확인이 일치하지 않습니다.'); else setStep(2); }}>
             <TextInput label="이름" placeholder="이름을 입력하세요" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <TextInput label="이메일" type="email" placeholder="이메일 주소를 입력하세요" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="off" required />
+            <TextInput label="이메일" type="email" placeholder="이메일 주소를 입력하세요" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             <TextInput label="비밀번호" type="password" placeholder="비밀번호를 입력하세요" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
             <TextInput label="비밀번호 확인" type="password" placeholder="비밀번호를 다시 입력하세요" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required />
             {error && <div className="rounded-lg border border-[#ffb9b9] bg-[#fff1f1] p-3 text-sm font-black text-[#e02929]">{error}</div>}
@@ -506,7 +471,7 @@ function OnboardingHeader({ current }) {
     <header className="h-[88px] bg-white">
       <div className="mx-auto flex h-[58px] max-w-[1440px] items-center justify-between px-8">
         <BrandLogo />
-        <nav className="hidden gap-12 text-xs font-black lg:flex">{['서비스 소개', '기능', '면접 연습', '요금제', '이용 방법'].map((n) => <span key={n}>{n}</span>)}</nav>
+        <nav className="hidden gap-12 text-xs font-black lg:flex">{['서비스 소개', '기능', '면접 연습', '이용 방법'].map((n) => <span key={n}>{n}</span>)}</nav>
         <Bell size={18} />
       </div>
       <div className="mx-auto flex max-w-[1060px] items-center justify-center gap-2">
