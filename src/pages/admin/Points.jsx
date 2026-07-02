@@ -19,8 +19,11 @@ const TX_CFG = {
   ADMIN:  { label: '지급', cls: 'bg-[#10204A] text-[#7AA2FF]' },
 }
 
-function TxBadge({ type }) {
-  const cfg = TX_CFG[type] ?? { label: type, cls: 'bg-[#1E293B] text-[#AAAAAA]' }
+function TxBadge({ type, amount }) {
+  let cfg = TX_CFG[type] ?? { label: type, cls: 'bg-[#1E293B] text-[#AAAAAA]' }
+  if (type === 'ADMIN') {
+    cfg = amount < 0 ? { label: '회수', cls: 'bg-[#2E2000] text-[#F5A623]' } : { label: '지급', cls: 'bg-[#10204A] text-[#7AA2FF]' }
+  }
   return (
     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.cls}`}>
       {cfg.label}
@@ -56,6 +59,23 @@ const REASON_LABELS = {
   'PRACTICE.WEAKNESS_FOCUS': '약점 집중 연습',
   'GITHUB.DEEP_ANALYSIS': 'GitHub 심층 분석',
   'ACTION_PLAN.REGENERATE': '액션플랜 재생성',
+  'INTERVIEW.SESSION_STARTED': '면접 세션 시작',
+  // 'ADMIN.ADJUSTMENT'는 부호에 따라 지급/회수로 나뉘므로 adminReasonText()에서 처리한다.
+}
+
+/* description에 서비스가 붙이는 "actor_id=N; " 접두를 제거한 순수 사유 텍스트 */
+function stripActor(desc) {
+  return (desc ?? '').replace(/^actor_id=\d+;\s*/, '').trim()
+}
+
+/* 내역 행의 사유 표시 텍스트. 관리자 수동 조정은 "관리자 지급/회수: {사유}" 형태로 출력 */
+function reasonText(r) {
+  if (r.reason_code === 'ADMIN.ADJUSTMENT') {
+    const kind = r.amount > 0 ? '관리자 지급' : '관리자 회수'
+    const detail = stripActor(r.description)
+    return detail ? `${kind}: ${detail}` : kind
+  }
+  return REASON_LABELS[r.reason_code] ?? r.reason_code
 }
 
 /* ── 상단 스탯 카드 ──────────────────────────────────────────────────────── */
@@ -204,7 +224,9 @@ const TYPE_TABS = [
   { key: 'all',   label: '전체', value: '' },
   { key: 'earn',  label: '적립', value: 'EARN' },
   { key: 'use',   label: '차감', value: 'USE' },
-  { key: 'admin', label: '지급', value: 'ADMIN' },
+  { key: 'admin', label: '지급/회수', value: 'ADMIN' },
+  { key: 'refund', label: '환불', value: 'REFUND' },
+  { key: 'expire', label: '소멸', value: 'EXPIRE' },
 ]
 
 const PAGE_SIZE = 20
@@ -574,18 +596,21 @@ export default function Points() {
                   </tr>
                 ) : (
                   rows.map((r) => (
+
                     <tr key={r.point_history_id} className="hover:bg-[#334155]/40">
                       <td className="pl-6 pr-4 py-3.5">
                         <p className="truncate text-sm font-medium text-[#EEEEEE]">{r.user_name ?? `회원 #${r.user_id}`}</p>
                         <p className="truncate text-xs text-[#666666]">{r.user_email ?? `#${r.user_id}`}</p>
                       </td>
-                      <td className="px-4 py-3.5"><TxBadge type={r.transaction_type} /></td>
+                      <td className="px-4 py-3.5"><TxBadge type={r.transaction_type} amount={r.amount} /></td>
                       <td className={`px-4 py-3.5 font-semibold ${r.amount > 0 ? 'text-[#3DDD37]' : 'text-[#FF5555]'}`}>
                         {fmtAmount(r.amount)}
                       </td>
                       <td className="px-4 py-3.5">
-                        <p className="truncate text-sm text-[#CCCCCC]">{REASON_LABELS[r.reason_code] ?? r.reason_code}</p>
-                        {r.description && <p className="truncate text-xs text-[#666666]">{r.description}</p>}
+                        <p className="truncate text-sm text-[#CCCCCC]">{reasonText(r)}</p>
+                        {r.reason_code !== 'ADMIN.ADJUSTMENT' && r.description && (
+                          <p className="truncate text-xs text-[#666666]">{r.description}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-sm text-[#AAAAAA]">
                         {r.balance_after?.toLocaleString() ?? '-'}
