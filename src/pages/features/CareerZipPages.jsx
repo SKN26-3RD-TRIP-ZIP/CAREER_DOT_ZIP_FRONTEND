@@ -261,8 +261,8 @@ export function LoginPage() {
       <AuthCard title="로그인" sub="Career.zip 계정으로 로그인하세요">
         <form onSubmit={submit} className="space-y-5">
           <TextInput label="이메일" type="email" placeholder="이메일 주소를 입력하세요" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
           <TextInput label="비밀번호" type={showPw ? 'text' : 'password'} placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} required right={<button type="button" aria-label="비밀번호 보기 전환" onClick={() => setShowPw((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7b8791]">{showPw ? <EyeOff size={20} /> : <Eye size={20} />}</button>} />
+          {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
           <div className="flex items-center justify-between text-sm font-bold">
             <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />로그인 상태 유지</label>
             <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link>
