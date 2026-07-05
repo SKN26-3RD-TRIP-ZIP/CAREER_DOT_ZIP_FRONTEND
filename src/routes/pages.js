@@ -4,6 +4,7 @@
 export { default as HomePage } from '../pages/HomePage.jsx'
 export { default as VoiceInterviewPage } from '../pages/interview/VoiceInterviewPage.jsx'
 export { default as InterviewQuestionCheckPage } from '../pages/interview/InterviewQuestionCheckPage.jsx'
+export { default as ChatInterviewPage } from '../pages/interview/ChatInterviewPage.jsx'
 export { default as InterviewSetupCheckPage } from '../pages/interview/InterviewSetupCheckPage.jsx'
 export { default as JdInputPage } from '../pages/input/JdInputPage.jsx'
 export { default as JdImportPage } from '../pages/input/JdImportPage.jsx'

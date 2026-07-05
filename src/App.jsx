@@ -44,6 +44,7 @@ function App() {
         <Route path="/interview" element={<Pages.VoiceInterviewPage />} />
         <Route path="/interview/setup" element={<Pages.SessionSetupPage />} />
         <Route path="/interview/question" element={<Pages.InterviewQuestionCheckPage />} />
+        <Route path="/interview/chat" element={<Pages.ChatInterviewPage />} />
         <Route path="/interview/setup-check" element={<Pages.InterviewSetupCheckPage />} />
         <Route path="/interview/question-check" element={<Navigate to="/interview/question" replace />} />
         <Route path="/interview/question-packs" element={<Pages.QuestionPacksPage />} />

@@ -39,20 +39,28 @@ function AuthGateLoading({ timedOut = false }) {
   );
 }
 
-function AuthGateError({ onRetry }) {
+function AuthGateError({ onRetry, loginTo }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
       <p className="text-base font-black text-[#000000]">로그인 정보를 불러오지 못했습니다.</p>
       <p className="max-w-sm text-sm text-[rgba(0,0,0,0.62)]">
         네트워크 상태를 확인한 뒤 다시 시도해 주세요. 문제가 계속되면 다시 로그인해 주세요.
       </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="inline-flex h-11 items-center justify-center rounded-lg bg-[#08CB00] px-5 text-sm font-black text-[#000000] transition hover:bg-[#05A000]"
-      >
-        다시 시도
-      </button>
+      <div className="flex flex-wrap justify-center gap-2">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-[#08CB00] px-5 text-sm font-black text-[#000000] transition hover:bg-[#05A000]"
+        >
+          다시 시도
+        </button>
+        <Link
+          to={loginTo}
+          className="inline-flex h-11 items-center justify-center rounded-lg border border-[rgba(0,0,0,0.2)] bg-[#EEEEEE] px-5 text-sm font-black text-[#253900] transition hover:border-[#253900]"
+        >
+          로그인으로 이동
+        </Link>
+      </div>
     </div>
   );
 }
@@ -88,16 +96,17 @@ export default function ProtectedRoute({ requireComplete = false }) {
     setAuthCheckTimedOut(false);
     retry();
   };
+  const next = encodeURIComponent(location.pathname + location.search);
+  const loginTo = `/auth/login?next=${next}`;
 
   if (status === 'unauthenticated') {
-    const next = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/auth/login?next=${next}`} replace />;
+    return <Navigate to={loginTo} replace />;
   }
   if (status === 'loading') {
     return <AuthGateLoading timedOut={authCheckTimedOut} />;
   }
   if (status === 'error') {
-    return <AuthGateError onRetry={handleRetry} />;
+    return <AuthGateError onRetry={handleRetry} loginTo={loginTo} />;
   }
   // status === 'ready'
   if (requireComplete && !isProfileComplete(user)) {

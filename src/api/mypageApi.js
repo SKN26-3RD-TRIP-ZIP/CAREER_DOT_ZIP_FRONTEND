@@ -23,6 +23,10 @@ export const mypageApi = {
     const response = await axiosInstance.get('/users/me/points');
     return response.data;
   },
+  getInterviewSessionStartPointPolicy: async () => {
+    const response = await axiosInstance.get('/users/me/points/policies/interview-session-start');
+    return response.data;
+  },
   getPointHistory: async (params = {}) => {
     const response = await axiosInstance.get('/users/me/points/history', { params });
     return response.data;

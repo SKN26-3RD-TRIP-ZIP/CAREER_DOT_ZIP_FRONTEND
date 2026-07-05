@@ -4,6 +4,7 @@ import { Check, Mic, RotateCcw } from 'lucide-react';
 import { coverLetterApi } from '../../api/coverLetterApi';
 import { interviewApi } from '../../api/interviewApi';
 import { jdApi } from '../../api/jdApi';
+import { mypageApi } from '../../api/mypageApi';
 import { projectApi } from '../../api/projectApi';
 import { resumeApi } from '../../api/resumeApi';
 import { getPromptVersionTestSetup } from '../../api/adminApi';
@@ -14,7 +15,6 @@ import {
   Alert,
   Button,
   Card,
-  EmptyState,
   Field,
   LoadingState,
   PageShell,
@@ -38,10 +38,11 @@ const PERSONA_OPTIONS = [
 
 const INTERVIEW_MODE_OPTIONS = [
   { value: 'voice', label: '음성 면접', desc: '마이크로 답변하며 실전 면접 흐름에 맞춰 진행합니다.' },
-  { value: 'text', label: '텍스트 면접', desc: '키보드 답변으로 질문과 답변을 차분히 정리합니다.', disabled: true },
+  { value: 'text', label: '텍스트 면접', desc: '키보드 답변으로 질문과 답변을 차분히 정리합니다.' },
 ];
 
 const DEFAULT_QUESTION_COUNT = 5;
+const FALLBACK_INTERVIEW_START_POINT_COST = 10;
 const CURRENT_SESSION_STORAGE_KEY = 'careerzip_current_session_id';
 const QA_METADATA_SOURCE_LABEL = 'generation_metadata';
 
@@ -74,20 +75,6 @@ function getProjectId(project) {
   return id == null ? '' : String(id);
 }
 
-function getProjectGithubUrl(project) {
-  return project?.github_url || project?.githubUrl || project?.github || project?.repository_url || project?.repo_url || '';
-}
-
-function normalizeTechStack(techStack) {
-  if (Array.isArray(techStack)) return techStack.map((item) => String(item).trim()).filter(Boolean);
-  if (typeof techStack === 'string') {
-    return techStack
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
 
 function rememberCurrentSessionId(sessionId) {
   if (!sessionId || typeof window === 'undefined') return;
@@ -150,9 +137,10 @@ function normalizeQuestions(response) {
   return [...items].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 }
 
-function formatApiError(err, fallback) {
+function formatApiError(err, fallback, interviewStartPointCost = FALLBACK_INTERVIEW_START_POINT_COST) {
   const status = err?.response?.status;
   const detail = err?.response?.data;
+  if (status === 402 || detail?.code === 'POINTS_INSUFFICIENT') return `포인트가 부족합니다. 면접 시작에는 ${interviewStartPointCost}P가 필요합니다.`;
   if (!err?.response) return '서버에 연결할 수 없습니다. 백엔드 실행 상태를 확인해주세요.';
   if (status === 401) return '로그인이 필요합니다. 다시 로그인해주세요.';
   if (status === 400) return `입력값 오류: ${typeof detail === 'object' ? JSON.stringify(detail) : String(detail)}`;
@@ -219,64 +207,6 @@ function OptionCard({ option, checked, name, onChange }) {
   );
 }
 
-function SelectableItem({ selected, title, meta, onClick, disabled = false, children }) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={`w-full rounded-lg border p-4 text-left transition ${
-        disabled
-          ? selected
-            ? 'cursor-not-allowed border-[#253900] bg-[#08CB00] text-[#000000] opacity-80 shadow-[0_8px_18px_rgba(0,0,0,0.14)]'
-            : 'cursor-not-allowed border-[rgba(0,0,0,0.12)] bg-[rgba(0,0,0,0.04)] text-[rgba(0,0,0,0.45)]'
-          :
-        selected
-          ? 'border-[#253900] bg-[#08CB00] text-[#000000] shadow-[0_8px_18px_rgba(0,0,0,0.14)]'
-          : 'border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] text-[#000000] hover:border-[#253900]'
-      }`}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="text-sm font-black leading-5">{title}</p>
-        {selected && <StatusBadge tone="success">선택됨</StatusBadge>}
-      </div>
-      {meta && <p className="mt-2 text-xs leading-5 text-[rgba(0,0,0,0.64)]">{meta}</p>}
-      {children}
-    </button>
-  );
-}
-
-function ProjectDetails({ project }) {
-  const techStack = normalizeTechStack(project?.tech_stack);
-  const githubUrl = getProjectGithubUrl(project);
-  const contribution = project?.contribution;
-  const description = project?.description;
-
-  return (
-    <div className="mt-3 space-y-2">
-      {description && (
-        <p className="text-xs leading-5 text-[rgba(0,0,0,0.70)]">
-          {description}
-        </p>
-      )}
-      <div className="flex flex-wrap gap-1.5">
-        {contribution && (
-          <span className="rounded-full border border-[rgba(0,0,0,0.14)] bg-white px-2 py-0.5 text-[11px] font-bold text-[#253900]">
-            기여도 {contribution}
-          </span>
-        )}
-        {techStack.map((stack) => (
-          <span key={stack} className="rounded-full border border-[rgba(0,0,0,0.14)] bg-white px-2 py-0.5 text-[11px] font-bold text-[#253900]">
-            {stack}
-          </span>
-        ))}
-      </div>
-      <p className="text-[11px] font-semibold leading-5 text-[rgba(0,0,0,0.55)]">
-        {githubUrl ? `GitHub ${githubUrl}` : 'GitHub 링크 없음'}
-      </p>
-    </div>
-  );
-}
 
 // 음성 면접 시작 전 마이크 권한, 장치 선택, 실제 입력 레벨을 확인하는 패널.
 function MicrophoneCheckPanel({ micCheck, required }) {
@@ -431,6 +361,8 @@ function SessionSetupPage({ adminMode = false }) {
   const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState('');
   const [adminTestSetup, setAdminTestSetup] = useState(null);
+  const [interviewStartPointCost, setInterviewStartPointCost] = useState(FALLBACK_INTERVIEW_START_POINT_COST);
+  const [pointPolicyLoaded, setPointPolicyLoaded] = useState(adminMode);
 
   const selectedJd = useMemo(() => jds.find((item) => item.jd_id === selectedJdId) || null, [jds, selectedJdId]);
   const selectedResume = useMemo(() => resumes.find((item) => item.resume_id === selectedResumeId) || null, [resumes, selectedResumeId]);
@@ -444,6 +376,21 @@ function SessionSetupPage({ adminMode = false }) {
   );
   // 음성 면접일 때만 마이크 확인 완료 여부를 세션 생성 조건으로 사용한다.
   const requiresMicrophone = interviewMode === 'voice';
+
+  const loadInterviewStartPointPolicy = async () => {
+    if (adminMode) return;
+    try {
+      const policy = await mypageApi.getInterviewSessionStartPointPolicy();
+      const nextCost = Number(policy?.cost ?? Math.abs(Number(policy?.amount)));
+      if (Number.isFinite(nextCost) && nextCost >= 0) {
+        setInterviewStartPointCost(nextCost);
+      }
+      setPointPolicyLoaded(true);
+    } catch {
+      setPointPolicyLoaded(false);
+      setInterviewStartPointCost(FALLBACK_INTERVIEW_START_POINT_COST);
+    }
+  };
 
   const applyAdminSetup = (setup) => {
     const materials = setup?.materials ?? {};
@@ -530,8 +477,9 @@ function SessionSetupPage({ adminMode = false }) {
       if (rememberedCoverLetter) setSelectedCoverLetterId(rememberedCoverLetter);
       setSelectedProjectIds(rememberedProjectIds);
       storeProjectIds(rememberedProjectIds);
+      await loadInterviewStartPointPolicy();
     } catch (err) {
-      setError(formatApiError(err, '자료 목록을 불러오지 못했습니다.'));
+      setError(formatApiError(err, '자료 목록을 불러오지 못했습니다.', interviewStartPointCost));
       if (err?.response?.status === 401) navigate('/auth/login');
     } finally {
       setInitialLoading(false);
@@ -549,36 +497,6 @@ function SessionSetupPage({ adminMode = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSelectJd = (nextId) => {
-    setSelectedJdId(nextId);
-    window.localStorage.setItem('careerzip_selected_jd_id', nextId);
-    const jd = jds.find((item) => item.jd_id === nextId);
-    if (jd) setJd(nextId, jd);
-  };
-
-  const handleSelectResume = (nextId) => {
-    setSelectedResumeId(nextId);
-    window.localStorage.setItem('careerzip_selected_resume_id', nextId);
-  };
-
-  const handleSelectCoverLetter = (nextId) => {
-    setSelectedCoverLetterId(nextId);
-    if (nextId) window.localStorage.setItem('careerzip_selected_cover_letter_id', nextId);
-    else window.localStorage.removeItem('careerzip_selected_cover_letter_id');
-  };
-
-  const handleToggleProject = (projectId) => {
-    const nextIds = selectedProjectIds.includes(projectId)
-      ? selectedProjectIds.filter((id) => id !== projectId)
-      : [...selectedProjectIds, projectId];
-    setSelectedProjectIds(nextIds);
-    storeProjectIds(nextIds);
-  };
-
-  const handleClearProjects = () => {
-    setSelectedProjectIds([]);
-    storeProjectIds([]);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -601,6 +519,10 @@ function SessionSetupPage({ adminMode = false }) {
       setError('로그인이 필요합니다. 다시 로그인해주세요.');
       navigate(adminMode ? '/admin/login' : '/auth/login');
       return;
+    }
+    if (!adminMode) {
+      const confirmed = window.confirm(`면접 시작 시 ${interviewStartPointCost}P가 차감됩니다.\n진행하시겠습니까?`);
+      if (!confirmed) return;
     }
 
     const count = parseInt(totalQuestionCount, 10);
@@ -665,10 +587,14 @@ function SessionSetupPage({ adminMode = false }) {
         );
       }
 
-      const nextInterviewPath = adminMode ? '/interview/question-admin' : '/interview/question';
+      const nextInterviewPath = adminMode
+        ? '/interview/question-admin'
+        : interviewMode === 'text'
+          ? '/interview/chat'
+          : '/interview/question';
       navigate(`${nextInterviewPath}?sessionId=${encodeURIComponent(newSessionId)}`);
     } catch (err) {
-      setError(formatApiError(err, newSessionId ? '질문 생성에 실패했습니다.' : '세션 생성에 실패했습니다.'));
+      setError(formatApiError(err, newSessionId ? '질문 생성에 실패했습니다.' : '세션 생성에 실패했습니다.', interviewStartPointCost));
       if (err?.response?.status === 401) navigate(adminMode ? '/admin/login' : '/auth/login');
     } finally {
       setLoading(false);
@@ -716,137 +642,6 @@ function SessionSetupPage({ adminMode = false }) {
                 title="연결 자료 확인"
                 description="면접 질문을 만들 JD와 이력서를 확인합니다. 자기소개서는 선택 사항입니다."
               />
-              <div className="grid gap-4 lg:grid-cols-4">
-                <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <p className="text-sm font-black text-[#253900]">JD 선택</p>
-                    <Button type="button" variant="ghost" onClick={() => navigate('/jd')} disabled={adminMode} className="h-9 px-3 py-0">
-                      추가
-                    </Button>
-                  </div>
-                  {jds.length === 0 ? (
-                    <EmptyState
-                      title="등록된 JD가 없습니다"
-                      description="직접 입력, Mock 공고 저장, PDF 업로드 중 하나로 JD를 먼저 등록해주세요."
-                      actionLabel="JD 등록"
-                      actionTo="/jd"
-                    />
-                  ) : (
-                    <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                      {jds.map((item) => (
-                        <SelectableItem
-                          key={item.jd_id}
-                          selected={selectedJdId === item.jd_id}
-                          title={`${item.company_name || '회사명 없음'} · ${item.position || '직무명 없음'}`}
-                          meta={`등록 ${fmtDateTime(item.created_at)}`}
-                          onClick={() => handleSelectJd(item.jd_id)}
-                          disabled={adminMode}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <p className="text-sm font-black text-[#253900]">이력서 선택</p>
-                    <Button type="button" variant="ghost" onClick={() => navigate('/input/documents')} disabled={adminMode} className="h-9 px-3 py-0">
-                      추가
-                    </Button>
-                  </div>
-                  {resumes.length === 0 ? (
-                    <EmptyState
-                      title="등록된 이력서가 없습니다"
-                      description="PDF 또는 DOCX 이력서를 업로드한 뒤 면접에 사용할 이력서를 선택해주세요."
-                      actionLabel="이력서 업로드"
-                      actionTo="/input/documents"
-                    />
-                  ) : (
-                    <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                      {resumes.map((item) => (
-                        <SelectableItem
-                          key={item.resume_id}
-                          selected={selectedResumeId === item.resume_id}
-                          title={item.name || '이력서'}
-                          meta={`수정 ${fmtDateTime(item.updated_at)}`}
-                          onClick={() => handleSelectResume(item.resume_id)}
-                          disabled={adminMode}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
-                  <p className="mb-3 text-sm font-black text-[#253900]">자기소개서 선택</p>
-                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                    <SelectableItem
-                      selected={!selectedCoverLetterId}
-                      title="선택 안 함"
-                      meta="자기소개서 없이 JD와 이력서만으로 질문을 생성합니다."
-                      onClick={() => handleSelectCoverLetter('')}
-                      disabled={adminMode}
-                    />
-                    {coverLetters.length === 0 ? (
-                      <EmptyState
-                        title="저장된 자기소개서가 없습니다"
-                        description="자기소개서는 선택 항목입니다. 없어도 면접을 시작할 수 있습니다."
-                      />
-                    ) : (
-                      coverLetters.map((item) => (
-                        <SelectableItem
-                          key={item.cover_letter_id}
-                          selected={selectedCoverLetterId === item.cover_letter_id}
-                          title={item.title || '자기소개서'}
-                          meta={item.company_name || fmtDateTime(item.created_at)}
-                          onClick={() => handleSelectCoverLetter(item.cover_letter_id)}
-                          disabled={adminMode}
-                        />
-                      ))
-                    )}
-                  </div>
-                </section>
-
-                <section className="rounded-lg border border-[rgba(0,0,0,0.12)] p-4">
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <p className="text-sm font-black text-[#253900]">프로젝트 선택</p>
-                    <Button type="button" variant="ghost" onClick={() => navigate('/input/cover-letter-project')} disabled={adminMode} className="h-9 px-3 py-0">
-                      추가
-                    </Button>
-                  </div>
-                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                    <SelectableItem
-                      selected={selectedProjectIds.length === 0}
-                      title="선택 안 함"
-                      meta="프로젝트 없이 JD, 이력서, 자기소개서 기준으로 질문을 생성합니다."
-                      onClick={handleClearProjects}
-                      disabled={adminMode}
-                    />
-                    {projects.length === 0 ? (
-                      <EmptyState
-                        title="저장된 프로젝트가 없습니다"
-                        description="프로젝트는 선택 항목입니다. 없어도 면접을 시작할 수 있습니다."
-                      />
-                    ) : (
-                      projects.map((item) => {
-                        const projectId = getProjectId(item);
-                        return (
-                          <SelectableItem
-                            key={projectId || item.project_name || item.created_at}
-                            selected={selectedProjectIds.includes(projectId)}
-                            title={item.project_name || '프로젝트'}
-                            meta={`등록 ${fmtDateTime(item.created_at)}`}
-                            onClick={() => handleToggleProject(projectId)}
-                            disabled={adminMode || !projectId}
-                          >
-                            <ProjectDetails project={item} />
-                          </SelectableItem>
-                        );
-                      })
-                    )}
-                  </div>
-                </section>
-              </div>
             </section>
 
             <section className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-4">
@@ -961,6 +756,12 @@ function SessionSetupPage({ adminMode = false }) {
             <MicrophoneCheckPanel micCheck={micCheck} required={requiresMicrophone} />
 
             {error && <Alert tone="danger">{error}</Alert>}
+            {!adminMode && (
+              <p className="text-sm font-bold text-[rgba(0,0,0,0.62)]">
+                면접 시작 시 {interviewStartPointCost}P가 차감됩니다.
+                {!pointPolicyLoaded && ' 현재 기본 정책 금액으로 안내 중입니다.'}
+              </p>
+            )}
 
             <div className="flex flex-wrap justify-between gap-3 border-t border-[rgba(0,0,0,0.10)] pt-6">
               <Button
