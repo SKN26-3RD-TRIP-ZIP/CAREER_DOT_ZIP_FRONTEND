@@ -50,6 +50,15 @@ const formatPointAmount = (amount) => {
   return `${value > 0 ? '+' : ''}${value.toLocaleString('ko-KR')}P`;
 };
 
+const formatScoreDelta = (value) => {
+  if (value == null) return null;
+  const rounded = Number(value.toFixed(1));
+  return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('ko-KR', {
+    minimumFractionDigits: Number.isInteger(rounded) ? 0 : 1,
+    maximumFractionDigits: 1,
+  })}`;
+};
+
 function safeJsonParse(value) {
   if (!value) return null;
   try {
@@ -79,14 +88,6 @@ function extractWeaknesses(report) {
     if (typeof c === 'string' && c.trim()) return [c.trim()];
   }
   return [];
-}
-
-function statusTone(status) {
-  const normalized = String(status || '').toLowerCase();
-  if (normalized.includes('complete') || normalized.includes('success')) return 'success';
-  if (normalized.includes('fail') || normalized.includes('error')) return 'danger';
-  if (normalized.includes('progress') || normalized.includes('pending')) return 'warning';
-  return 'default';
 }
 
 function InfoRow({ label, value }) {
@@ -123,8 +124,6 @@ function MyPage() {
   const clearAuth = useAuthStore((s) => s.logout);
   const [history, setHistory] = useState([]);
   const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [historyError, setHistoryError] = useState('');
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState('');
@@ -183,10 +182,6 @@ function MyPage() {
           navigate('/auth/login');
           return;
         }
-        setHistoryError('면접 기록을 불러오지 못했습니다.');
-      })
-      .finally(() => {
-        if (active) setHistoryLoading(false);
       });
 
     mypageApi
@@ -302,6 +297,7 @@ function MyPage() {
     growthPoints.length >= 2
       ? growthPoints[growthPoints.length - 1].overall_score - growthPoints[growthPoints.length - 2].overall_score
       : null;
+  const growthDeltaLabel = formatScoreDelta(growthDelta);
 
   const weaknesses = useMemo(() => extractWeaknesses(latestReportDetail), [latestReportDetail]);
   const recommendedQuestions = useMemo(() => getRecommendedQuestions(weaknesses, 3), [weaknesses]);
@@ -429,7 +425,7 @@ function MyPage() {
             <DashboardCard>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-xl font-black text-[#253900]">성장 추이</h2>
-                {growthDelta != null && <StatusBadge tone={growthDelta >= 0 ? 'success' : 'warning'}>{growthDelta >= 0 ? `+${growthDelta}` : growthDelta}점</StatusBadge>}
+                {growthDeltaLabel != null && <StatusBadge tone={growthDelta >= 0 ? 'success' : 'warning'}>직전 대비 {growthDeltaLabel}점</StatusBadge>}
               </div>
               <div className="mt-5">
                 {growthPoints.length >= 2 ? (
@@ -549,52 +545,6 @@ function MyPage() {
             )}
           </DashboardCard>
 
-          <DashboardCard>
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-black text-[#253900]">최근 면접 기록</h2>
-              <StatusBadge>{historyTotal}건</StatusBadge>
-            </div>
-            {historyLoading ? (
-              <LoadingState title="면접 기록을 불러오는 중입니다" />
-            ) : historyError ? (
-              <Alert tone="danger">{historyError}</Alert>
-            ) : history.length === 0 ? (
-              <EmptyState title="아직 면접 기록이 없습니다" description="JD와 이력서를 선택해 첫 면접을 시작해보세요." actionLabel="면접 시작하기" actionTo="/analysis" />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-[rgba(0,0,0,0.12)] text-[#253900]">
-                      <th className="py-3 pr-4">날짜</th>
-                      <th className="py-3 pr-4">면접 유형</th>
-                      <th className="py-3 pr-4">상태</th>
-                      <th className="py-3 pr-4">점수</th>
-                      <th className="py-3 pr-4">동작</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.slice(0, 5).map((rec) => (
-                      <tr key={rec.session_id} className="border-b border-[rgba(0,0,0,0.12)]">
-                        <td className="py-3 pr-4">{fmtDateTime(rec.created_at)}</td>
-                        <td className="py-3 pr-4 font-black">{rec.interview_type || '면접'}</td>
-                        <td className="py-3 pr-4"><StatusBadge tone={statusTone(rec.status)}>{rec.status || '기록됨'}</StatusBadge></td>
-                        <td className="py-3 pr-4">{rec.overall_score != null ? `${rec.overall_score}점` : '-'}</td>
-                        <td className="py-3 pr-4">
-                          {rec.has_report ? (
-                            <Button type="button" variant="secondary" onClick={() => navigate(`/report/${rec.session_id}`)}>
-                              리포트 보기
-                            </Button>
-                          ) : (
-                            <span className="font-bold">리포트 없음</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </DashboardCard>
         </div>
       </div>
     </PageShell>
