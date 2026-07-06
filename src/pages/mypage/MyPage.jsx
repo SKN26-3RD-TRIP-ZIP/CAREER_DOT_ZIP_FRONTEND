@@ -59,6 +59,12 @@ const formatScoreDelta = (value) => {
   })}`;
 };
 
+const roundOverallScore = (value) => {
+  if (value == null) return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? Math.round(numberValue) : null;
+};
+
 function safeJsonParse(value) {
   if (!value) return null;
   try {
@@ -248,7 +254,7 @@ function MyPage() {
     () => summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null,
     [summary, reports, history],
   );
-  const latestReportScore = latestReport ? getOverallScore(latestReport, null) : null;
+  const latestReportScore = latestReport ? roundOverallScore(getOverallScore(latestReport, null)) : null;
   const latestReportSessionId = reportSessionId(latestReport);
   const interviewCount = summary?.interview_count ?? historyTotal;
   const pointSummaryBalance = pointBalance?.point_balance ?? summary?.point_balance ?? 0;
@@ -288,7 +294,7 @@ function MyPage() {
         .sort((a, b) => new Date(a.generated_at || a.created_at || 0) - new Date(b.generated_at || b.created_at || 0))
         .map((r) => ({
           session_id: reportSessionId(r),
-          overall_score: Number(getOverallScore(r, null)),
+          overall_score: roundOverallScore(getOverallScore(r, null)),
           label: fmtDate(r.generated_at || r.created_at),
         })),
     [reports],

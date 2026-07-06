@@ -27,6 +27,10 @@ export const signup = ({
     privacy_version: privacyVersion,
   });
 
+// 이메일 중복 확인 (POST /auth/check-email { email }) → { available, code, detail }
+export const checkEmail = (email) =>
+  axiosInstance.post('/auth/check-email', { email });
+
 export const login = ({ email, password }) =>
   axiosInstance.post('/auth/login', { email, password });
 
@@ -82,6 +86,7 @@ export const updateMarketingConsent = ({ agreed, version }) =>
   );
 
 export default {
+  checkEmail,
   signup,
   login,
   verifyCode,

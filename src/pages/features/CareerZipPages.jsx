@@ -28,7 +28,7 @@ import {
   Target,
   User,
 } from 'lucide-react';
-import { login as loginApi, getMe, signup as signupApi, verifyCode, resendVerification, logout as logoutApi } from '../../api/authApi';
+import { login as loginApi, getMe, signup as signupApi, checkEmail as checkEmailApi, verifyCode, resendVerification, logout as logoutApi } from '../../api/authApi';
 import { mypageApi } from '../../api/mypageApi';
 import { useAuthStore } from '../../store/authStore';
 import { resolveAuthedRedirect } from '../../utils/authNavigation';
@@ -265,7 +265,7 @@ export function LoginPage() {
           {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
           <div className="flex items-center justify-between text-sm font-bold">
             <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />로그인 상태 유지</label>
-            <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link>
+            {/* <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link> */}
           </div>
           <button type="submit" disabled={loading} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '로그인 중...' : '로그인'}</button>
           <SocialLoginButtons next={params.get('next') || '/mypage'} mode="login" />
@@ -307,6 +307,19 @@ function StepDots({ current, labels = false }) {
   );
 }
 
+// 백엔드 PasswordComplexityValidator(apps/accounts/validators.py) 와 동일한 기준으로 검증한다.
+// 8자 이상 + 영문/숫자/특수문자 각 1자 이상 + 동일 문자 3연속 금지.
+const PASSWORD_PLACEHOLDER = '8자 이상, 영문·숫자·특수문자 포함 (동일 문자 3연속 불가)';
+function getPasswordErrors(password) {
+  const errors = [];
+  if (password.length < 8) errors.push('비밀번호는 최소 8자 이상이어야 합니다.');
+  if (!/[A-Za-z]/.test(password)) errors.push('비밀번호에 영문자를 1자 이상 포함해주세요.');
+  if (!/\d/.test(password)) errors.push('비밀번호에 숫자를 1자 이상 포함해주세요.');
+  if (!/[^A-Za-z0-9]/.test(password)) errors.push('비밀번호에 특수문자를 1자 이상 포함해주세요.');
+  if (/(.)\1\1/.test(password)) errors.push('같은 문자를 3번 이상 연속으로 사용할 수 없습니다.');
+  return errors;
+}
+
 export function SignupPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -314,8 +327,39 @@ export function SignupPage() {
   const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // 이메일 중복확인 상태: idle | checking | available | taken | error
+  const [emailCheck, setEmailCheck] = useState({ status: 'idle', message: '' });
   const all = agreements.terms && agreements.privacy && agreements.marketing;
   function setAll(v) { setAgreements({ terms: v, privacy: v, marketing: v }); }
+  function updateEmail(value) {
+    setForm({ ...form, email: value });
+    setEmailCheck({ status: 'idle', message: '' });
+  }
+  async function checkEmailDuplicate() {
+    const email = form.email.trim();
+    if (!email) return;
+    setEmailCheck({ status: 'checking', message: '' });
+    try {
+      const res = await checkEmailApi(email);
+      if (res.data?.available) {
+        setEmailCheck({ status: 'available', message: res.data?.detail || '사용 가능한 이메일입니다.' });
+      } else {
+        setEmailCheck({ status: 'taken', message: res.data?.detail || '이미 사용 중인 이메일입니다.' });
+      }
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      setEmailCheck({ status: 'error', message: detail || '이메일 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' });
+    }
+  }
+  function submitStep1(e) {
+    e.preventDefault();
+    setError('');
+    if (emailCheck.status !== 'available') return setError('이메일 중복확인을 완료해주세요.');
+    const passwordErrors = getPasswordErrors(form.password);
+    if (passwordErrors.length > 0) return setError(passwordErrors[0]);
+    if (form.password !== form.confirm) return setError('비밀번호 확인이 일치하지 않습니다.');
+    setStep(2);
+  }
   async function submitSignup() {
     setError('');
     if (!agreements.terms || !agreements.privacy) return setError('필수 약관에 동의해주세요.');
@@ -335,11 +379,46 @@ export function SignupPage() {
       <AuthCard title={step === 1 ? '회원가입' : '약관 동의'} sub={step === 1 ? 'Career.zip 계정을 만들어 시작해보세요' : '서비스 이용을 위해 필수 약관에 동의해주세요'} width="max-w-[590px]">
         <StepDots current={step} />
         {step === 1 ? (
-          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); if (form.password !== form.confirm) setError('비밀번호 확인이 일치하지 않습니다.'); else setStep(2); }}>
-            <TextInput label="이름" placeholder="이름을 입력하세요" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <TextInput label="이메일" type="email" placeholder="이메일 주소를 입력하세요" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            <TextInput label="비밀번호" type="password" placeholder="비밀번호를 입력하세요" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-            <TextInput label="비밀번호 확인" type="password" placeholder="비밀번호를 다시 입력하세요" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required />
+          <form className="space-y-5" onSubmit={submitStep1}>
+            <TextInput label="이름" placeholder="이름을 입력하세요" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={50} required />
+            <label className="block">
+              <span className="mb-2 block text-sm font-black">이메일</span>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="이메일 주소를 입력하세요"
+                  value={form.email}
+                  onChange={(e) => updateEmail(e.target.value)}
+                  required
+                  maxLength={100}
+                  disabled={emailCheck.status === 'available'}
+                  className={cx('h-13 flex-1 min-w-0 rounded-lg border bg-white px-4 text-[16px] font-medium outline-none transition focus:border-[#009900] focus:ring-4 focus:ring-[#08CB00]/15 disabled:bg-[#f2f5f7] disabled:text-[#7b8791]', emailCheck.status === 'taken' || emailCheck.status === 'error' ? 'border-[#ff4d4f]' : 'border-[#cfd8df]')}
+                />
+                {emailCheck.status === 'available' ? (
+                  <button
+                    type="button"
+                    onClick={() => setEmailCheck({ status: 'idle', message: '' })}
+                    className="h-13 shrink-0 whitespace-nowrap rounded-lg border border-[#cfd8df] px-5 text-sm font-black text-[#4c5a65]"
+                  >
+                    수정
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={checkEmailDuplicate}
+                    disabled={!form.email.trim() || emailCheck.status === 'checking'}
+                    className="h-13 shrink-0 whitespace-nowrap rounded-lg border border-[#009900] px-5 text-sm font-black text-[#009900] disabled:opacity-50"
+                  >
+                    {emailCheck.status === 'checking' ? '확인 중...' : '중복확인'}
+                  </button>
+                )}
+              </div>
+              {emailCheck.message && (
+                <p className={cx('mt-2 text-sm font-bold', emailCheck.status === 'available' ? 'text-[#009900]' : 'text-[#e02929]')}>{emailCheck.message}</p>
+              )}
+            </label>
+            <TextInput label="비밀번호" type="password" placeholder={PASSWORD_PLACEHOLDER} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} maxLength={32} required />
+            <TextInput label="비밀번호 확인" type="password" placeholder="비밀번호를 다시 입력하세요" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} maxLength={32} required />
             {error && <div className="rounded-lg border border-[#ffb9b9] bg-[#fff1f1] p-3 text-sm font-black text-[#e02929]">{error}</div>}
             <button type="submit" className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white">다음</button>
             <SocialLoginButtons next="/input/onboarding/1" mode="signup" />
