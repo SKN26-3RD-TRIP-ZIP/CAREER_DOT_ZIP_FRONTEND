@@ -15,7 +15,6 @@ import {
 } from '../../components/ui/DemoLayout';
 
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
-const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트', '면접 설정'];
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 
@@ -130,8 +129,6 @@ function DocumentsInputPage() {
       eyebrow="Step 3"
       title="이력서를 업로드해요"
       description="PDF 또는 DOCX 이력서를 업로드하고 면접 세션에서 사용할 이력서를 선택합니다."
-      steps={STEPS}
-      currentStep={3}
     >
       <Card className="mx-auto max-w-5xl p-6">
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">

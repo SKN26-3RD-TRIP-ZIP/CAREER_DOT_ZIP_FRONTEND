@@ -6,8 +6,6 @@ import { projectApi } from '../../api/projectApi';
 import { Alert, Button, Card, Field, LoadingState, PageShell, StatusBadge, inputClass } from '../../components/ui/DemoLayout';
 import { useAuthStore } from '../../store/authStore';
 
-const STEPS = ['프로필', 'JD 입력', '이력서', '자소서·프로젝트', '면접 설정'];
-
 function safeJsonParse(value, fallback = {}) {
   if (!value) return fallback;
   try {
@@ -243,8 +241,6 @@ function CoverLetterProjectPage() {
       eyebrow="Step 4"
       title="자소서·프로젝트 경험"
       description="입력한 내용은 서버에 저장한 뒤 면접 질문 생성 자료로 연결합니다."
-      steps={STEPS}
-      currentStep={4}
       actions={<StatusBadge tone="info">서버 저장</StatusBadge>}
     >
       <Card className="mx-auto max-w-5xl p-6">

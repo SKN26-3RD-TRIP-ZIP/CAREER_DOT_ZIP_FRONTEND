@@ -27,7 +27,6 @@ import {
 } from '../../api/talentProfileApi';
 import {
   CUSTOM_SUMMARY_MAX_LENGTH,
-  TALENT_PROFILE_STEPS,
   normalizeTalentProfileCatalog,
 } from '../../utils/talentProfile';
 
@@ -192,8 +191,6 @@ export default function TalentProfilePage() {
       eyebrow="Step 2-1"
       title="면접 연습에 반영할 인재상 기준을 선택해주세요"
       description="회사의 공식 인재상이 아닌, 사용자가 면접 연습을 위해 직접 설정한 인재상 기준입니다."
-      steps={TALENT_PROFILE_STEPS}
-      currentStep={2}
       maxWidth="max-w-7xl"
       actions={<CountBadge selectedCount={selectedItems.length} categoryCount={catalog.length} traitCount={traitCount} />}
     >

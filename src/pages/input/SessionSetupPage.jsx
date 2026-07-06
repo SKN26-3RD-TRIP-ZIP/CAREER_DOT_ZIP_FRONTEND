@@ -22,8 +22,6 @@ import {
   inputClass,
 } from '../../components/ui/DemoLayout';
 
-const STEPS = ['프로필', 'JD 입력', '이력서', '자소서/프로젝트', '면접 설정'];
-
 const INTERVIEW_TYPE_OPTIONS = [
   { value: 'technical', label: '기술 면접', desc: '직무 역량과 기술 판단 근거를 깊게 확인합니다.' },
   { value: 'personality', label: '인성 면접', desc: '가치관, 협업 방식, 성장 태도를 중심으로 질문합니다.' },
@@ -616,8 +614,6 @@ function SessionSetupPage({ adminMode = false }) {
           목록 새로고침
         </Button>
       }
-      steps={STEPS}
-      currentStep={5}
       activeNav="면접 진행"
       navDisabled={adminMode}
     >
