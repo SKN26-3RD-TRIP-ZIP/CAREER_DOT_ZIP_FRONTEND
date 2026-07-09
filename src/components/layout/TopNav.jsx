@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useEnsureMe } from '../../hooks/useEnsureMe';
@@ -8,7 +8,7 @@ import { mypageApi } from '../../api/mypageApi';
 import { BrandLogo } from './BrandLogo.jsx';
 
 const NAV_ITEMS = [
-  { label: '대시보드', to: '/dashboard' },
+  { label: '대시보드', to: '/mypage/growth' },
   { label: '자료 입력', to: '/jd' },
   { label: '면접 진행', to: '/analysis' },
   { label: '리포트', to: '/report' },
@@ -19,7 +19,7 @@ function isActiveItem(item, pathname, active) {
   if (active && item.label === active) return true;
   if (item.to === '/analysis') return pathname.startsWith('/analysis') || pathname.startsWith('/interview');
   if (item.to === '/report') return pathname.startsWith('/report');
-  if (item.to === '/dashboard') return pathname === '/dashboard';
+  if (item.to === '/mypage/growth') return pathname.startsWith('/mypage/growth');
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 function UserAvatar() {
@@ -117,33 +117,100 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
     });
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
   useEffect(() => {
     setMenuOpen(false);
+    setProfileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const closeProfileMenu = (event) => {
+      if (!profileMenuRef.current || profileMenuRef.current.contains(event.target)) return;
+      setProfileOpen(false);
+    };
+
+    document.addEventListener('mousedown', closeProfileMenu);
+    return () => document.removeEventListener('mousedown', closeProfileMenu);
+  }, []);
 
   const appUserZone = (mobile = false) => (
     <div className={mobile ? 'flex flex-col gap-4' : 'flex items-center gap-[18px]'}>
-      <Link to="/mypage" className="flex items-center gap-2 no-underline">
-        <UserAvatar />
-        <span className="text-[15px] font-semibold text-[#1f2937]">{displayName} 님</span>
-      </Link>
-
-      {mobile ? <span className="h-px w-full bg-[#e5e7eb]" /> : <span className="h-5 w-px bg-[#e5e7eb]" />}
-
       <div className="flex items-center gap-[7px]">
         <img src="/icon-point.svg" alt="포인트" width="20" height="20" />
         <span className="text-[15px] font-bold text-[#111827]">{formattedPoints}</span>
       </div>
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        className={`h-[38px] rounded-[9px] border border-[#e0e3e7] bg-white px-4 text-sm font-semibold text-[#4b5563] hover:bg-[#f9fafb] ${
-          mobile ? 'w-full' : ''
-        }`}
-      >
-        로그아웃
-      </button>
+      {mobile ? <span className="h-px w-full bg-[#e5e7eb]" /> : <span className="h-5 w-px bg-[#e5e7eb]" />}
+
+      <div className="relative" ref={mobile ? null : profileMenuRef}>
+        <button
+          type="button"
+          onClick={() => setProfileOpen((v) => !v)}
+          className={`flex items-center gap-2 rounded-lg text-left no-underline hover:text-[#08CB00] ${mobile ? 'w-full' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={profileOpen}
+        >
+          <UserAvatar />
+          <span className="text-[15px] font-semibold text-[#1f2937]">{displayName} 님</span>
+        </button>
+
+        {!mobile && profileOpen && (
+          <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-48 rounded-lg border border-[#e5e7eb] bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.16)]" role="menu">
+            <Link
+              to="/mypage"
+              className="block rounded-md px-3 py-2 text-sm font-semibold text-[#1f2937] no-underline hover:bg-[#f4f8f1] hover:text-[#08CB00]"
+              role="menuitem"
+            >
+              마이페이지
+            </Link>
+            <Link
+              to="/mypage/terms"
+              className="block rounded-md px-3 py-2 text-sm font-semibold text-[#1f2937] no-underline hover:bg-[#f4f8f1] hover:text-[#08CB00]"
+              role="menuitem"
+            >
+              약관·동의 관리
+            </Link>
+            <Link
+              to="/mypage/points"
+              className="block rounded-md px-3 py-2 text-sm font-semibold text-[#1f2937] no-underline hover:bg-[#f4f8f1] hover:text-[#08CB00]"
+              role="menuitem"
+            >
+              포인트 내역
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mt-1 block w-full rounded-md border-0 bg-transparent px-3 py-2 text-left text-sm font-semibold text-[#1f2937] hover:bg-[#f4f8f1] hover:text-[#08CB00]"
+              role="menuitem"
+            >
+              로그아웃
+            </button>
+          </div>
+        )}
+      </div>
+
+      {mobile && (
+        <>
+          <Link to="/mypage" className="text-[15px] font-semibold text-[#1f2937] no-underline">
+            마이페이지
+          </Link>
+          <Link to="/mypage/terms" className="text-[15px] font-semibold text-[#1f2937] no-underline">
+            약관·동의 관리
+          </Link>
+          <Link to="/mypage/points" className="text-[15px] font-semibold text-[#1f2937] no-underline">
+            포인트 내역
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full rounded-lg border border-[#e0e3e7] bg-white px-4 py-2 text-left text-[15px] font-semibold text-[#1f2937]"
+          >
+            로그아웃
+          </button>
+        </>
+      )}
     </div>
   );
 

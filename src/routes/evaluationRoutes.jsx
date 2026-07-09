@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import FinalReportPage from '../pages/evaluation/FinalReportPage.jsx';
-import ReportListPage from '../pages/evaluation/ReportListPage.jsx';
+import ReportIndexPage from '../pages/evaluation/ReportIndexPage.jsx';
 import GrowthTrendPage from '../pages/evaluation/GrowthTrendPage.jsx';
 import OverallScorePage from '../pages/evaluation/OverallScorePage.jsx';
 import RoadmapPage from '../pages/evaluation/RoadmapPage.jsx';
@@ -30,7 +30,7 @@ export default function EvaluationRoutes({ adminMode = false }) {
       <Route path=":sessionId/overall" element={<OverallScorePage adminMode={adminMode} />} />
       <Route path=":sessionId/roadmap" element={<RoadmapPage adminMode={adminMode} />} />
       <Route path=":sessionId/feedback" element={<InterviewerFeedbackPage adminMode={adminMode} />} />
-      <Route index element={adminMode ? <Navigate to="latest" replace /> : <ReportListPage />} />
+      <Route index element={adminMode ? <Navigate to="latest" replace /> : <ReportIndexPage />} />
     </Routes>
   );
 }

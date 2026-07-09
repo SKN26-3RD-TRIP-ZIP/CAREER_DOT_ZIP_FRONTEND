@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useEnsureMe } from '../../hooks/useEnsureMe';
-import { isProfileComplete } from '../../utils/authNavigation';
+import { isOnboardingRequired, isProfileComplete } from '../../utils/authNavigation';
 
 const AUTH_CHECK_TIMEOUT_MS = 120000;
 
@@ -109,6 +109,13 @@ export default function ProtectedRoute({ requireComplete = false }) {
     return <AuthGateError onRetry={handleRetry} loginTo={loginTo} />;
   }
   // status === 'ready'
+  if (
+    isOnboardingRequired(user) &&
+    !location.pathname.startsWith('/input/onboarding') &&
+    location.pathname !== '/signup/social/terms'
+  ) {
+    return <Navigate to="/input/onboarding/1" replace state={{ from: location.pathname }} />;
+  }
   if (requireComplete && !isProfileComplete(user)) {
     return <Navigate to="/profile" replace state={{ from: location.pathname }} />;
   }

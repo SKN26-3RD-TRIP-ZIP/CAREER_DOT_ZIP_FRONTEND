@@ -45,6 +45,9 @@ export const resendVerification = (email) =>
 // 현재 로그인 사용자 조회 — 화면 표시 사용자의 단일 출처
 export const getMe = () => axiosInstance.get('/auth/me');
 
+export const completeOnboarding = () =>
+  axiosInstance.post('/auth/onboarding/complete');
+
 export const logout = () => axiosInstance.post('/auth/logout');
 
 // ── 소셜 로그인(OAuth) ─────────────────────────────────────────────
@@ -92,6 +95,7 @@ export default {
   verifyCode,
   resendVerification,
   getMe,
+  completeOnboarding,
   logout,
   oauthStart,
   oauthExchange,

@@ -17,6 +17,10 @@ export function isProfileComplete(user) {
   return Boolean(user && user.profile && user.profile.is_complete);
 }
 
+export function isOnboardingRequired(user) {
+  return Boolean(user && !user.is_staff && user.onboarding && user.onboarding.required);
+}
+
 /**
  * 오픈 리다이렉트 방지: 같은 출처의 내부 경로만 허용한다.
  * - 반드시 '/' 로 시작하고 '//'(protocol-relative)·역슬래시·콜론(scheme) 금지
@@ -53,6 +57,8 @@ export function resolveAuthedRedirect(user, savedNext) {
 
   // 관리자: 프로필 개념과 무관하게 백엔드가 지정한 next_path(/admin/dashboard) 우선
   if (user.is_staff) return user.next_path || '/admin/dashboard';
+
+  if (isOnboardingRequired(user)) return user.onboarding.next_path || '/input/onboarding/1';
 
   // 필수 프로필 미완성: 반드시 프로필 작성 화면으로 (savedNext 무시)
   if (!isProfileComplete(user)) return '/profile';

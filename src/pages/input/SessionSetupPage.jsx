@@ -43,6 +43,25 @@ const DEFAULT_QUESTION_COUNT = 5;
 const FALLBACK_INTERVIEW_START_POINT_COST = 10;
 const CURRENT_SESSION_STORAGE_KEY = 'careerzip_current_session_id';
 const QA_METADATA_SOURCE_LABEL = 'generation_metadata';
+const START_LOADING_STEPS = [
+  { key: 'session', label: '면접 세션 생성', match: '세션', progress: 28 },
+  { key: 'questions', label: '맞춤 질문 생성', match: '질문', progress: 68 },
+  { key: 'load', label: '질문 목록 불러오기', match: '불러', progress: 92 },
+];
+
+function resolveQuestionCount(value) {
+  const count = parseInt(value, 10);
+  return !Number.isNaN(count) && count > 0 ? count : DEFAULT_QUESTION_COUNT;
+}
+
+function getStartLoadingState(step = '') {
+  const currentIndex = START_LOADING_STEPS.findIndex((item) => step.includes(item.match));
+  const index = currentIndex >= 0 ? currentIndex : 0;
+  return {
+    index,
+    progress: START_LOADING_STEPS[index]?.progress ?? 35,
+  };
+}
 
 function fmtDateTime(v) {
   return v ? new Date(v).toLocaleString('ko-KR') : '기록 없음';
@@ -207,6 +226,65 @@ function OptionCard({ option, checked, name, onChange }) {
 
 
 // 음성 면접 시작 전 마이크 권한, 장치 선택, 실제 입력 레벨을 확인하는 패널.
+function InterviewStartLoadingPanel({ step, interviewMode, questionCount }) {
+  const { index: activeIndex, progress } = getStartLoadingState(step);
+  const modeLabel = interviewMode === 'text' ? '텍스트 면접' : '음성 면접';
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="rounded-lg border border-[#08CB00] bg-white p-5 shadow-[0_14px_34px_rgba(8,203,0,0.14)]"
+    >
+      <div className="flex flex-col gap-5 md:flex-row md:items-center">
+        <div className="flex items-center gap-4">
+          <div className="relative h-16 w-16 shrink-0">
+            <div className="absolute inset-0 rounded-full border-8 border-[#D9F7D7]" />
+            <div className="absolute inset-0 animate-spin rounded-full border-8 border-transparent border-r-[#253900] border-t-[#08CB00]" />
+            <div className="absolute inset-4 rounded-full bg-[#08CB00]" />
+          </div>
+          <div>
+            <p className="text-lg font-black text-[#000000]">면접 준비 중입니다</p>
+            <p className="mt-1 text-sm leading-6 text-[rgba(0,0,0,0.62)]">
+              {modeLabel} 질문 {questionCount}개를 준비하고 있어요. 보통 10~30초 정도 걸릴 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3 text-xs font-black text-[#253900]">
+            <span>{step || '처리 중...'}</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-[#D9F7D7]">
+            <div className="h-full rounded-full bg-[#08CB00] transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
+          <ol className="mt-4 grid gap-2 text-xs font-bold text-[rgba(0,0,0,0.58)] sm:grid-cols-3">
+            {START_LOADING_STEPS.map((item, itemIndex) => {
+              const done = itemIndex < activeIndex;
+              const active = itemIndex === activeIndex;
+              return (
+                <li key={item.key} className={`flex items-center gap-2 ${active ? 'text-[#000000]' : ''}`}>
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-black ${
+                      done || active
+                        ? 'border-[#08CB00] bg-[#08CB00] text-[#000000]'
+                        : 'border-[rgba(0,0,0,0.16)] bg-[#EEEEEE] text-[rgba(0,0,0,0.46)]'
+                    }`}
+                  >
+                    {done ? <Check size={13} strokeWidth={3} /> : itemIndex + 1}
+                  </span>
+                  <span>{item.label}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MicrophoneCheckPanel({ micCheck, required }) {
   const {
     isSupported,
@@ -523,8 +601,7 @@ function SessionSetupPage({ adminMode = false }) {
       if (!confirmed) return;
     }
 
-    const count = parseInt(totalQuestionCount, 10);
-    const questionCount = !Number.isNaN(count) && count > 0 ? count : DEFAULT_QUESTION_COUNT;
+    const questionCount = resolveQuestionCount(totalQuestionCount);
     // 백엔드 세션 생성 API가 사용하는 필드명과 기존 프론트 필드명을 함께 맞춰 보낸다.
     const sessionPayload = {
       jd_id: selectedJdId,
@@ -757,6 +834,14 @@ function SessionSetupPage({ adminMode = false }) {
                 면접 시작 시 {interviewStartPointCost}P가 차감됩니다.
                 {!pointPolicyLoaded && ' 현재 기본 정책 금액으로 안내 중입니다.'}
               </p>
+            )}
+
+            {loading && (
+              <InterviewStartLoadingPanel
+                step={loadingStep}
+                interviewMode={interviewMode}
+                questionCount={resolveQuestionCount(totalQuestionCount)}
+              />
             )}
 
             <div className="flex flex-wrap justify-between gap-3 border-t border-[rgba(0,0,0,0.10)] pt-6">

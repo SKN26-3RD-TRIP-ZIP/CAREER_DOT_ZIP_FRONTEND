@@ -58,7 +58,7 @@ export default function GrowthDashboardPage() {
 
   return (
     <PageShell
-      activeNav="마이페이지"
+      activeNav="대시보드"
       title="성장 비교 · 개인화 대시보드"
       description="실제 평가가 완료된 면접 결과만으로 성장 추이를 비교합니다. (Mock·미평가·실패 결과 제외)"
       actions={

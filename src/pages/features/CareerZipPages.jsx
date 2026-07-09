@@ -28,7 +28,7 @@ import {
   Target,
   User,
 } from 'lucide-react';
-import { login as loginApi, getMe, signup as signupApi, checkEmail as checkEmailApi, verifyCode, resendVerification, logout as logoutApi } from '../../api/authApi';
+import { login as loginApi, getMe, signup as signupApi, checkEmail as checkEmailApi, verifyCode, resendVerification, logout as logoutApi, completeOnboarding } from '../../api/authApi';
 import { mypageApi } from '../../api/mypageApi';
 import { useAuthStore } from '../../store/authStore';
 import { resolveAuthedRedirect } from '../../utils/authNavigation';
@@ -521,7 +521,7 @@ export function SignupCompletePage() {
           <span className="flex h-22 w-22 items-center justify-center rounded-full bg-[#05b700] text-white shadow-[0_18px_30px_rgba(8,203,0,.26)]"><Check size={52} /></span>
         </div>
         <div className="rounded-lg border border-[#b9eab6] bg-[#f0fff0] p-4 text-center text-[16px] font-black text-[#009900]"><Mail className="mr-2 inline" />이메일 인증이 완료되었습니다.</div>
-        <Link to="/input/onboarding/1" className="mt-8 flex h-14 items-center justify-center rounded-lg bg-[#05b700] text-lg font-black text-white">프로필 입력 시작하기</Link>
+        <Link to="/auth/login" className="mt-8 flex h-14 items-center justify-center rounded-lg bg-[#05b700] text-lg font-black text-white">로그인하러 가기</Link>
         <div className="mt-6 text-center"><Link to="/" className="text-[16px] font-black text-[#64717d] underline">홈으로 이동</Link></div>
       </AuthCard>
     </AuthFrame>
@@ -530,20 +530,21 @@ export function SignupCompletePage() {
 
 function OnboardingHeader({ current }) {
   return (
-    <header className="h-[88px] bg-white">
-      <div className="mx-auto flex h-[58px] max-w-[1440px] items-center justify-between px-8">
-        <BrandLogo />
-        <nav className="hidden gap-12 text-xs font-black lg:flex">{['서비스 소개', '기능', '면접 연습', '이용 방법'].map((n) => <span key={n}>{n}</span>)}</nav>
-        <Bell size={18} />
-      </div>
-      <div className="mx-auto flex max-w-[1060px] items-center justify-center gap-2">
+    <header className="bg-white">
+      <div className="mx-auto grid min-h-[76px] max-w-[1440px] grid-cols-[180px_1fr_180px] items-center px-8 py-3 max-lg:grid-cols-[150px_1fr] max-md:grid-cols-1 max-md:gap-3">
+        <div className="min-w-0">
+          <BrandLogo />
+        </div>
+        <div className="flex min-w-0 items-center justify-center gap-2">
         {['사용자 유형', '기본 프로필', '외부 링크', '면접 목표', '입력 요약'].map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <span className={cx('flex h-8 w-8 items-center justify-center rounded-full text-xs font-black', current === i + 1 ? 'bg-[#009900] text-white' : 'bg-[#f2f5f7] text-[#7b8791]')}>{i + 1}</span>
-            <span className={cx('text-xs font-black', current === i + 1 ? 'text-[#009900]' : 'text-[#7b8791]')}>{s}</span>
-            {i < 4 && <span className="h-px w-20 bg-[#dfe5ea]" />}
+          <div key={s} className="flex min-w-0 items-center gap-2">
+            <span className={cx('flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black', current === i + 1 ? 'bg-[#009900] text-white' : 'bg-[#f2f5f7] text-[#7b8791]')}>{i + 1}</span>
+            <span className={cx('whitespace-nowrap text-xs font-black', current === i + 1 ? 'inline text-[#009900]' : 'hidden text-[#7b8791] xl:inline')}>{s}</span>
+            {i < 4 && <span className="h-px w-5 shrink bg-[#dfe5ea] md:w-8 xl:w-20" />}
           </div>
         ))}
+        </div>
+        <div className="max-lg:hidden" />
       </div>
     </header>
   );
@@ -552,10 +553,32 @@ function OnboardingHeader({ current }) {
 export function OnboardingPage() {
   const navigate = useNavigate();
   const { step = '1' } = useParams();
+  const setUser = useAuthStore((s) => s.setUser);
   const current = Math.max(1, Math.min(12, Number(step)));
   const [selectedType, setSelectedType] = useState(0);
   const [mode, setMode] = useState('text');
   const [fileName, setFileName] = useState('');
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState('');
+  const handleComplete = async () => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+    setCompleteError('');
+    try {
+      await completeOnboarding();
+      const me = await getMe();
+      setUser(me.data);
+      navigate(resolveAuthedRedirect(me.data), { replace: true });
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        navigate('/auth/login', { replace: true });
+        return;
+      }
+      setCompleteError('온보딩 완료 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsCompleting(false);
+    }
+  };
   const titles = {
     1: ['나에게 맞는 면접 유형을 찾아요', '사용자 유형에 따라 추천 면접과 학습 방법이 달라집니다.'],
     2: ['기본 프로필을 입력해요', '면접 맞춤 추천과 피드백에 필요한 기본 정보를 입력해주세요.'],
@@ -572,15 +595,16 @@ export function OnboardingPage() {
   }[current];
   return (
     <main className="min-h-screen bg-[#f8fafb] text-black">
-      <OnboardingHeader current={Math.min(5, Math.ceil(current / 3))} />
-      <section className="mx-auto mt-16 max-w-[920px] rounded-xl border border-[#dfe5ea] bg-white px-10 py-9 shadow-[0_14px_40px_rgba(0,0,0,.05)]">
+      <OnboardingHeader current={Math.min(5, current)} />
+      <section className="mx-auto mt-10 flex min-h-[620px] max-w-[920px] flex-col rounded-xl border border-[#dfe5ea] bg-white px-10 py-9 shadow-[0_14px_40px_rgba(0,0,0,.05)]">
         <h1 className="text-center text-[26px] font-black">{titles[0]}</h1>
         <p className="mt-3 text-center text-sm font-medium text-[#64717d]">{titles[1]}</p>
-        <div className="mt-10">{renderOnboardingBody(current, { selectedType, setSelectedType, mode, setMode, fileName, setFileName })}</div>
+        <div className="mt-10 flex-1">{renderOnboardingBody(current, { selectedType, setSelectedType, mode, setMode, fileName, setFileName })}</div>
         <div className="mt-10 flex justify-between">
           <button onClick={() => navigate(`/input/onboarding/${Math.max(1, current - 1)}`)} className="h-10 rounded-md border border-[#cfd8df] px-7 font-black">이전</button>
-          {current === 12 ? <Link to="/interview/setup" className="flex h-10 min-w-[240px] items-center justify-center rounded-md bg-[#05b700] px-7 font-black text-white">면접 연습 시작하기</Link> : <button onClick={() => navigate(current === 7 ? '/input/jd/temp/talent-profile' : `/input/onboarding/${current + 1}`)} className="h-10 rounded-md bg-[#05b700] px-8 font-black text-white">다음</button>}
+          {current === 12 ? <button type="button" disabled={isCompleting} onClick={handleComplete} className="flex h-10 min-w-[240px] items-center justify-center rounded-md bg-[#05b700] px-7 font-black text-white disabled:cursor-not-allowed disabled:opacity-60">{isCompleting ? '완료 처리 중...' : '온보딩 완료하기'}</button> : <button onClick={() => navigate(current === 7 ? '/input/jd/temp/talent-profile' : `/input/onboarding/${current + 1}`)} className="h-10 rounded-md bg-[#05b700] px-8 font-black text-white">다음</button>}
         </div>
+        {completeError && <p className="mt-4 text-center text-sm font-bold text-red-600">{completeError}</p>}
       </section>
     </main>
   );

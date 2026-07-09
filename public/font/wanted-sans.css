@@ -6,33 +6,33 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("./WantedSans-Regular.otf") format("opentype");
+  src: url("/font/WantedSans-Regular.otf") format("opentype");
 }
 @font-face {
   font-family: "Wanted Sans";
   font-weight: 500;
   font-style: normal;
   font-display: swap;
-  src: url("./WantedSans-Medium.otf") format("opentype");
+  src: url("/font/WantedSans-Medium.otf") format("opentype");
 }
 @font-face {
   font-family: "Wanted Sans";
   font-weight: 600;
   font-style: normal;
   font-display: swap;
-  src: url("./WantedSans-SemiBold.otf") format("opentype");
+  src: url("/font/WantedSans-SemiBold.otf") format("opentype");
 }
 @font-face {
   font-family: "Wanted Sans";
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  src: url("./WantedSans-Bold.otf") format("opentype");
+  src: url("/font/WantedSans-Bold.otf") format("opentype");
 }
 @font-face {
   font-family: "Wanted Sans";
   font-weight: 800;
   font-style: normal;
   font-display: swap;
-  src: url("./WantedSans-ExtraBold.otf") format("opentype");
+  src: url("/font/WantedSans-ExtraBold.otf") format("opentype");
 }

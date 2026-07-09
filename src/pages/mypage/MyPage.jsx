@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMe, logout as logoutApi } from '../../api/authApi';
+import { getMe } from '../../api/authApi';
 import { mypageApi } from '../../api/mypageApi';
 import { reportApi } from '../../api/reportApi';
 import { Alert, Button, Card, DashboardCard, EmptyState, LoadingState, PageShell, StatCard, StatusBadge } from '../../components/ui/DemoLayout';
@@ -127,7 +127,6 @@ function MyPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const clearAuth = useAuthStore((s) => s.logout);
   const [history, setHistory] = useState([]);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [summary, setSummary] = useState(null);
@@ -238,17 +237,6 @@ function MyPage() {
     };
   }, [navigate, pointPage]);
 
-  const handleLogout = async () => {
-    try {
-      await logoutApi();
-    } catch {
-      // 서버 세션이 이미 만료되어도 클라이언트 토큰은 정리합니다.
-    } finally {
-      clearAuth();
-      navigate('/auth/login?logout=1');
-    }
-  };
-
   const profile = safeJsonParse(localStorage.getItem('userProfile')) || {};
   const latestReport = useMemo(
     () => summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null,
@@ -317,31 +305,6 @@ function MyPage() {
       activeNav="마이페이지"
       title={`${profile.name || user?.name || '회원'} 님의 성장 대시보드`}
       description="최근 면접 리포트와 약점 기반 연습 흐름을 한 화면에서 확인하세요."
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => navigate('/analysis')}>
-            면접 시작하기
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
-            내 정보 수정
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/terms')}>
-            약관·동의 관리
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/interview/question-packs')}>
-            질문팩
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/growth')}>
-            성장 대시보드
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => navigate('/mypage/points')}>
-            포인트 내역
-          </Button>
-          <Button type="button" variant="danger" onClick={handleLogout}>
-            로그아웃
-          </Button>
-        </div>
-      }
     >
       <div className="grid gap-5 lg:grid-cols-[0.9fr_2.1fr]">
         <div className="space-y-5">
