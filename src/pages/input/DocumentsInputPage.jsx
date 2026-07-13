@@ -121,12 +121,11 @@ function DocumentsInputPage() {
       return;
     }
     window.localStorage.setItem('careerzip_selected_resume_id', selectedResumeId);
-    navigate('/input/cover-letter-project');
+    navigate('/input');
   };
 
   return (
     <PageShell
-      eyebrow="Step 3"
       title="이력서를 업로드해요"
       description="PDF 또는 DOCX 이력서를 업로드하고 면접 세션에서 사용할 이력서를 선택합니다."
     >
@@ -228,11 +227,11 @@ function DocumentsInputPage() {
         {success && <Alert tone="success" className="mt-5">{success}</Alert>}
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Button type="button" variant="secondary" onClick={() => navigate('/jd')}>
+          <Button type="button" variant="secondary" onClick={() => navigate('/input')}>
             이전
           </Button>
           <Button type="button" onClick={handleNext}>
-            저장하고 다음
+            저장하고 자료입력으로
           </Button>
         </div>
       </Card>

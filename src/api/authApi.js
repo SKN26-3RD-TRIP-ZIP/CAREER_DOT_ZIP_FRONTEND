@@ -34,6 +34,17 @@ export const checkEmail = (email) =>
 export const login = ({ email, password }) =>
   axiosInstance.post('/auth/login', { email, password });
 
+export const requestPasswordReset = (email) =>
+  axiosInstance.post('/auth/password-reset/request', { email });
+
+export const confirmPasswordReset = ({ uid, token, password, passwordConfirm }) =>
+  axiosInstance.post('/auth/password-reset/confirm', {
+    uid,
+    token,
+    password,
+    password_confirm: passwordConfirm,
+  });
+
 // 6자리 인증번호 검증 (POST /auth/verify-email { email, code })
 export const verifyCode = ({ email, code }) =>
   axiosInstance.post('/auth/verify-email', { email, code });
@@ -49,6 +60,9 @@ export const completeOnboarding = () =>
   axiosInstance.post('/auth/onboarding/complete');
 
 export const logout = () => axiosInstance.post('/auth/logout');
+
+export const withdrawAccount = ({ confirm }) =>
+  axiosInstance.delete('/auth/me/withdraw', { data: { confirm } });
 
 // ── 소셜 로그인(OAuth) ─────────────────────────────────────────────
 // GET /auth/oauth/{provider}/start?next=<path>&flow=<login|signup>
@@ -92,11 +106,14 @@ export default {
   checkEmail,
   signup,
   login,
+  requestPasswordReset,
+  confirmPasswordReset,
   verifyCode,
   resendVerification,
   getMe,
   completeOnboarding,
   logout,
+  withdrawAccount,
   oauthStart,
   oauthExchange,
   submitSocialTerms,

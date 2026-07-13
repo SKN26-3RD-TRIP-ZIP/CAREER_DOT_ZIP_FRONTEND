@@ -28,7 +28,8 @@ import {
   Target,
   User,
 } from 'lucide-react';
-import { login as loginApi, getMe, signup as signupApi, checkEmail as checkEmailApi, verifyCode, resendVerification, logout as logoutApi, completeOnboarding } from '../../api/authApi';
+import { login as loginApi, getMe, signup as signupApi, checkEmail as checkEmailApi, verifyCode, resendVerification, logout as logoutApi, completeOnboarding, requestPasswordReset, confirmPasswordReset } from '../../api/authApi';
+import { toUserMessage } from '../../api/errors';
 import { mypageApi } from '../../api/mypageApi';
 import { useAuthStore } from '../../store/authStore';
 import { resolveAuthedRedirect } from '../../utils/authNavigation';
@@ -265,7 +266,7 @@ export function LoginPage() {
           {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
           <div className="flex items-center justify-between text-sm font-bold">
             <label className="flex items-center gap-2"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="h-4 w-4 accent-[#08CB00]" />로그인 상태 유지</label>
-            {/* <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link> */}
+            <Link to="/auth/login?mode=find" className="text-[#009900]">비밀번호 찾기</Link>
           </div>
           <button type="submit" disabled={loading} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '로그인 중...' : '로그인'}</button>
           <SocialLoginButtons next={params.get('next') || '/mypage'} mode="login" />
@@ -277,15 +278,86 @@ export function LoginPage() {
 }
 
 export function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await requestPasswordReset(email.trim());
+      setSent(true);
+    } catch (err) {
+      setError(toUserMessage(err, '재설정 링크 요청 중 오류가 발생했습니다.'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <AuthFrame>
       <AuthCard title="비밀번호 찾기" sub="가입한 이메일로 비밀번호 재설정 링크를 보내드릴게요.">
-        <div className="space-y-7">
-          <TextInput label="이메일" type="email" icon={Mail} placeholder="이메일 주소를 입력하세요" />
-          <button type="button" disabled className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white opacity-60" title="비밀번호 재설정 API가 아직 연결되지 않았습니다.">재설정 링크 보내기</button>
+        <form onSubmit={submit} className="space-y-7">
+          <TextInput label="이메일" type="email" icon={Mail} placeholder="이메일 주소를 입력하세요" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} disabled={sent} required />
+          {sent && <div className="rounded-lg border border-[#b9eab6] bg-[#f2fff1] p-4 text-sm font-bold text-[#257a20]">가입된 계정이라면 비밀번호 재설정 링크를 이메일로 보내드렸습니다.</div>}
+          {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
+          {!sent && <button type="submit" disabled={loading || !email.trim()} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '전송 중...' : '재설정 링크 보내기'}</button>}
           <div className="text-center"><Link to="/auth/login" className="inline-flex items-center gap-2 font-black text-[#009900]"><ChevronLeft size={18} />로그인으로 돌아가기</Link></div>
-          <p className="rounded-lg border border-[#dfe5ea] bg-[#f8fafb] p-3 text-sm font-medium text-[#64717d]">현재 백엔드 비밀번호 재설정 API가 확인되지 않아 UI_ONLY 상태입니다.</p>
-        </div>
+        </form>
+      </AuthCard>
+    </AuthFrame>
+  );
+}
+
+export function ResetPasswordPage() {
+  const [params] = useSearchParams();
+  const uid = params.get('uid') || '';
+  const token = params.get('token') || '';
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!uid || !token) return setError('유효하지 않은 비밀번호 재설정 링크입니다.');
+    if (password !== passwordConfirm) return setError('비밀번호 확인이 일치하지 않습니다.');
+    setLoading(true);
+    setError('');
+    try {
+      await confirmPasswordReset({ uid, token, password, passwordConfirm });
+      setCompleted(true);
+    } catch (err) {
+      const data = err?.response?.data;
+      const fieldMessage = data?.password?.[0] || data?.password_confirm?.[0] || data?.token?.[0];
+      setError(fieldMessage || toUserMessage(err, '비밀번호를 변경할 수 없습니다. 링크를 다시 요청해주세요.'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AuthFrame>
+      <AuthCard title="새 비밀번호 설정" sub="새로 사용할 비밀번호를 입력해주세요.">
+        {completed ? (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-[#b9eab6] bg-[#f2fff1] p-4 text-sm font-bold text-[#257a20]">비밀번호가 변경되었습니다.</div>
+            <Link to="/auth/login" className="flex h-13 items-center justify-center rounded-lg bg-[#05b700] text-lg font-black text-white">새 비밀번호로 로그인</Link>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-5">
+            <TextInput label="새 비밀번호" type={showPw ? 'text' : 'password'} placeholder={PASSWORD_PLACEHOLDER} value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} maxLength={128} required right={<button type="button" aria-label="비밀번호 보기 전환" onClick={() => setShowPw((value) => !value)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7b8791]">{showPw ? <EyeOff size={20} /> : <Eye size={20} />}</button>} />
+            <TextInput label="새 비밀번호 확인" type={showPw ? 'text' : 'password'} placeholder="새 비밀번호를 다시 입력하세요" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} minLength={8} maxLength={128} required />
+            {error && <div className="flex items-center gap-3 rounded-lg border border-[#ffb9b9] bg-[#fff1f1] px-4 py-3 text-sm font-black text-[#e02929]"><AlertCircle size={18} />{error}</div>}
+            <button type="submit" disabled={loading || !uid || !token} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '변경 중...' : '비밀번호 변경'}</button>
+            <div className="text-center"><Link to="/auth/login?mode=find" className="font-black text-[#009900]">재설정 링크 다시 요청하기</Link></div>
+          </form>
+        )}
       </AuthCard>
     </AuthFrame>
   );

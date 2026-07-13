@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Check, ChevronRight, MoveDown, MoveUp, X } from 'lucide-react';
 import {
   Alert,
@@ -170,7 +170,7 @@ export default function TalentProfilePage() {
 
       if (confirmedByUser) {
         window.localStorage.setItem('careerzip_selected_jd_id', String(jdId));
-        navigate('/input/documents');
+        navigate('/input');
       } else {
         setToast('인재상 기준이 임시 저장되었습니다.');
       }
@@ -188,7 +188,6 @@ export default function TalentProfilePage() {
   return (
     <PageShell
       activeNav="자료 입력"
-      eyebrow="Step 2-1"
       title="면접 연습에 반영할 인재상 기준을 선택해주세요"
       description="회사의 공식 인재상이 아닌, 사용자가 면접 연습을 위해 직접 설정한 인재상 기준입니다."
       maxWidth="max-w-7xl"
@@ -322,18 +321,15 @@ export default function TalentProfilePage() {
           </Card>
 
           <div className="flex flex-col-reverse gap-3 border-t border-[rgba(0,0,0,0.08)] pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="secondary" onClick={() => navigate('/jd')} disabled={saving}>이전</Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/input/jd')} disabled={saving}>이전</Button>
             <div className="flex flex-wrap gap-3">
               <Button type="button" variant="secondary" onClick={() => save(false)} disabled={saving}>{saving ? '저장 중...' : '임시 저장'}</Button>
-              <Button type="button" onClick={() => save(true)} disabled={saving}>{saving ? '저장 중...' : '선택 완료하고 다음'}</Button>
+              <Button type="button" onClick={() => save(true)} disabled={saving}>{saving ? '저장 중...' : '선택 완료'}</Button>
             </div>
           </div>
         </div>
       )}
 
-      <p className="mt-6 text-center text-xs font-semibold text-[rgba(0,0,0,0.45)]">
-        JD ID: <span className="font-mono">{jdId}</span> · <Link to="/input/documents" className="underline">이력서 단계로 이동</Link>
-      </p>
     </PageShell>
   );
 }

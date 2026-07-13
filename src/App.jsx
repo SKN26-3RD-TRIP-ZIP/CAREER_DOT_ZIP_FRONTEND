@@ -27,11 +27,14 @@ function App() {
 
         {/* 입력·면접 흐름 (P0 보호 라우트 완성) */}
         <Route path="/input/onboarding/:step" element={<Pages.OnboardingPage />} />
+        <Route path="/input" element={<Pages.InputHomePage />} />
         {/* develop 기존 JD 입력 라우트 보존 */}
-        <Route path="/jd" element={<Pages.JdInputPage />} />
+        <Route path="/jd" element={<Pages.JdManagementPage />} />
         <Route path="/input/jd-import" element={<Pages.JdImportPage />} />
-        <Route path="/JD" element={<Pages.JdInputPage />} />
-        <Route path="/input/jd" element={<Pages.JdInputPage />} />
+        <Route path="/JD" element={<Pages.JdManagementPage />} />
+        <Route path="/input/jd" element={<Pages.JdManagementPage />} />
+        <Route path="/input/jd/new" element={<Pages.JdInputPage />} />
+        <Route path="/input/jd/:jdId/edit" element={<Pages.JdInputPage />} />
         <Route path="/input/jd/:jdId/talent-profile" element={<Pages.TalentProfilePage />} />
         <Route path="/input/documents" element={<Pages.DocumentsInputPage />} />
         <Route path="/input/cover-letter-project" element={<Pages.CoverLetterProjectPage />} />
@@ -70,6 +73,7 @@ function App() {
 
       {/* 실제 인증 연동 라우트 (프로토타입 /login,/signup 과 분리) */}
       <Route path="/auth/login" element={<Pages.AuthLoginPage />} />
+      <Route path="/auth/reset-password" element={<Pages.ResetPasswordPage />} />
       <Route path="/auth/signup" element={<Pages.SignupPage />} />
       <Route path="/auth/signup/complete" element={<Pages.SignupCompletePage />} />
       <Route path="/login" element={<Navigate to="/auth/login" replace />} />

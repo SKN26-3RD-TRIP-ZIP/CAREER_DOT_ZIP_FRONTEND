@@ -696,10 +696,10 @@ function SessionSetupPage({ adminMode = false }) {
     >
       <Card className="overflow-hidden">
         <div className="border-b border-[rgba(0,0,0,0.10)] bg-[#253900] px-6 py-5 text-[#EEEEEE]">
-          <p className="text-xs font-black text-[#08CB00]">Step 5</p>
+          <p className="text-xs font-black text-[#08CB00]">Interview setup</p>
           <h2 className="mt-1 text-2xl font-black">면접 설정 카드</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[rgba(238,238,238,0.78)]">
-            Step 5에서 면접 조건을 확정한 뒤 바로 세션과 질문을 생성합니다.
+            선택한 자료와 면접 조건을 확정한 뒤 바로 세션과 질문을 생성합니다.
           </p>
         </div>
 

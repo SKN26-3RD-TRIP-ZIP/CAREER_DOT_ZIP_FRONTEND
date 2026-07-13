@@ -180,7 +180,7 @@ function ProfilePage() {
 
   return (
     <PageShell
-      eyebrow="Step 1"
+      eyebrow="기본 프로필"
       title="프로필 입력"
       description="경력, 전공 여부, 희망 직무를 저장하면 JD와 이력서 기반 면접 준비가 더 정확해집니다."
     >

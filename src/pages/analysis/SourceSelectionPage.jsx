@@ -217,7 +217,6 @@ function SourceSelectionPage() {
 
       <Card className="overflow-hidden">
         <div className="border-b border-[rgba(0,0,0,0.10)] bg-[#253900] px-6 py-5 text-[#EEEEEE]">
-          <p className="text-xs font-black text-[#08CB00]">Step 2</p>
           <h2 className="mt-1 text-2xl font-black">분석 자료 연결</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[rgba(238,238,238,0.78)]">
             JD와 이력서는 필수입니다. 자기소개서는 선택 사항으로 분석 정확도를 높여줍니다.

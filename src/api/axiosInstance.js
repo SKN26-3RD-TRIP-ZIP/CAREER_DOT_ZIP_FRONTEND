@@ -15,6 +15,8 @@ const axiosInstance = axios.create({
 const PUBLIC_ENDPOINTS = [
   '/auth/login',
   '/auth/signup',
+  '/auth/password-reset/request',
+  '/auth/password-reset/confirm',
   '/auth/token/refresh',
   '/auth/verify-email',
   '/auth/verify-email/resend',

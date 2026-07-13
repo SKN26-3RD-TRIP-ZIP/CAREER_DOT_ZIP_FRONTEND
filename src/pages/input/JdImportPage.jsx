@@ -113,7 +113,7 @@ export default function JdImportPage() {
     } finally { setLoading(false); }
   };
 
-  // navigateAfter=true 면 저장 성공 후에만 면접 설정으로 이동 (실패 시 이동하지 않음)
+  // navigateAfter=true 면 저장 성공 후에만 인재상 설정으로 이동 (실패 시 이동하지 않음)
   const saveEdits = async (navigateAfter) => {
     if (!result?.jdId || saving) return false;
     setSaving(true); setSaveNotice(''); setSaveError('');
@@ -145,7 +145,7 @@ export default function JdImportPage() {
       activeNav="자료 입력"
       title="채용공고 가져오기"
       description="채용공고 URL을 분석하거나 이미지를 업로드해 JD를 자동 생성하고, 추출 결과를 수정해 저장합니다."
-      actions={<Button type="button" variant="secondary" onClick={() => navigate('/jd')}>직접 입력으로</Button>}
+      actions={<Button type="button" variant="secondary" onClick={() => navigate('/input/jd/new')}>직접 입력으로</Button>}
     >
       <div className="mb-5 flex gap-2">
         <button type="button" onClick={() => { setTab('url'); reset(); }} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === 'url' ? 'bg-[#08CB00] text-[#EEEEEE]' : 'border border-[rgba(0,0,0,0.18)] text-[#253900]'}`}>URL 분석</button>
@@ -214,7 +214,7 @@ export default function JdImportPage() {
           <p className="mt-4 text-sm font-bold text-[#253900]">저장 후 인재상 설정 화면으로 이동합니다.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button type="button" onClick={() => saveEdits(false)} disabled={saving}>{saving ? '저장 중...' : '수정 내용 저장'}</Button>
-            <Button type="button" variant="secondary" onClick={() => saveEdits(true)} disabled={saving}>저장하고 면접 설정으로</Button>
+            <Button type="button" variant="secondary" onClick={() => saveEdits(true)} disabled={saving}>저장하고 인재상 설정으로</Button>
             <Button type="button" variant="ghost" onClick={useWithoutEdit} disabled={saving}>수정 없이 이 JD 사용</Button>
             <Button type="button" variant="ghost" onClick={reset} disabled={saving}>다시 분석</Button>
           </div>

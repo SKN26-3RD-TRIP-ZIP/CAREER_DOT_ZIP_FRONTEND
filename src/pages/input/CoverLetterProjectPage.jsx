@@ -157,10 +157,10 @@ function CoverLetterProjectPage() {
   const handleSkip = () => {
     setError('');
     if (hasAnyInput) {
-      setError('입력한 내용이 있습니다. 서버 저장 후 다음 단계로 이동하거나 입력을 비워주세요.');
+      setError('입력한 내용이 있습니다. 서버 저장 후 자료입력으로 돌아가거나 입력을 비워주세요.');
       return;
     }
-    navigate('/interview/setup');
+    navigate('/input');
   };
 
   const handleSaveAndMove = async () => {
@@ -174,7 +174,7 @@ function CoverLetterProjectPage() {
     }
 
     if (!hasAnyInput) {
-      navigate('/interview/setup');
+      navigate('/input');
       return;
     }
 
@@ -227,8 +227,8 @@ function CoverLetterProjectPage() {
         window.localStorage.removeItem(draftKey(currentUser.user_id, 'project'));
       }
 
-      setNotice('서버에 저장했습니다. 면접 설정으로 이동합니다.');
-      navigate('/interview/setup');
+      setNotice('서버에 저장했습니다. 자료입력 화면으로 돌아갑니다.');
+      navigate('/input');
     } catch (err) {
       setError(formatApiError(err, '자소서·프로젝트 저장에 실패했습니다.'));
     } finally {
@@ -238,7 +238,6 @@ function CoverLetterProjectPage() {
 
   return (
     <PageShell
-      eyebrow="Step 4"
       title="자소서·프로젝트 경험"
       description="입력한 내용은 서버에 저장한 뒤 면접 질문 생성 자료로 연결합니다."
       actions={<StatusBadge tone="info">서버 저장</StatusBadge>}
@@ -313,15 +312,15 @@ function CoverLetterProjectPage() {
             {error && <Alert tone="danger" className="mt-5">{error}</Alert>}
 
             <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <Button type="button" variant="secondary" onClick={() => navigate('/input/documents')} disabled={saving}>
+              <Button type="button" variant="secondary" onClick={() => navigate('/input')} disabled={saving}>
                 이전
               </Button>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="secondary" onClick={handleSkip} disabled={saving}>
-                  입력 없이 건너뛰기
+                  입력 없이 자료입력으로
                 </Button>
                 <Button type="button" onClick={handleSaveAndMove} disabled={saving}>
-                  {saving ? '저장 중...' : '저장하고 다음'}
+                  {saving ? '저장 중...' : '저장하고 자료입력으로'}
                 </Button>
               </div>
             </div>

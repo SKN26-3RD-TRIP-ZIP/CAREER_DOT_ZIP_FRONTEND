@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { jdApi } from '../../api/jdApi';
 import { jobsApi } from '../../api/jobsApi';
 import { toUserMessage } from '../../api/errors';
@@ -79,6 +79,30 @@ function listText(value) {
   return value || '';
 }
 
+function parseKeywords(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+  } catch {
+    // 문자열 키워드는 아래 쉼표 파싱으로 처리한다.
+  }
+  return parseCommaSeparated(String(value));
+}
+
+function detailToForm(data) {
+  const keywords = parseKeywords(data?.keywords);
+  return {
+    ...INITIAL_FORM,
+    company_name: data?.company_name || '',
+    position: data?.position || '',
+    requirements: data?.job_requirements || '',
+    jd_text: data?.original_text || '',
+    custom_keywords: keywords.join(', '),
+  };
+}
+
 function formatApiError(err, fallback) {
   return toUserMessage(err, fallback);
 }
@@ -93,6 +117,8 @@ function validateJdFile(file) {
 
 function JdInputPage() {
   const navigate = useNavigate();
+  const { jdId: editingJdId } = useParams();
+  const isEditMode = Boolean(editingJdId);
   const { setJd } = useJdStore();
   const [activeMode, setActiveMode] = useState('manual');
   const [form, setForm] = useState(INITIAL_FORM);
@@ -102,6 +128,7 @@ function JdInputPage() {
   const [selectedMockJob, setSelectedMockJob] = useState(null);
   const [mockLoading, setMockLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(isEditMode);
   const [error, setError] = useState('');
   const [successData, setSuccessData] = useState(null);
 
@@ -122,6 +149,32 @@ function JdInputPage() {
     }
     navigate(`/input/jd/${nextJdId}/talent-profile`);
   };
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    let alive = true;
+    const loadJdDetail = async () => {
+      setInitialLoading(true);
+      setError('');
+      try {
+        const data = await jdApi.getJdDetail(editingJdId);
+        if (!alive) return;
+        setForm(detailToForm(data));
+      } catch (err) {
+        if (!alive) return;
+        setError(formatApiError(err, 'JD 정보를 불러오지 못했습니다.'));
+        if (err?.response?.status === 401) navigate('/auth/login');
+      } finally {
+        if (alive) setInitialLoading(false);
+      }
+    };
+
+    loadJdDetail();
+    return () => {
+      alive = false;
+    };
+  }, [editingJdId, isEditMode, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -184,11 +237,18 @@ function JdInputPage() {
 
     setLoading(true);
     try {
-      const data = await jdApi.createJd(buildPayload());
+      const data = isEditMode
+        ? await jdApi.updateJd(editingJdId, buildPayload())
+        : await jdApi.createJd(buildPayload());
       setSuccessData(data);
-      goTalentProfile(data);
+      if (isEditMode) {
+        rememberJd(data);
+        navigate('/input/jd');
+      } else {
+        goTalentProfile(data);
+      }
     } catch (err) {
-      setError(formatApiError(err, 'JD 저장에 실패했습니다.'));
+      setError(formatApiError(err, isEditMode ? 'JD 수정에 실패했습니다.' : 'JD 저장에 실패했습니다.'));
       if (err?.response?.status === 401) navigate('/auth/login');
     } finally {
       setLoading(false);
@@ -280,12 +340,23 @@ function JdInputPage() {
     setSuccessData(null);
   };
 
+  if (initialLoading) {
+    return (
+      <PageShell
+        title="JD 수정"
+        description="기존 JD 정보를 불러오고 있습니다."
+        maxWidth="max-w-[1220px]"
+      >
+        <LoadingState title="JD 정보를 불러오는 중입니다" description="저장된 채용공고 내용을 확인하고 있습니다." />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
-      eyebrow="Step 2"
-      title="JD 입력"
-      description="직접 입력, 개발·연습용 합성 공고 검색, PDF 업로드 중 하나를 선택해 면접 질문의 기준이 될 JD를 저장합니다."
-      actions={<Button type="button" variant="secondary" onClick={() => navigate('/input/jd-import')}>URL·이미지로 가져오기</Button>}
+      title={isEditMode ? 'JD 수정' : 'JD 입력'}
+      description={isEditMode ? '저장된 JD 내용을 수정합니다.' : '직접 입력, 개발·연습용 합성 공고 검색, PDF 업로드 중 하나를 선택해 면접 질문의 기준이 될 JD를 저장합니다.'}
+      actions={!isEditMode && <Button type="button" variant="secondary" onClick={() => navigate('/input/jd-import')}>URL·이미지로 가져오기</Button>}
     >
       <Card className="mx-auto max-w-4xl p-6">
         {successData ? (
@@ -302,8 +373,8 @@ function JdInputPage() {
               <Button type="button" onClick={() => goTalentProfile(successData)}>
                 인재상 설정으로
               </Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/interview/setup')}>
-                면접 설정으로 이동
+              <Button type="button" variant="secondary" onClick={() => navigate('/input')}>
+                자료입력으로 이동
               </Button>
               <Button type="button" variant="ghost" onClick={handleReset}>
                 다른 JD 등록
@@ -312,23 +383,25 @@ function JdInputPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-2 rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-1">
-              {INPUT_MODES.map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveMode(mode.id);
-                    setError('');
-                  }}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    activeMode === mode.id ? 'bg-[#253900] text-[#EEEEEE]' : 'text-[#000000] hover:opacity-80'
-                  }`}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
+            {!isEditMode && (
+              <div className="grid grid-cols-3 gap-2 rounded-lg border border-[rgba(0,0,0,0.12)] bg-[#EEEEEE] p-1">
+                {INPUT_MODES.map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveMode(mode.id);
+                      setError('');
+                    }}
+                    className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                      activeMode === mode.id ? 'bg-[#253900] text-[#EEEEEE]' : 'text-[#000000] hover:opacity-80'
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {activeMode === 'manual' && (
               <form onSubmit={handleManualSubmit} className="mt-6 space-y-5">
@@ -402,11 +475,11 @@ function JdInputPage() {
                 </Field>
                 {error && <Alert tone="danger">{error}</Alert>}
                 <div className="flex flex-wrap justify-between gap-2">
-                  <Button type="button" variant="secondary" onClick={() => navigate('/profile')} disabled={loading}>
+                  <Button type="button" variant="secondary" onClick={() => navigate('/input/jd')} disabled={loading}>
                     이전
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {loading ? '저장 중...' : '저장하고 다음'}
+                    {loading ? '저장 중...' : isEditMode ? '수정 완료' : '저장하고 인재상 설정으로'}
                   </Button>
                 </div>
               </form>
@@ -464,11 +537,11 @@ function JdInputPage() {
                 )}
                 {error && <Alert tone="danger">{error}</Alert>}
                 <div className="flex flex-wrap justify-between gap-2">
-                  <Button type="button" variant="secondary" onClick={() => navigate('/profile')} disabled={loading}>
+                  <Button type="button" variant="secondary" onClick={() => navigate('/input/jd')} disabled={loading}>
                     이전
                   </Button>
                   <Button type="button" disabled={loading || !selectedMockJob} onClick={handleMockSave}>
-                    {loading ? '저장 중...' : '선택한 합성 공고를 저장하고 다음'}
+                    {loading ? '저장 중...' : '선택한 합성 공고를 저장하고 인재상 설정으로'}
                   </Button>
                 </div>
               </div>
@@ -506,11 +579,11 @@ function JdInputPage() {
                 </Field>
                 {error && <Alert tone="danger">{error}</Alert>}
                 <div className="flex flex-wrap justify-between gap-2">
-                  <Button type="button" variant="secondary" onClick={() => navigate('/profile')} disabled={loading}>
+                  <Button type="button" variant="secondary" onClick={() => navigate('/input/jd')} disabled={loading}>
                     이전
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {loading ? '업로드 중...' : 'PDF 업로드하고 다음'}
+                    {loading ? '업로드 중...' : 'PDF 업로드하고 인재상 설정으로'}
                   </Button>
                 </div>
               </form>

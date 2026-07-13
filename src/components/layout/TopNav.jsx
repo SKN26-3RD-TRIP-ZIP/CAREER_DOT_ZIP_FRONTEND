@@ -9,7 +9,7 @@ import { BrandLogo } from './BrandLogo.jsx';
 
 const NAV_ITEMS = [
   { label: '대시보드', to: '/mypage/growth' },
-  { label: '자료 입력', to: '/jd' },
+  { label: '자료 입력', to: '/input' },
   { label: '면접 진행', to: '/analysis' },
   { label: '리포트', to: '/report' },
   { label: '마이페이지', to: '/mypage' },
@@ -179,6 +179,20 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
             >
               포인트 내역
             </Link>
+            <Link
+              to="/mypage/profile-settings"
+              className="block rounded-md px-3 py-2 text-sm font-semibold text-[#1f2937] no-underline hover:bg-[#f4f8f1] hover:text-[#08CB00]"
+              role="menuitem"
+            >
+              프로필·설정
+            </Link>
+            <Link
+              to="/mypage/profile-settings#withdraw"
+              className="block rounded-md px-3 py-2 text-sm font-semibold text-[#b42318] no-underline hover:bg-[#fff7f5]"
+              role="menuitem"
+            >
+              회원탈퇴
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
@@ -201,6 +215,12 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
           </Link>
           <Link to="/mypage/points" className="text-[15px] font-semibold text-[#1f2937] no-underline">
             포인트 내역
+          </Link>
+          <Link to="/mypage/profile-settings" className="text-[15px] font-semibold text-[#1f2937] no-underline">
+            프로필·설정
+          </Link>
+          <Link to="/mypage/profile-settings#withdraw" className="text-[15px] font-semibold text-[#b42318] no-underline">
+            회원탈퇴
           </Link>
           <button
             type="button"

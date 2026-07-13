@@ -15,6 +15,11 @@ export const createJd = async (payload) => {
   return response.data;
 };
 
+export const updateJd = async (jdId, payload) => {
+  const response = await axiosInstance.patch(`/jds/${jdId}`, payload);
+  return response.data;
+};
+
 // JD PDF 업로드 → 텍스트 추출 → 저장 (BE: POST /jds/upload, multipart)
 export const uploadJdPdf = async (file, { company_name = '', position = '' } = {}) => {
   const form = new FormData();
@@ -37,6 +42,7 @@ export const jdApi = {
   getJd: getJdDetail,
   getJdDetail,
   createJd,
+  updateJd,
   uploadJd: uploadJdPdf,
   uploadJdPdf,
   deleteJd,
