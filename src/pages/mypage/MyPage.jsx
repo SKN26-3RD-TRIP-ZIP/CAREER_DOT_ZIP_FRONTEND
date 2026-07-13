@@ -7,7 +7,6 @@ import { Alert, Button, Card, DashboardCard, EmptyState, LoadingState, PageShell
 import { useAuthStore } from '../../store/authStore';
 import { getOverallScore } from '../../utils/reportSummary';
 import { getRecommendedQuestions } from '../../utils/recommendedQuestions';
-import PointHistoryPanel, { POINT_PAGE_SIZE } from './PointHistoryPanel';
 
 const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('ko-KR') : '기록 없음');
 const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('ko-KR') : '기록 없음');
@@ -108,12 +107,6 @@ function MyPage() {
   const [reports, setReports] = useState([]);
   const [latestReportDetail, setLatestReportDetail] = useState(null);
   const [latestReportDetailError, setLatestReportDetailError] = useState('');
-  const [pointBalance, setPointBalance] = useState(null);
-  const [pointHistory, setPointHistory] = useState([]);
-  const [pointTotal, setPointTotal] = useState(0);
-  const [pointPage, setPointPage] = useState(1);
-  const [pointLoading, setPointLoading] = useState(true);
-  const [pointError, setPointError] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('access_token')) {
@@ -176,40 +169,6 @@ function MyPage() {
     };
   }, [navigate, setUser]);
 
-  useEffect(() => {
-    if (!localStorage.getItem('access_token')) return undefined;
-    let active = true;
-    setPointLoading(true);
-    setPointError('');
-
-    Promise.all([
-      mypageApi.getPointBalance(),
-      mypageApi.getPointHistory({ page: pointPage, size: POINT_PAGE_SIZE }),
-    ])
-      .then(([balanceData, historyData]) => {
-        if (!active) return;
-        const results = Array.isArray(historyData?.results) ? historyData.results : [];
-        setPointBalance(balanceData);
-        setPointHistory(results);
-        setPointTotal(historyData?.total ?? results.length);
-      })
-      .catch((err) => {
-        if (!active) return;
-        if (err.response?.status === 401) {
-          navigate('/auth/login');
-          return;
-        }
-        setPointError('포인트 내역을 불러오지 못했습니다.');
-      })
-      .finally(() => {
-        if (active) setPointLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [navigate, pointPage]);
-
   const profile = safeJsonParse(localStorage.getItem('userProfile')) || {};
   const latestReport = useMemo(
     () => summary?.latest_report || reports[0] || history.find((rec) => rec.has_report) || null,
@@ -218,7 +177,7 @@ function MyPage() {
   const latestReportScore = latestReport ? roundOverallScore(getOverallScore(latestReport, null)) : null;
   const latestReportSessionId = reportSessionId(latestReport);
   const interviewCount = summary?.interview_count ?? historyTotal;
-  const pointSummaryBalance = pointBalance?.point_balance ?? summary?.point_balance ?? 0;
+  const pointSummaryBalance = summary?.point_balance ?? 0;
 
   useEffect(() => {
     if (!latestReportSessionId) {
@@ -414,17 +373,6 @@ function MyPage() {
               )}
             </DashboardCard>
           </section>
-
-          <PointHistoryPanel
-            pointBalance={pointBalance}
-            summary={summary}
-            pointHistory={pointHistory}
-            pointTotal={pointTotal}
-            pointPage={pointPage}
-            setPointPage={setPointPage}
-            pointLoading={pointLoading}
-            pointError={pointError}
-          />
 
         </div>
       </div>

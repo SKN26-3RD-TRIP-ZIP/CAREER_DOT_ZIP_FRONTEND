@@ -111,6 +111,7 @@ export function useTTS() {
             if (requestId !== requestIdRef.current) return;
             cleanupOpenAiAudio();
             setIsSpeaking(false);
+            options.onEnd?.({ method: 'openai' });
           };
           audio.onerror = () => {
             // mp3 재생 자체가 실패하면 질문 진행을 막지 않도록 브라우저 TTS로 대체한다.
@@ -126,6 +127,10 @@ export function useTTS() {
           if (requestId !== requestIdRef.current) return;
           cleanupOpenAiAudio();
           setIsSpeaking(false);
+          const started = speakWithBrowser(text, requestId, options);
+          if (!started && requestId === requestIdRef.current) {
+            options.onEnd?.({ method: 'error' });
+          }
         }
       }
 

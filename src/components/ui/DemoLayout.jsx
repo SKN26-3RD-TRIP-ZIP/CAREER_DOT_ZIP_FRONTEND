@@ -56,55 +56,48 @@ export function PageShell({
 
 export function AuthShell({ title, description, children, footer, aside }) {
   return (
-    <div className="min-h-screen w-full bg-[#EEEEEE] lg:grid lg:grid-cols-[minmax(0,460px)_1fr]">
-      <aside className="hidden flex-col justify-between bg-[#253900] px-12 py-12 text-[#EEEEEE] lg:flex">
+    <div className="min-h-screen w-full bg-[#f8fafb] lg:grid lg:grid-cols-[42%_58%]">
+      <aside className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_70%_75%,rgba(8,203,0,.35),transparent_28%),linear-gradient(135deg,#071a00,#253900)] px-[34px] py-[43px] text-white lg:block">
         <Logo tone="light" />
-        <div>
-          <h1 className="text-4xl font-black leading-tight tracking-tight">
-            AI 모의면접으로
-            <br />
-            합격에 한 걸음 더
-          </h1>
-          <p className="mt-5 max-w-sm text-sm leading-7 text-[rgba(238,238,238,0.8)]">
-            JD·이력서·자소서·프로젝트를 분석해 맞춤 면접 질문과 성장 리포트를 제공합니다.
+        <div className="mt-14">
+          <p className="inline-flex rounded-full border border-[rgba(8,203,0,.45)] bg-[rgba(8,203,0,.08)] px-4 py-2 text-[15px] font-black text-[#24ff1a]">
+            AI Hybrid Interview Coach
           </p>
-          <ul className="mt-8 space-y-3">
-            {['맞춤 면접 질문 생성', '답변 평가 · 실전 꼬리질문', '성장 리포트 자동 저장'].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-sm font-bold">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#08CB00]" />
+          <h1 className="mt-8 text-[30px] font-black leading-[1.28]">
+            <span className="whitespace-nowrap">실전 같은 AI 모의면접으로</span>
+            <br />
+            <span className="text-[#18e40d]">합격에 한 걸음</span> 더 가까이
+          </h1>
+          <p className="mt-8 text-xl font-medium leading-8 text-white/90">
+            JD 분석부터 맞춤 질문, 실전 피드백까지
+            <br />
+            AI가 당신의 커리어 여정을 함께합니다.
+          </p>
+          <ul className="mt-14 space-y-7 text-lg font-bold">
+            {['직무 맞춤 질문으로 실전 완벽 대비', 'AI 피드백으로 강점과 개선점 파악', '성장 리포트로 합격 가능성 높이기'].map((item) => (
+              <li key={item} className="flex items-center gap-7">
+                <span className="relative h-8 w-8 shrink-0 rounded-full border-4 border-[#24ff1a]">
+                  <span className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#24ff1a]" />
+                  <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#24ff1a]" />
+                </span>
                 {item}
               </li>
             ))}
           </ul>
           {aside}
         </div>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-[rgba(238,238,238,0.6)]">
-            Career.zip 면접 준비 흐름
-          </p>
-          <ol className="relative mt-4 space-y-4 before:absolute before:left-[13px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-[rgba(238,238,238,0.25)]">
-            {['자료 입력', 'AI 분석', '모의면접', '리포트'].map((item, index) => (
-              <li key={item} className="relative flex items-center gap-3">
-                <span className="z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#08CB00] text-xs font-black text-[#253900]">
-                  {index + 1}
-                </span>
-                <span className="text-sm font-bold">{item}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
       </aside>
 
-      <main className="flex min-h-screen items-center justify-center px-5 py-10">
-        <div className="w-full max-w-md">
+      <main className="flex min-h-screen items-center justify-center px-8 py-12">
+        <div className="w-full max-w-[560px]">
           <div className="mb-6 text-center lg:hidden">
             <Logo center />
             <p className="mt-2 text-sm text-[rgba(0,0,0,0.6)]">AI 모의면접 준비를 한 흐름으로 이어갑니다.</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(0,0,0,0.08)] bg-[#EEEEEE] p-8 shadow-[0_12px_40px_rgba(0,0,0,0.10)]">
-            <h2 className="text-2xl font-black tracking-tight text-[#253900]">{title}</h2>
-            {description && <p className="mt-2 text-sm leading-6 text-[rgba(0,0,0,0.6)]">{description}</p>}
-            <div className="mt-7">{children}</div>
+          <div className="rounded-[18px] border border-[#e1e6ea] bg-white px-10 py-11 shadow-[0_18px_60px_rgba(0,0,0,.08)]">
+            <h2 className="text-center text-[34px] font-black leading-tight tracking-tight text-[#000000]">{title}</h2>
+            {description && <p className="mt-4 text-center text-[16px] font-medium leading-7 text-[#64717d]">{description}</p>}
+            <div className="mt-9">{children}</div>
             {footer && <div className="mt-6 text-center text-sm text-[rgba(0,0,0,0.6)]">{footer}</div>}
           </div>
         </div>

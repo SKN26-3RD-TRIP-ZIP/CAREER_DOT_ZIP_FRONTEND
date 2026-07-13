@@ -670,6 +670,7 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
           <Check size={15} />
           {isCompleted ? '면접 종료 버튼이 활성화되었습니다.' : '저장 완료 전에는 다음 질문으로 이동할 수 없습니다.'}
         </section>
+
       </section>
     </main>
   );

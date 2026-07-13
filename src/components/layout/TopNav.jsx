@@ -186,13 +186,6 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
             >
               프로필·설정
             </Link>
-            <Link
-              to="/mypage/profile-settings#withdraw"
-              className="block rounded-md px-3 py-2 text-sm font-semibold text-[#b42318] no-underline hover:bg-[#fff7f5]"
-              role="menuitem"
-            >
-              회원탈퇴
-            </Link>
             <button
               type="button"
               onClick={handleLogout}
@@ -218,9 +211,6 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
           </Link>
           <Link to="/mypage/profile-settings" className="text-[15px] font-semibold text-[#1f2937] no-underline">
             프로필·설정
-          </Link>
-          <Link to="/mypage/profile-settings#withdraw" className="text-[15px] font-semibold text-[#b42318] no-underline">
-            회원탈퇴
           </Link>
           <button
             type="button"
