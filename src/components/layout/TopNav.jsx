@@ -180,11 +180,11 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
               포인트 내역
             </Link>
             <Link
-              to="/mypage/profile-settings"
+              to="/mypage/profile-settings#withdraw"
               className="block rounded-md px-3 py-2 text-sm font-semibold text-[#1f2937] no-underline hover:bg-[#f4f8f1] hover:text-[#08CB00]"
               role="menuitem"
             >
-              프로필·설정
+              계정 관리
             </Link>
             <button
               type="button"
@@ -209,8 +209,8 @@ export default function TopNav({ active = true, disabled = false, variant = 'app
           <Link to="/mypage/points" className="text-[15px] font-semibold text-[#1f2937] no-underline">
             포인트 내역
           </Link>
-          <Link to="/mypage/profile-settings" className="text-[15px] font-semibold text-[#1f2937] no-underline">
-            프로필·설정
+          <Link to="/mypage/profile-settings#withdraw" className="text-[15px] font-semibold text-[#1f2937] no-underline">
+            계정 관리
           </Link>
           <button
             type="button"
