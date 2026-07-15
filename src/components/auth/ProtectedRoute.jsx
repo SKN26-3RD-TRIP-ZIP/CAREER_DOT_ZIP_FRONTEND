@@ -111,14 +111,14 @@ export default function ProtectedRoute({ requireComplete = false }) {
   // status === 'ready'
   if (
     user?.terms?.required &&
-    location.pathname !== '/signup/social/terms'
+    location.pathname !== '/signup/terms'
   ) {
-    return <Navigate to="/signup/social/terms" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/signup/terms" replace state={{ from: location.pathname }} />;
   }
   if (
     isOnboardingRequired(user) &&
     !location.pathname.startsWith('/input/onboarding') &&
-    location.pathname !== '/signup/social/terms'
+    location.pathname !== '/signup/terms'
   ) {
     return <Navigate to="/input/onboarding/1" replace state={{ from: location.pathname }} />;
   }

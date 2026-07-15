@@ -57,8 +57,10 @@ function App() {
 
         <Route path="/mypage/terms" element={<Pages.TermsManagementPage />} />
 
-        {/* 소셜 간편가입 필수 약관 동의 화면 */}
-        <Route path="/signup/social/terms" element={<Pages.SocialTermsPage />} />
+        {/* 일반·소셜 가입 공통 필수 약관 동의 화면 */}
+        <Route path="/signup/terms" element={<Pages.SocialTermsPage />} />
+        {/* 하위 호환: 이전 소셜 전용 주소는 공통 주소로 이동 */}
+        <Route path="/signup/social/terms" element={<Navigate to="/signup/terms" replace />} />
       </Route>
 
       {/* 마이페이지 실제 면접 기록/리포트 조회 (prototype /mypage/* 와 분리): 프로필 완료 요건 필요 */}

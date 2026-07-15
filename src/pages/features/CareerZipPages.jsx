@@ -249,7 +249,7 @@ export function LoginPage() {
       if (!token) throw new Error('no token');
       setToken(token);
       if (res.data?.needs_terms) {
-        navigate(res.data?.next_path || '/signup/social/terms', { replace: true });
+        navigate(res.data?.next_path || '/signup/terms', { replace: true });
         return;
       }
       const me = await getMe();

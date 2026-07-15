@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getMe, submitSocialTerms } from '../../api/authApi';
+import { getMe, submitTermsAcceptance } from '../../api/authApi';
 import { toUserMessage } from '../../api/errors';
 import { useAuthStore } from '../../store/authStore';
 import { Alert, AuthShell, Button } from '../../components/ui/DemoLayout';
@@ -38,7 +38,7 @@ export default function SocialTermsPage() {
     }
     setLoading(true);
     try {
-      const { data } = await submitSocialTerms({
+      const { data } = await submitTermsAcceptance({
         termsAgreed: agreements.terms,
         privacyAgreed: agreements.privacy,
         marketingAgreed: agreements.marketing,

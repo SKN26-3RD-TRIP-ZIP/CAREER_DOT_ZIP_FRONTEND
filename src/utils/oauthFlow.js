@@ -6,7 +6,9 @@
  *   → POST /auth/oauth/exchange { code } → access token + refresh 쿠키 → next_path 이동
  */
 
-export const SOCIAL_TERMS_PATH = '/signup/social/terms';
+export const TERMS_PATH = '/signup/terms';
+// 기존 import와의 호환성을 유지한다.
+export const SOCIAL_TERMS_PATH = TERMS_PATH;
 export const DEFAULT_OAUTH_NEXT = '/mypage';
 export const OAUTH_PROVIDER_KEY = 'careerzip_oauth_provider';
 
@@ -67,7 +69,7 @@ export function parseOAuthCallbackParams(params) {
  * - 그 외 → 허용된 내부 경로만(외부 URL 차단), 기본 /mypage
  */
 export function resolveOAuthDestination({ nextPath, needsTerms } = {}) {
-  if (needsTerms || nextPath === SOCIAL_TERMS_PATH) return SOCIAL_TERMS_PATH;
+  if (needsTerms || nextPath === TERMS_PATH) return TERMS_PATH;
   return safeInternal(nextPath) || DEFAULT_OAUTH_NEXT;
 }
 
@@ -127,8 +129,8 @@ export async function runOAuthExchange({ params, provider, deps }) {
     setUser(me.data);
 
     const redirect =
-      data.needs_terms || data.next_path === SOCIAL_TERMS_PATH
-        ? SOCIAL_TERMS_PATH
+      data.needs_terms || data.next_path === TERMS_PATH
+        ? TERMS_PATH
         : resolveAuthed(me.data, data.next_path);
     return { ok: true, redirect, created: Boolean(data.created), needsTerms: Boolean(data.needs_terms) };
   } catch (err) {
