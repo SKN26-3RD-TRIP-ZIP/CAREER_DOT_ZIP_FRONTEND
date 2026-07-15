@@ -61,7 +61,7 @@ export default function SocialTermsPage() {
   return (
     <AuthShell
       title="약관에 동의해 주세요"
-      description="가입을 완료하려면 필수 약관의 내용을 확인하고 동의해 주세요."
+      description="서비스 이용을 계속하려면 필수 약관의 내용을 확인하고 동의해 주세요."
       footer={
         <Link to="/auth/login" className="font-black text-[#253900]">
           로그인 화면으로
@@ -120,7 +120,7 @@ export default function SocialTermsPage() {
             취소
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={loading || !allRequired}>
-            {loading ? '처리 중...' : '동의하고 가입 완료'}
+            {loading ? '처리 중...' : '동의하고 계속'}
           </Button>
         </div>
       </div>
