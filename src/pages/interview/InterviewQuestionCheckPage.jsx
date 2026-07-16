@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Check,
   CircleStop,
@@ -143,10 +143,7 @@ function Waveform({ isActive }) {
 // 질문 TTS 재생, 답변 녹음, Whisper STT 변환, 답변 저장, 꼬리질문 생성을 이어주는 음성 면접 진행 화면.
 function InterviewQuestionCheckPage({ adminMode = false }) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const storedSessionId = useInterviewStore((state) => state.sessionId);
-  const setSessionId = useInterviewStore((state) => state.setSessionId);
-  const sessionId = searchParams.get('sessionId') || storedSessionId;
+  const sessionId = useInterviewStore((state) => state.sessionId);
   const questions = useInterviewStore((state) => state.questions);
   const currentQuestionIndex = useInterviewStore((state) => state.currentQuestionIndex);
   const setQuestions = useInterviewStore((state) => state.setQuestions);
@@ -175,13 +172,6 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
   const recordingStartedAtRef = useRef(0);
   const countdownTimeoutRef = useRef(null);
   const autoRecordingStartedRef = useRef(false);
-
-  useEffect(() => {
-    if (!sessionId || sessionId === storedSessionId) return;
-    setSessionId(sessionId);
-    setQuestions([]);
-    setCurrentQuestionIndex(0);
-  }, [sessionId, setCurrentQuestionIndex, setQuestions, setSessionId, storedSessionId]);
 
   const totalQuestions = questions.length;
   const safeCurrentIndex = Math.min(currentQuestionIndex, Math.max(totalQuestions - 1, 0));
@@ -333,6 +323,7 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
           formData.append('audio', blob, 'answer.webm');
           formData.append('language', 'ko');
           formData.append('session_id', sessionId);
+          formData.append('question_id', currentQuestionId);
           nextSttResult = await interviewApi.transcribeAudio(formData);
           setSttResult(nextSttResult);
         }
