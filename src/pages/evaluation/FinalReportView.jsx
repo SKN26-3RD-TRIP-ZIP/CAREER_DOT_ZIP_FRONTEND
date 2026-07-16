@@ -7,7 +7,6 @@ import RadarChart from '../../components/report/charts/RadarChart';
 import { getRecommendedQuestions } from '../../utils/recommendedQuestions';
 import Tooltip from '../../components/report/Tooltip';
 import { metricDescription } from '../../utils/reportLabels';
-import { interviewApi } from '../../api/interviewApi';
 
 function toList(value) {
   if (!value) return [];
@@ -60,15 +59,6 @@ function ListBlock({ items, emptyText, tone = 'default' }) {
 export default function FinalReportView({ report, isShared = false, actionSlot = null, adminMode = false }) {
   const navigate = useNavigate();
   const overallScore = getOverallScore(report, null);
-  const playAnswerAudio = async (answerId) => {
-    try {
-      const { url } = await interviewApi.getAnswerAudioUrl(answerId);
-      await new Audio(url).play();
-    } catch (error) {
-      console.error('Failed to play interview answer audio', error);
-      window.alert('음성을 재생하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-    }
-  };
   const handleAdminReturn = async () => {
     if (!report?.session_id) {
       navigate('/admin/versions');
@@ -202,7 +192,6 @@ export default function FinalReportView({ report, isShared = false, actionSlot =
                   <th className="py-2 pr-4 font-semibold">번호</th>
                   <th className="py-2 pr-4 font-semibold">질문</th>
                   <th className="py-2 pr-4 font-semibold">개선 액션</th>
-                  <th className="py-2 pr-4 font-semibold">음성</th>
                   <th className="py-2 text-right font-semibold">점수</th>
                 </tr>
               </thead>
@@ -212,17 +201,6 @@ export default function FinalReportView({ report, isShared = false, actionSlot =
                     <td className="whitespace-nowrap py-3 pr-4 font-semibold text-[rgba(0,0,0,0.7)]">Q{q.order || idx + 1}</td>
                     <td className="max-w-xl py-3 pr-4 text-[rgba(0,0,0,0.6)]">{q.question_text || '질문 내용 없음'}</td>
                     <td className="py-3 pr-4 text-[rgba(0,0,0,0.5)]">{q.improvement_action || '개선 액션 없음'}</td>
-                    <td className="py-3 pr-4">
-                      {!isShared && q.has_audio && q.answer_id && (
-                        <button
-                          type="button"
-                          onClick={() => playAnswerAudio(q.answer_id)}
-                          className="whitespace-nowrap rounded-lg border border-[rgba(8,203,0,0.5)] px-3 py-2 text-xs font-bold text-[#253900] hover:bg-[rgba(8,203,0,0.1)]"
-                        >
-                          음성 다시 듣기
-                        </button>
-                      )}
-                    </td>
                     <td className="py-3 text-right font-bold text-[#000000]">{q.score ?? '-'}</td>
                   </tr>
                 ))}

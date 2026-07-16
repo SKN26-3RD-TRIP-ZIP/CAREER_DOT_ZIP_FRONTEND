@@ -322,8 +322,6 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
           const formData = new FormData();
           formData.append('audio', blob, 'answer.webm');
           formData.append('language', 'ko');
-          formData.append('session_id', sessionId);
-          formData.append('question_id', currentQuestionId);
           nextSttResult = await interviewApi.transcribeAudio(formData);
           setSttResult(nextSttResult);
         }
@@ -365,7 +363,6 @@ function InterviewQuestionCheckPage({ adminMode = false }) {
         await interviewApi.patchSttResult(nextAnswerId, {
           stt_text: sttText,
           audio_url: null,
-          audio_key: nextSttResult?.audio_key ?? null,
           speech_duration: nextSttResult?.speech_duration ?? duration,
           total_pause_duration: nextSttResult?.total_pause_duration ?? 0,
           long_pause_count: nextSttResult?.long_pause_count ?? 0

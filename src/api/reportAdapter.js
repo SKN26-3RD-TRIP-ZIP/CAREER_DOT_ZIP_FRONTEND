@@ -50,8 +50,6 @@ export function normalizeFinalReport(raw) {
   const interviewType = interviewTypeLabel(meta.interview_type);
   const questions = (Array.isArray(detail.questions) ? detail.questions : []).map((q, i) => ({
     question_id: q?.question_id ?? `q${i}`,
-    answer_id: q?.answer_id ?? null,
-    has_audio: Boolean(q?.has_audio),
     order: q?.order ?? i + 1,
     question_type: interviewType, // 표시용: 기술/인성/종합 면접
     question_kind: questionTypeLabel(q?.question_type), // 참고: 기본/꼬리질문 (raw main/follow_up)

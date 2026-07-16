@@ -38,11 +38,6 @@ export const interviewApi = {
     return response.data;
   },
 
-  getAnswerAudioUrl: async (answerId) => {
-    const response = await axiosInstance.post(`/answers/${answerId}/audio`);
-    return response.data;
-  },
-
   transcribeAudio: async (formData) => {
     // MediaRecorder가 만든 webm blob은 multipart/form-data로 Whisper STT API에 보낸다.
     const response = await axiosInstance.post('/stt/transcribe', formData, {
