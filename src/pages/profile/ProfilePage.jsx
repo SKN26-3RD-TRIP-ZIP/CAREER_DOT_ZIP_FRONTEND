@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileApi } from '../../api/profileApi';
+import { useAuthStore } from '../../store/authStore';
 import {
   Alert,
   Button,
@@ -73,8 +74,10 @@ function ChoiceGroup({ label, name, options, value, onChange }) {
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const authUser = useAuthStore((state) => state.user);
+  const setAuthUser = useAuthStore((state) => state.setUser);
   const localProfile = safeJsonParse(localStorage.getItem('userProfile')) || {};
-  const [displayName, setDisplayName] = useState(localProfile.name || '');
+  const [displayName, setDisplayName] = useState(authUser?.name || localProfile.name || '');
   const [careerType, setCareerType] = useState('new');
   const [majorType, setMajorType] = useState('major');
   const [jobRole, setJobRole] = useState('backend');
@@ -101,8 +104,8 @@ function ProfilePage() {
         setCareerType(profile.career_type || 'new');
         setMajorType(profile.major_type || 'major');
         setJobRole(profile.desired_job || 'backend');
-        setYearsExp(String(profile.career_year ?? ''));
-        setDisplayName((prev) => prev || profile.name || localProfile.name || '');
+        setYearsExp(String(profile.career_type === 'new' ? 0 : (profile.career_year ?? '')));
+        setDisplayName((prev) => prev || profile.name || authUser?.name || localProfile.name || '');
       })
       .catch((err) => {
         if (!active) return;
@@ -123,7 +126,14 @@ function ProfilePage() {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [authUser?.name, navigate]);
+
+  const handleCareerTypeChange = (nextCareerType) => {
+    setCareerType(nextCareerType);
+    if (nextCareerType === 'new') {
+      setYearsExp('0');
+    }
+  };
 
   const persistLocalProfile = (careerYear) => {
     localStorage.setItem(
@@ -142,13 +152,15 @@ function ProfilePage() {
   const handleNext = async () => {
     setError('');
     setSuccess('');
-    const careerYear = Number.parseInt(yearsExp || '0', 10);
+    const careerYear = careerType === 'new' ? 0 : Number.parseInt(yearsExp || '0', 10);
     if (Number.isNaN(careerYear) || careerYear < 0 || careerYear > 30) {
       setError('경력 연차는 0부터 30 사이로 입력해주세요.');
       return;
     }
 
+    const trimmedName = displayName.trim();
     const payload = {
+      name: trimmedName,
       career_type: careerType,
       major_type: majorType,
       desired_job: jobRole,
@@ -168,6 +180,9 @@ function ProfilePage() {
         }
       }
       persistLocalProfile(careerYear);
+      if (trimmedName) {
+        setAuthUser({ ...(authUser || {}), name: trimmedName });
+      }
       setSuccess('프로필이 저장되었습니다.');
       navigate('/jd');
     } catch (err) {
@@ -215,7 +230,7 @@ function ProfilePage() {
                 { value: 'career', label: '경력' },
               ]}
               value={careerType}
-              onChange={setCareerType}
+              onChange={handleCareerTypeChange}
             />
             <ChoiceGroup
               label="전공 여부"
@@ -227,15 +242,16 @@ function ProfilePage() {
               value={majorType}
               onChange={setMajorType}
             />
-            <Field label="경력 연차" hint="신입이면 0을 입력해주세요.">
+            <Field label="경력 연차" hint={careerType === 'new' ? '신입은 0년으로 자동 저장됩니다.' : '경력 연차를 입력해주세요.'}>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
                   min="0"
                   max="30"
-                  className={`${inputClass} w-32`}
+                  className={`${inputClass} w-32 disabled:cursor-not-allowed disabled:bg-[#e9ecef] disabled:text-[#6b7280]`}
                   placeholder="0"
-                  value={yearsExp}
+                  value={careerType === 'new' ? '0' : yearsExp}
+                  disabled={careerType === 'new'}
                   onChange={(e) => setYearsExp(e.target.value)}
                 />
                 <span className="text-sm font-bold text-[#000000]">년</span>

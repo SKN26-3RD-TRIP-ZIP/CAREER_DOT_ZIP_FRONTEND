@@ -80,14 +80,17 @@ export const oauthStart = (provider, next, flow) =>
 export const oauthExchange = (code) =>
   axiosInstance.post('/auth/oauth/exchange', { code });
 
-// POST /auth/oauth/social/terms { terms_agreed, privacy_agreed, marketing_agreed }  (인증 필요)
+// POST /auth/terms { terms_agreed, privacy_agreed, marketing_agreed }  (인증 필요)
 //   200 → { detail, next_path } · 400 TERMS_REQUIRED
-export const submitSocialTerms = ({ termsAgreed, privacyAgreed, marketingAgreed = false }) =>
-  axiosInstance.post('/auth/oauth/social/terms', {
+export const submitTermsAcceptance = ({ termsAgreed, privacyAgreed, marketingAgreed = false }) =>
+  axiosInstance.post('/auth/terms', {
     terms_agreed: Boolean(termsAgreed),
     privacy_agreed: Boolean(privacyAgreed),
     marketing_agreed: Boolean(marketingAgreed),
   });
+
+// 기존 import와의 호환성을 유지한다.
+export const submitSocialTerms = submitTermsAcceptance;
 
 // ── 약관 동의 ──────────────────────────────────────────────────────
 // GET /auth/users/me/terms-agreements?page=&size=
@@ -116,6 +119,7 @@ export default {
   withdrawAccount,
   oauthStart,
   oauthExchange,
+  submitTermsAcceptance,
   submitSocialTerms,
   getMyTermsAgreements,
   updateMarketingConsent,

@@ -8,7 +8,7 @@ import {
   claimExchange,
   runOAuthExchange,
   __resetExchangeGuardForTests,
-  SOCIAL_TERMS_PATH,
+  TERMS_PATH,
 } from '../oauthFlow';
 import { resolveAuthedRedirect } from '../authNavigation';
 
@@ -64,8 +64,8 @@ describe('parseOAuthCallbackParams', () => {
 
 describe('resolveOAuthDestination / safeInternal (Open Redirect 방지)', () => {
   it('약관 미완료면 약관 경로', () => {
-    expect(resolveOAuthDestination({ needsTerms: true })).toBe(SOCIAL_TERMS_PATH);
-    expect(resolveOAuthDestination({ nextPath: SOCIAL_TERMS_PATH })).toBe(SOCIAL_TERMS_PATH);
+    expect(resolveOAuthDestination({ needsTerms: true })).toBe(TERMS_PATH);
+    expect(resolveOAuthDestination({ nextPath: TERMS_PATH })).toBe(TERMS_PATH);
   });
   it('내부 경로 통과, 외부 URL 차단(기본 /mypage)', () => {
     expect(resolveOAuthDestination({ nextPath: '/mypage' })).toBe('/mypage');
@@ -104,13 +104,13 @@ describe('runOAuthExchange (callback 흐름)', () => {
     expect(result.redirect).toBe('/mypage');
   });
 
-  it('신규 가입 + 약관 미완료 → /signup/social/terms 이동', async () => {
+  it('신규 가입 + 약관 미완료 → /signup/terms 이동', async () => {
     const deps = makeDeps({
-      exchange: vi.fn(async () => ({ data: { access_token: 'AT', created: true, needs_terms: true, next_path: SOCIAL_TERMS_PATH } })),
+      exchange: vi.fn(async () => ({ data: { access_token: 'AT', created: true, needs_terms: true, next_path: TERMS_PATH } })),
     });
     const result = await runOAuthExchange({ params: { code: 'c2' }, provider: 'google', deps });
     expect(result.ok).toBe(true);
-    expect(result.redirect).toBe(SOCIAL_TERMS_PATH);
+    expect(result.redirect).toBe(TERMS_PATH);
     expect(deps.resolveAuthed).not.toHaveBeenCalled();
   });
 

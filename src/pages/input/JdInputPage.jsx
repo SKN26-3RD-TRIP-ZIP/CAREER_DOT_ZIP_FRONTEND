@@ -5,6 +5,7 @@ import { jobsApi } from '../../api/jobsApi';
 import { toUserMessage } from '../../api/errors';
 import { useJdStore } from '../../store/jdStore';
 import { getCreatedJdId } from '../../utils/talentProfile';
+import { parseJdOriginalText } from '../../utils/jdOriginalText';
 import {
   Alert,
   Button,
@@ -93,13 +94,28 @@ function parseKeywords(value) {
 
 function detailToForm(data) {
   const keywords = parseKeywords(data?.keywords);
+  const parsed = parseJdOriginalText(data?.original_text);
+  const parsedTechStacks = parseCommaSeparated(parsed.tech_stacks || '');
+  const selectedTechStacks = parsedTechStacks.filter((stack) => TECH_STACK_OPTIONS.includes(stack));
+  const customTechStacks = parsedTechStacks.filter((stack) => !TECH_STACK_OPTIONS.includes(stack));
+  const reservedKeywords = new Set([
+    parsed.job_category,
+    parsed.experience_level,
+    ...parsedTechStacks,
+  ].filter(Boolean));
   return {
     ...INITIAL_FORM,
     company_name: data?.company_name || '',
     position: data?.position || '',
-    requirements: data?.job_requirements || '',
-    jd_text: data?.original_text || '',
-    custom_keywords: keywords.join(', '),
+    job_category: data?.job_category || parsed.job_category || '',
+    experience_level: data?.experience_level || parsed.experience_level || '',
+    tech_stacks: selectedTechStacks,
+    custom_tech_stacks: customTechStacks.join(', '),
+    main_tasks: data?.main_tasks || parsed.main_tasks || '',
+    requirements: data?.requirements || parsed.requirements || data?.job_requirements || '',
+    preferences: data?.preferences || parsed.preferences || '',
+    jd_text: data?.jd_text ?? parsed.jd_text ?? '',
+    custom_keywords: keywords.filter((keyword) => !reservedKeywords.has(keyword)).join(', '),
   };
 }
 
@@ -213,7 +229,7 @@ function JdInputPage() {
       main_tasks: form.main_tasks.trim(),
       requirements: form.requirements.trim(),
       preferences: form.preferences.trim(),
-      original_text: form.jd_text.trim(),
+      jd_text: form.jd_text.trim(),
       custom_keywords: parseCommaSeparated(form.custom_keywords),
     };
 

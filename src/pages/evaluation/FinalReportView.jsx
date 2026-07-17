@@ -123,7 +123,11 @@ export default function FinalReportView({ report, isShared = false, actionSlot =
       {/* 종합 점수 + 면접 요약 */}
       <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
         <section className="rounded-2xl border border-[rgba(8,203,0,0.4)] bg-[rgba(8,203,0,0.1)] p-6 shadow-[0_8px_28px_rgba(0,0,0,0.08)]">
-          <p className="text-sm font-bold text-[#253900]">종합 점수</p>
+          <p className="text-sm font-bold text-[#253900]">
+            <Tooltip text="단순 평균이 아니라 면접관 페르소나별 가중치로 계산됩니다.">
+              종합 점수
+            </Tooltip>
+          </p>
           <div className="mt-4 flex items-end gap-2">
             <span className="text-6xl font-bold text-[#08CB00]">{overallScore ?? '-'}</span>
             <span className="pb-2 text-lg font-semibold text-[#253900]">점</span>

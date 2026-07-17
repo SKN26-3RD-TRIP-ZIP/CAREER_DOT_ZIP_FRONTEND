@@ -35,6 +35,7 @@ import { useAuthStore } from '../../store/authStore';
 import { resolveAuthedRedirect } from '../../utils/authNavigation';
 import Tooltip from '../../components/ui/Tooltip';
 import SocialLoginButtons from '../../components/auth/SocialLoginButtons';
+import TermsContentModal from '../../components/auth/TermsContentModal';
 import {
   addTraitSelection,
   buildTalentProfilePayload,
@@ -247,6 +248,10 @@ export function LoginPage() {
       const token = res.data?.access_token;
       if (!token) throw new Error('no token');
       setToken(token);
+      if (res.data?.needs_terms) {
+        navigate(res.data?.next_path || '/signup/terms', { replace: true });
+        return;
+      }
       const me = await getMe();
       setUser(me.data);
       navigate(resolveAuthedRedirect(me.data, params.get('next') || ''), { replace: true });
@@ -397,6 +402,7 @@ export function SignupPage() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false });
+  const [viewingTerms, setViewingTerms] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   // 이메일 중복확인 상태: idle | checking | available | taken | error
@@ -503,10 +509,15 @@ export function SignupPage() {
               ['privacy', '[필수] 개인정보 수집 및 이용 동의'],
               ['marketing', '[선택] 마케팅 정보 수신 동의'],
             ].map(([key, label]) => (
-              <label key={key} className="flex h-[58px] items-center justify-between border-b border-[#e4e9ed] text-[16px] font-bold">
-                <span className="flex items-center gap-4"><input type="checkbox" checked={agreements[key]} onChange={(e) => setAgreements({ ...agreements, [key]: e.target.checked })} className="h-6 w-6 accent-[#08CB00]" />{label}</span>
-                <span className="flex items-center gap-2 text-[#6c7781]">가입 후 관리 가능 <ChevronRight size={18} /></span>
-              </label>
+              <div key={key} className="flex min-h-[58px] items-center justify-between gap-4 border-b border-[#e4e9ed] text-[16px] font-bold">
+                <label className="flex min-w-0 flex-1 items-center gap-4">
+                  <input type="checkbox" checked={agreements[key]} onChange={(e) => setAgreements({ ...agreements, [key]: e.target.checked })} className="h-6 w-6 shrink-0 accent-[#08CB00]" />
+                  {label}
+                </label>
+                <button type="button" onClick={() => setViewingTerms(key)} className="flex shrink-0 items-center gap-1 text-sm font-black text-[#257A20] underline underline-offset-2">
+                  내용 보기 <ChevronRight size={18} />
+                </button>
+              </div>
             ))}
             {error && <div className="rounded-lg border border-[#ffb9b9] bg-[#fff1f1] p-3 text-sm font-black text-[#e02929]">{error}</div>}
             <button type="button" onClick={submitSignup} disabled={loading || !agreements.terms || !agreements.privacy} className="h-13 w-full rounded-lg bg-[#05b700] text-lg font-black text-white disabled:opacity-50">{loading ? '처리 중...' : '다음'}</button>
@@ -515,6 +526,7 @@ export function SignupPage() {
         )}
         <p className="mt-7 text-center text-sm text-[#6c7781]">이미 계정이 있으신가요? <Link to="/auth/login" className="font-black text-[#009900]">로그인</Link></p>
       </AuthCard>
+      {viewingTerms && <TermsContentModal kind={viewingTerms} onClose={() => setViewingTerms(null)} />}
     </AuthFrame>
   );
 }

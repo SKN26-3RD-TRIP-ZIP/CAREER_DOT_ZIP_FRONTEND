@@ -3,40 +3,11 @@ import { Link } from 'react-router-dom';
 import { getMyTermsAgreements, updateMarketingConsent } from '../../api/authApi';
 import { toUserMessage } from '../../api/errors';
 import { PageShell, Card, Button, Alert, LoadingState, EmptyState } from '../../components/ui/DemoLayout';
+import TermsContentModal from '../../components/auth/TermsContentModal';
+import { TERMS_KIND_LABEL } from '../../constants/termsContent';
 
-const KIND_LABEL = { terms: '이용약관', privacy: '개인정보 처리방침', marketing: '마케팅 정보 수신' };
 const normalizeKind = (kind) => String(kind || '').toLowerCase();
-const kindLabel = (k) => KIND_LABEL[normalizeKind(k)] || k;
-
-const TERMS_CONTENT = {
-  terms: {
-    title: '이용약관',
-    sections: [
-      ['서비스 이용', 'Career.zip은 사용자가 입력한 JD, 이력서, 자기소개서, 면접 답변을 바탕으로 분석과 면접 연습 기능을 제공합니다.'],
-      ['사용자 책임', '사용자는 본인에게 권한이 있는 자료를 입력해야 하며, 타인의 개인정보나 권리를 침해하는 내용을 업로드하지 않아야 합니다.'],
-      ['서비스 제한', '부정 사용, 보안 침해, 시스템 남용이 확인되면 서비스 이용이 제한될 수 있습니다.'],
-      ['결과 활용', 'AI 분석 결과와 면접 피드백은 취업 준비를 돕는 참고 자료이며, 실제 채용 결과를 보장하지 않습니다.'],
-    ],
-  },
-  privacy: {
-    title: '개인정보 처리방침',
-    sections: [
-      ['수집 항목', '회원 식별 정보, 프로필 정보, 사용자가 등록한 JD·이력서·자기소개서·프로젝트·면접 답변 및 서비스 이용 기록을 처리할 수 있습니다.'],
-      ['이용 목적', '계정 관리, 맞춤형 분석, 면접 질문 생성, 리포트 제공, 보안 및 서비스 품질 개선을 위해 사용합니다.'],
-      ['보관 및 파기', '관련 법령 또는 내부 보관 정책에 따라 필요한 기간 동안 보관하며, 목적 달성 후에는 파기 또는 익명화합니다.'],
-      ['권리 행사', '사용자는 개인정보 열람, 정정, 삭제, 처리 정지를 요청할 수 있습니다.'],
-    ],
-  },
-  marketing: {
-    title: '마케팅 정보 수신 동의',
-    sections: [
-      ['수신 내용', '서비스 업데이트, 이벤트, 혜택, 커리어 콘텐츠, 신규 기능 안내를 받을 수 있습니다.'],
-      ['수신 방법', '이메일, 앱/웹 알림 등 서비스가 제공하는 연락 수단을 사용할 수 있습니다.'],
-      ['선택 동의', '마케팅 수신 동의는 선택 사항이며, 동의하지 않아도 기본 서비스 이용에는 제한이 없습니다.'],
-      ['철회 방법', '마이페이지의 약관 · 동의 관리 화면에서 언제든지 수신 동의를 철회할 수 있습니다.'],
-    ],
-  },
-};
+const kindLabel = (k) => TERMS_KIND_LABEL[normalizeKind(k)] || k;
 
 function fmt(dt) {
   if (!dt) return '-';
@@ -238,36 +209,5 @@ export default function TermsManagementPage() {
         />
       )}
     </PageShell>
-  );
-}
-
-function TermsContentModal({ kind, version, onClose }) {
-  const content = TERMS_CONTENT[kind] || TERMS_CONTENT.terms;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="terms-content-title">
-      <div className="max-h-[86vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-[rgba(0,0,0,0.15)] bg-[#EEEEEE] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black text-[#08CB00]">버전 {version || 'v1'}</p>
-            <h2 id="terms-content-title" className="mt-1 text-2xl font-black text-[#253900]">{content.title}</h2>
-          </div>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            닫기
-          </Button>
-        </div>
-        <div className="mt-5 space-y-4">
-          {content.sections.map(([title, body]) => (
-            <section key={title} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white/45 p-4">
-              <h3 className="font-black text-[#253900]">{title}</h3>
-              <p className="mt-2 text-sm font-semibold leading-6 text-[rgba(0,0,0,0.68)]">{body}</p>
-            </section>
-          ))}
-        </div>
-        <p className="mt-5 text-xs leading-5 text-[rgba(0,0,0,0.55)]">
-          현재 화면은 서비스에서 제공하는 v1 동의 내용을 확인하기 위한 표시 영역입니다.
-        </p>
-      </div>
-    </div>
   );
 }

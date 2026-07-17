@@ -5,7 +5,7 @@ vi.mock('../axiosInstance', () => ({
 }));
 
 import axiosInstance from '../axiosInstance';
-import { oauthStart, oauthExchange, submitSocialTerms } from '../authApi';
+import { oauthStart, oauthExchange, submitTermsAcceptance } from '../authApi';
 
 beforeEach(() => {
   axiosInstance.get.mockReset().mockResolvedValue({ data: {} });
@@ -34,10 +34,10 @@ describe('oauthExchange', () => {
   });
 });
 
-describe('submitSocialTerms', () => {
-  it('POST /auth/oauth/social/terms with snake_case body', () => {
-    submitSocialTerms({ termsAgreed: true, privacyAgreed: true, marketingAgreed: false });
-    expect(axiosInstance.post).toHaveBeenCalledWith('/auth/oauth/social/terms', {
+describe('submitTermsAcceptance', () => {
+  it('POST /auth/terms with snake_case body', () => {
+    submitTermsAcceptance({ termsAgreed: true, privacyAgreed: true, marketingAgreed: false });
+    expect(axiosInstance.post).toHaveBeenCalledWith('/auth/terms', {
       terms_agreed: true,
       privacy_agreed: true,
       marketing_agreed: false,
